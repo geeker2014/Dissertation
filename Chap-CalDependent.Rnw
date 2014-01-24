@@ -1,0 +1,605 @@
+% !Rnw root = Master.Rnw
+
+<<chp:cal-dependent, echo = FALSE>>=
+
+## Simulated data
+simRCD <- function(n = 10, m = 20, fixed = c(0, 1), vars = c(0, 0, 0.1)) {
+  subject <- rep(1:m, each = n)
+  x <- rep(seq(from = 0, to = 1, length = n), times = m) 
+  B0 <- rnorm(m, mean = 0, sd = sqrt(vars[1]))
+  B1 <- rnorm(m, mean = 0, sd = sqrt(vars[2]))
+  y <- rnorm(m*n, mean = fixed[1]+B0[subject] + (fixed[2]+B1[subject])*x, 
+             sd = sqrt(vars[3]))
+  data.frame(x = x, y = y, subject = factor(subject))
+}
+set.seed(1234)
+simdata <- simRCD(m = 15, n = 30, fixed = c(0, 1), vars = c(0.01, 0, 0.001))
+
+## Models
+simdata.ols <- lm(y ~ x, data = simdata)
+simdata.lme <- lme(y ~ x, random = ~ 1|subject, data = simdata)
+simdata.gls <- gls(y ~ x, data = simdata, 
+                   correlation = corCompSymm(form = ~ 1|subject))
+simdata.x0.est <- calibrate(simdata.ols, y0 = 0.75)$estimate
+
+## Bladder volume data
+bladder.lme <- lme(HD ~ volume + I(volume^2), random = ~ 1|subject, 
+                   data = Bladder)
+bladder.lme2 <- lme(HD ~ volume + I(volume^2), random = ~ volume|subject, 
+                   data = Bladder)
+bladder.lme3 <- update(bladder.lme2, random = pdDiag(~volume))
+
+## Calibration for bladder volume data
+x0.est <- uniroot(function(x) {
+  predict(bladder.lme3, list(volume = x), level = 0) - 70  
+}, interval = range(bladder$volume), tol = 1e-10, maxiter = 1000)$root
+@
+
+\chapter{Calibration with Grouped Data}
+\label{chp:cal-dependent}
+
+% \begin{framed}
+% \textcolor{magenta}{
+% \textbf{TODO:}
+% \begin{itemize}
+%   \item extend bladder volume data example by adding additional unknowns at 20 $mm^2$ and 90 $mm^2$;
+% \end{itemize}
+% }
+% \end{framed}
+
+In this chapter, we extend the application of calibration to \textit{grouped data}; that is, data in which the observations are grouped into disjoint classes called clusters or groups. Common examples of grouped data include \textit{repeated measures data} and \textit{longitudinal data}. Groups tend to be homogeneous, therefore, observations belonging to the same group cannot be considered independent. (Although, observations between clusters usually are.) Thus, we need to account for within cluster dependence when modeling this type of data. To our knowledge, other than \citet{oman_calibration_1998}, very little has been done for calibration with grouped data. Oman considered a simpler model that only allowed for the intercept and slope to vary between groups, whereas we take a more general (and practical) approach that allows for an arbitrary random effects structure. Furthermore, while Oman considers only one type of calibration interval, we discuss four different calibration intervals that can be computed for grouped data, along with some adjustments that can be made to improve their accuracy. Moreover, the calibration interval considered by Oman was based on an \underline{approximate parametric bootstrap} that did not account for the variance attributed by the random variable $\mc{Y}_0$.
+
+The LMM was introduced in Section~\ref{sec:lmms}. In Section~\ref{sec:calibration-lmm-introduction}, we discuss a particular useful LMM: the \textit{random coefficient model}. In Section~\ref{sec:calibration-lmm-point}, we propose a simple method for estimating the unknown $x_0$ in a mixed model setting. We argue the utility of this approach by showing that, in a particular case, it coincides with the ML solution. In Sections \ref{sec:calibration-lmm-wald} and \ref{sec:calibration-lmm-inversion}, we discuss construction of Wald and asymptotic inversion intervals, respectively. We then propose a \underline{fully parametric bootstrap} approach for controlled calibration in Section \ref{sec:calibration-lmm-parboot}. Unlike \citet{oman_calibration_1998}, our parametric bootstrap algorithm does take into account the variability attributed by $\mc{Y}_0$. Distribution-free calibration intervals are (briefly) considered in Section~\ref{sec:calibration-lmm-distfree}. Finally, Section~\ref{sec:bladder-example} applies the aforementioned techniques to a real dataset taken from \citet{brown_measurement_1993}.
+
+\section{LMMs for repeated measures data}
+\label{sec:calibration-lmm-introduction}
+As discussed in Section~\ref{sec:lmms}, the LMM extends the basic LM \eqref{eqn:linmod-matrixform} to 
+\begin{equation}
+\label{eqn:lmm-matrix}
+  \bc{Y} = \X\bm{\beta} + \Z\bm{\alpha} + \bm{\epsilon},
+\end{equation}
+where $\X$ and $\Z$ are known design matrices, $\bm{\beta}$ is a vector of fixed effects, $\bm{\alpha}$ is a vector of random effects, and $\bm{\epsilon}$ is a vector of random errors. Since we are using mixed models to analyze grouped data, it would behoove us to decompress model~\eqref{eqn:lmm-matrix} into the form introduced by \citet{laird_random_1982},
+\begin{equation}
+\label{eqn:lmm-laird-ware}
+  \bc{Y}_i = \X_i\bm{\beta} + \Z_i\bm{\alpha}_i + \bm{\epsilon}_i, \quad i = 1, \dotsc, m,
+\end{equation}
+where, for the $i$-th group:
+\begin{itemize}
+  \item $\bc{Y}_i$ is an $n_i \times 1$ vector of response variables;
+  \item $\X_i$ and $\Z_i$ are known design matrices of dimensions $n_i \times p$ and $n_i \times q$, respectively;
+  \item $\bm{\beta}$ is a $p \times 1$ vector of fixed effects;
+  \item $\bm{\alpha}_i$ is a $q \times 1$ vector of random effects;
+  \item $\bm{\epsilon}_i$ is an $n_i \times 1$ vector of random errors.
+\end{itemize}
+Furthermore, it is assumed that the random variables $\big\{\bm{\alpha}_i\big\}_{i=1}^m$ and $\big\{\bm{\epsilon}_i\big\}_{i=1}^m$ are mutually independent and distributed according to
+\begin{equation*}
+  \bm{\alpha}_i \sim \mc{N}\left(\bm{0}, \bm{G}\right), \quad
+  \bm{\epsilon}_i \sim \mc{N}\left(\bm{0}, \sigma_\epsilon^2\bm{R}_i\right).
+\end{equation*}
+For our purposes, we shall assume that $\bm{R}_i = \bm{I}$ (an $N \times N$ identity matrix); that is, we are assuming constant variance within groups. Also, for computational purposes (e.g., maximizing the likelihood), it is convenient to reparameterize $\bm{G}$ as $\sigma_\epsilon^2\bm{G}^\dagger$, where $\bm{G}^\dagger$ is the "scaled" variance-covariance matrix for the random effects. In other words, we have that
+\begin{equation*}
+  \bm{\alpha}_i \sim \mc{N}\left(\bm{0}, \sigma_\epsilon^2\bm{G}^\dagger\right), \quad
+  \bm{\epsilon}_i \sim \mc{N}\left(\bm{0}, \sigma_\epsilon^2\bm{I}\right).
+\end{equation*}
+Model~\eqref{eqn:lmm-matrix} can also be written in marginal form as
+\begin{equation*}
+  \bc{Y}_i \sim \mc{N}\left(\X_i\bm{\beta}, \bm{V}_i\right),
+\end{equation*}
+where 
+\begin{equation*}
+\bm{V}_i = \Z_i\bm{G}\Z_i\trans + \sigma_\epsilon^2\bm{I}. 
+\end{equation*}
+In long notation (Equation~\eqref{eqn:lmm-matrix}), we have
+\begin{align*}
+  \bc{Y} &= \begin{bmatrix} \bc{Y}_1 \\ \vdots \\ \bc{Y}_m \end{bmatrix}_{N \times 1}, \quad
+  \X = \begin{bmatrix} \X_1 \\ \vdots \\ \X_m \end{bmatrix}_{N \times p}, \quad
+\Z =
+  \begin{bmatrix}
+    \Z_1 & \bm{0} & \bm{0}   \\
+    \bm{0}   & \ddots         & \bm{0}   \\
+    \bm{0}   & \bm{0} & \Z_m
+  \end{bmatrix}_{N \times mq}, \\
+  \bm{\alpha} &= \begin{bmatrix} \bm{\alpha}_1 \\ \vdots \\ \bm{\alpha}_m \end{bmatrix}_{mq \times 1}, \quad 
+   \bm{\epsilon} = \begin{bmatrix} \bm{\epsilon}_1 \\ \vdots \\ \bm{\epsilon}_m \end{bmatrix}_{N \times 1},
+\end{align*}
+% \begin{align*}
+%   \bc{Y} = \left(\bc{Y}_i, \dotsc, \bc{Y}_{n_i}\right)\trans, \quad
+%   \bm{\alpha} = \left(\bm{\alpha}_1, \dotsc, \bm{\alpha}_m\right)\trans, \quad
+%   \bm{\epsilon} = \left(\bm{\epsilon}_1, \dotsc, \bm{\epsilon}_m\right)\trans, \\
+%   \X = \Big\{_{c} \X_i \Big\}_{i = 1}^m, \quad
+%   \Z = \Big\{_{d} \Z_i \Big\}_{i = 1}^m,
+% \end{align*}
+  where $N = \sum_{i=1}^m n_i$ is the total number of observations. Similarly, this can be summarized in marginal form as $\bc{Y} \sim \mc{N}\left(\X\bm{\beta}, \bm{V}\right)$ where 
+\begin{equation*}
+  \bm{V} = \sigma_\epsilon^2\Big\lbrace_{\text{diag }} \bm{I}_{n_i} + \Z_i\bm{G}^\dagger\Z_i\trans \Big\rbrace_{i = 1}^m. 
+\end{equation*}  
+Notice, in this model, how the fixed effects are used to model the mean of $\bc{Y}$ while the random effects govern the variance-covariance structure of $\bc{Y}$. In fact, as pointed out by \citet{mcculloch_generalized_2008}, a key reason for including random effects in a model is to simplify the otherwise difficult task of dealing with $N(N+1)/2$ unique elements of $\bm{V}$. 
+
+Ignoring constants, the log-likelihood for the data can be written as
+\begin{multline}
+\label{eqn:lmm-loglik}
+  \ell\left(\bm{\beta}, \sigma_\epsilon^2, \bm{\theta}\right) = -\frac{N}{2}\log(\sigma_\epsilon^2) - \frac{1}{2}\sum_{i = 1}^m\log\left|\bm{I} + \Z_i\bm{G}^\dagger\Z_i\trans\right| \\ - \frac{1}{2\sigma_\epsilon^2}\sum_{i = 1}^m \left(\bc{Y}_i - \X_i\bm{\beta}\right)\trans\left(\bm{I} + \Z_i\bm{G}^\dagger\Z_i\trans\right)^{-1}\left(\bc{Y}_i - \X_i\bm{\beta}\right),
+\end{multline}
+where $\bm{\theta}$ is a vector containing the unique elements of $\bm{G}^\dagger$. Since $\bm{G}^\dagger$ is symmetric, it has at most $q(q+1)/2$ unique elements, hence, $\bm{\theta}$ has a maximum dimension of $q(q+1)/2$. In many practical applications, however, we can restrict $\bm{G}^\dagger$ (or equivalently $\bm{G}$) to simpler forms involving only a few parameters. For example, $\bm{G}^\dagger$ may be a constant multiple of the identity matrix, $\tau\bm{I}$, which corresponds to uncorrelated random effects with constant variance $\sigma_\epsilon^2\tau$; in this case, $\bm{\theta} = \tau$ has dimension one. This is the variance-covariance structure we used for the random coefficients in the mixed model approach to P-splines in the previous chapter.
+
+One of the most useful LMMs for repeated measures data is the so-called \textit{random linear trend model}:
+\begin{equation}
+\label{eqn:linear-random-trend}
+  \mc{Y}_{ij} = \left(\beta_0 + \alpha_{0i}\right) + \left(\beta_1 + \alpha_{1i}\right)x_{ij} + \epsilon_{ij}, \quad i = 1, \dotsc, m, \quad j = 1, \dotsc, n_i,
+\end{equation}
+where $\beta_0$ and $\beta_1$ are fixed effects, $\big\{\alpha_{0i}\big\}$ are random intercepts distributed as $\mc{N}\left(0, \sigma_0^2\right)$, $\big\{\alpha_{1i}\big\}$ are random slopes distributed as $\mc{N}\left(0, \sigma_1^2\right)$, and $\big\{\epsilon_{ij}\big\}$ are i.i.d. random errors distributed as $\mc{N}\left(0, \sigma_\epsilon^2\right)$. Also, if we let $\cov\left\{\alpha_{0i}, \alpha_{1i}\right\} = \sigma_{01}$, then 
+\begin{equation*}
+  \bm{G} = 
+    \begin{bmatrix}
+      \sigma_0^2  & \sigma_{01} \\
+      \sigma_{01} & \sigma_1^2
+    \end{bmatrix}.
+\end{equation*}
+We often assume the random intercepts and slopes are independent, that is, $\sigma_1^2 = 0$; this can be formally tested using a \textit{likelihood ratio test}. Also, setting $\alpha_{01} = \dotsb = \alpha_{0m} = 0$ or $\alpha_{11} = \dotsb = \alpha_{1m} = 0$ yields the \textit{random intercept} and \textit{random slope} models, respectively (see Figure~\ref{fig:random-coefficients}). Considerable simplifications arise for the balanced cases (i.e., when $n_i = n$ for all $i$). For example, for a balanced random intercept model, the matrix $\Z$ of Equation~\eqref{eqn:lmm-matrix} is just $\Z = \bm{I}_m \otimes \bm{1}_n$, where the symbol $\otimes$ denotes the Kronecker product. Estimating the fixed effects and variance components for model~\eqref{eqn:linear-random-trend} is also much simpler in the balanced case. 
+
+<<random-coefficients, echo = FALSE, opts.label = 'fig.6by3', par = TRUE, fig.pos = 'H', fig.scap = 'Common random coefficient models for grouped data', fig.cap = 'Common random coefficient models for grouped data. Each plot consists of ten measurements on 15 subjects---each of which has a positive, linear trend. \\textit{Left}: Random intercepts. \\textit{Middle}: Random slopes. \\textit{Right}: Random intercepts and slopes.'>>=
+set.seed(1234)
+d1 <- simRCD(m = 15, vars = c(0.2, 0, 0.001))
+d2 <- simRCD(m = 15, vars = c(0, 0.15, 0.001))
+d3 <- simRCD(m = 15, vars = c(0.2, 0.15, 0.001))
+p1 <- xyplot(y ~ x, groups = subject, data = d1, type = c("p", "r"),
+             scales = list(draw = FALSE), xlab = "", ylab = "")
+p2 <- xyplot(y ~ x, groups = subject, data = d2, type =  c("p", "r"),
+             scales = list(draw = FALSE), xlab = "", ylab = "")
+p3 <- xyplot(y ~ x, groups = subject, data = d3, type =  c("p", "r"),
+             scales = list(draw = FALSE), xlab = "", ylab = "")
+print(p1, pos = c(0, 0, 1/3, 1), more = TRUE) 
+print(p2, pos = c(1/3, 0, 2/3, 1), more = TRUE) 
+print(p3, pos = c(2/3, 0, 1, 1), more = FALSE) 
+@
+
+\subsection{Prediction of future observations}
+In the literature for mixed models, prediction of future observations is often overshadowed by the prediction of random effects. Nonetheless, prediction of future observations in mixed models is an important topic---see \citet{jiang_linear_2007} for some motivating examples. For LMMs, there are two kinds of predictions we can make regarding a future observations: (1) predicting a \emph{new} observation \emph{within} an existing group, and (2) predicting a \emph{new} observation in a \emph{new} group. Since longitudinal studies often aim to make inference for the whole population under study---and not just the groups sampled---we will restrict our attention to case (2). In particular, for calibration, we will assume that a (single) new observation, denoted $\mc{Y}_0$, is independent of the current observations and does not belong to an existing group. 
+
+\section{Point estimation}
+\label{sec:calibration-lmm-point}
+In this section, we discuss point estimation of $x_0$ in a mixed model setting. Generally, it is difficult to compute the ML estimate of $x_0$ due the complex nature of mixed model likelihoods, however, as shown below, some cases yield relatively simple results. 
+
+Consider the linear random trend model (Equation~\eqref{eqn:linear-random-trend}). For a particular $x$, we have
+\begin{equation*}
+  \mc{Y} = \underbrace{\strut \beta_0 + \beta_1 x}_\text{\strut FIXED} + \overbrace{\strut \alpha_0 + \alpha_1 x + \epsilon}^\text{\strut RANDOM} = \underbrace{\strut \mu\left(x; \bm{\beta}\right)}_\text{\strut FIXED} + \overbrace{\strut R\left(x; \bm{\alpha}\right)}^\text{\strut RANDOM},
+\end{equation*}
+where $\mu\left(x; \bm{\beta}\right) = \E\left\{\mc{Y}|x\right\}$ is the (population) mean response. For simplicity of notation, let $\mu\left(x\right) = \mu\left(x; \bm{\beta}\right)$. Solving the equation $\mu(x) = \beta_0 + \beta_1 x$ for $x$, we get (assuming $
+\beta_1 \ne 0$)
+\begin{equation*}
+  x = \frac{\mu(x) - \beta_0}{\beta_1}.
+\end{equation*}
+If $\mc{Y}_0$ denotes a random observation from a normal distribution with mean $\mu(x_0)$, then $\E\left\{\mc{Y}_0\right\} = \mu(x_0) = \beta_0 + \beta_1 x_0$, therefore, a natural estimator of $x_0$ is
+\begin{equation}
+\label{eqn:calibration-lmm-mle}
+  \wh{x}_0 = \frac{\mc{Y}_0 - \wh{\beta}_0}{\wh{\beta}_1},
+\end{equation}
+where $\wh{\bm{\beta}} = \left(\wh{\beta}_0, \wh{\beta}_1\right)\trans$ is the EBLUE of $\bm{\beta} = \left(\beta_0, \beta_1\right)\trans$. Notice how this has the same form as the classical estimator (Equation~\eqref{eqn:x0-mle}) discussed in Section~\ref{sec:point-estimation}. In fact, for the balanced random intercept model, the classical estimator is still the ML estimator of $x_0$; in other words, we can compute the ML estimator of $x_0$ using ordinary least squares with i.i.d. normal errors! To see this, note that for the general case $\bm{G}^\dagger = \tau\bm{I}$ and $\Z_i = \bm{1}_i$ (a column vector of all ones), hence, $\bm{V}_i = \sigma_\epsilon^2\left(\bm{I}_i + \tau\bm{1}_i\bm{1}_i\trans\right)$. Therefore, we can write
+\begin{equation*}
+  \bc{Y}_i \sim \mc{N}\left\{\X_i\bm{\beta}, \sigma_\epsilon^2\left(\bm{I}_i + \tau\bm{1}_i\bm{1}_i\trans\right)\right\}, \quad i = 1, \dotsc, m,
+\end{equation*}
+where $\X_i$ is an $n_i \times 2$ design matrix with $j$-th row equal to $\X_{ij}\trans = \left(1, x_{ij}\right)$, $\bm{\beta} = \left(\beta_0, \beta_1\right)\trans$ is a vector of fixed effects, $\sigma_\epsilon^2$ is the within-subject variance, and $\sigma_\epsilon^2\tau$ is the variance of the random intercepts. From Equation~\ref{eqn:lmm-loglik}, the log-likelihood for the data (ignoring constants) is
+\begin{multline*}
+  \ell_{\mathrm{I}}\left(\bm{\beta}, \sigma_\epsilon^2, \tau\right) = -\frac{N}{2}\log\left(\sigma_\epsilon^2\right) - \frac{1}{2}\sum_{i = 1}^m \log\left|\bm{I} + \tau\bm{1}_i\bm{1}_i\trans\right| \\ - \frac{1}{2\sigma_\epsilon^2}\sum_{i = 1}^m \left(\bc{Y}_i - \X_i\bm{\beta}\right)\trans\left(\bm{I} + \tau\bm{1}_i\bm{1}_i\trans\right)^{-1}\left(\bc{Y}_i - \X_i\bm{\beta}\right).
+\end{multline*}
+The subscript "$\mathrm{I}$" is there to remind us that this is the likelihood for the standards, the data from the first stage of the calibration experiment (see Section~\ref{sec:intro}). Using the following formulas \citep[pg. 49]{demidenko_mixed_2013},
+\begin{itemize}
+  \item $\left|\bm{I} + \tau\bm{1}_i\bm{1}_i\trans\right| = 1 + n_i\tau$;
+  \item $\left(\bm{I} + \tau\bm{1}_i\bm{1}_i\trans\right)^{-1} = \bm{I} - \frac{\tau}{1 + n_i\tau}\bm{1}_i\bm{1}_i\trans$;
+\end{itemize}
+the log-likelihood simplifies to
+\begin{multline*}
+  \ell_{\mathrm{I}}\left(\bm{\beta}, \sigma_\epsilon^2, \tau\right) = -\frac{N}{2}\log\left(\sigma_\epsilon^2\right) - \frac{1}{2}\sum_{i = 1}^m \log\left(1 + n_i\tau\right) \\ - \frac{1}{2\sigma_\epsilon^2}\sum_{i = 1}^m \left(\bc{Y}_i - \X_i\bm{\beta}\right)\trans\left(\bm{I} - \frac{\tau}{1 + n_i\tau}\bm{1}_i\bm{1}_i\trans\right)\left(\bc{Y}_i - \X_i\bm{\beta}\right).
+\end{multline*}
+Similarly, the log-likelihood for the (single) unknown (i.e., the log-likelihood for the data from the second stage of the calibration experiment) is 
+\begin{equation*}
+  \mc{\ell}_{\mathrm{II}}\left(\bm{\beta}, \sigma_\epsilon^2, \tau, x_0\right) = -\frac{1}{2}\log\left(\sigma_\epsilon^2\right) - \frac{1}{2}\log\left(1 + \tau\right) - \frac{1}{2\sigma_\epsilon^2\left(1 + \tau\right)}\left(\mc{Y}_0 - \beta_0 - \beta_1 x_0\right)^2.
+\end{equation*}
+From the independence of $\bc{Y}$ and $\mc{Y}_0$, the log-likelihood for the pooled data, denoted $\mc{\ell}\left(\bm{\beta}, \sigma_\epsilon^2, \tau, x_0\right)$, is given by
+\begin{align*}
+  \ell\left(\bm{\beta}, \sigma_\epsilon^2, \tau, x_0\right) &= \mc{\ell}_{\mathrm{I}}\left(\bm{\beta}, \sigma_\epsilon^2, \tau\right) + \mc{\ell}_{\mathrm{II}}\left(\bm{\beta}, \sigma_\epsilon^2, \tau, x_0\right) \\
+  &= -\frac{N+1}{2}\log\left(\sigma_\epsilon^2\right) - \frac{1}{2}\sum_{i = 1}^m \log\left(1 + n_i\tau\right) - \frac{1}{2}\log\left(1 + \tau\right) \newln - \frac{1}{2\sigma_\epsilon^2}\sum_{i = 1}^m \left(\bc{Y}_i - \X_i\bm{\beta}\right)\trans\left(\bm{I} - \frac{\tau}{1 + n_i\tau}\bm{1}_i\bm{1}_i\trans\right)\left(\bc{Y}_i - \X_i\bm{\beta}\right) \newln - \frac{1}{2\sigma_\epsilon^2\left(1 + \tau\right)}\left(\mc{Y}_0 - \beta_0 - \beta_1 x_0\right)^2.
+\end{align*}
+Thus, the full log-likelihood is the sum of two parts, the log-likelihood for the standards, and the log-likelihood for the unknown. Equating to zero the partial derivative of the full log-likelihood with respect to the parameter $x_0$ results in $\widetilde{x}_0\left(\bm{\beta}\right) = \left(\mc{Y}_0 - \beta_0\right)/\beta_1$. In other words, for any value of $\bm{\beta}$, $\widetilde{x}_0\left(\bm{\beta}\right)$ maximizes the likelihood with respect to $x_0$. Plugging this back into the log-likelihood yields the \textit{profiled log-likelihood}
+\begin{multline*}
+  \mc{\ell}_p\left(\bm{\beta}, \sigma_\epsilon^2, \tau\right) = -\frac{N+1}{2}\log\left(\sigma_\epsilon^2\right) - \frac{1}{2}\sum_{i = 1}^m \log\left(1 + n_i\tau\right) - \frac{1}{2}\log\left(1 + \tau\right) \\ - \frac{1}{2\sigma_\epsilon^2}\sum_{i = 1}^m \left(\bc{Y}_i - \X_i\bm{\beta}\right)\trans\left(\bm{I} - \frac{\tau}{1 + n_i\tau}\bm{1}_i\bm{1}_i\trans\right)\left(\bc{Y}_i - \X_i\bm{\beta}\right),
+\end{multline*}
+Similarly, equating the partial derivative of $\mc{\ell}_p\left(\bm{\beta}, \sigma_\epsilon^2, \tau\right)$, with respect to the parameter $\sigma_\epsilon^2$, to zero yields 
+\begin{equation*}
+  \widetilde{\sigma}_\epsilon^2\left(\bm{\beta}, \tau\right) = \frac{1}{N + 1}\sum_{i = 1}^m \left(\bc{Y}_i - \X_i\bm{\beta}\right)\left(\bm{I} - \frac{\tau}{1 + n_i\tau}\bm{1}_i\bm{1}_i\trans\right)\left(\bc{Y}_i - \X_i\bm{\beta}\right)\trans.
+\end{equation*}
+Substituting this back into the profiled log-likelihood and simplifying (i.e., cancelling common factors and ignoring constants) we get
+\begin{multline*}
+  \mc{\ell}_p\left(\bm{\beta}, \tau\right) = -\frac{N+1}{2}\log\left\{\sum_{i = 1}^m \left(\bc{Y}_i - \X_i\bm{\beta}\right)\trans\left(\bm{I} - \frac{\tau}{1 + n_i\tau}\bm{1}_i\bm{1}_i\trans\right)\left(\bc{Y}_i - \X_i\bm{\beta}\right)\right\} \\ - \frac{1}{2}\sum_{i = 1}^m \log\left(1 + n_i\tau\right) - \frac{1}{2}\log\left(1 + \tau\right),
+\end{multline*}
+The parameters $x_0$ and $\sigma_\epsilon^2$ have been "profiled out", resulting in a simpler log-likelihood in only $p + 1$ parameters. We could continue in this fashion with the parameter $\bm{\beta}$ as well, although, it is quite easy to see that the value of $\bm{\beta}$ that maximizes $\mc{\ell}_p\left(\bm{\beta}, \tau\right)$ is just the usual GLS estimator, $\widetilde{\bm{\beta}}$, given by Equation~\eqref{eqn:beta-gls}. Furthermore, it can be shown \citep{demidenko_mixed_2013} that, for the balanced case, $\widetilde{\bm{\beta}}$ does not depend on $\tau$ and in fact reduces to the ordinary LS estimator $\wh{\bm{\beta}} = \left(\X\trans\X\right)^{-1}\X\trans\bc{Y}$. Thus, the ML estimator of $x_0$ for the balanced random intercept model is simply
+\begin{equation*}
+  \wh{x}_0 = \widetilde{x}_0\left(\wh{\bm{\beta}}\right) = \frac{\mc{Y}_0 - \wh{\beta}_0}{\wh{\beta}_1},
+\end{equation*}
+where 
+\begin{equation*}
+  \wh{\beta}_1 = \frac{\sum_{i=1}^n\sum_{j=1}^m\left(x_{ij}-\bar{x}\right)\left(y_{ij}-\bar{y}\right)}{\sum_{i=1}^n\sum_{j=1}^m\left(x_{ij}-\bar{x}\right)^2}, \quad \wh{\beta}_0 = \bar{y} - \wh{\beta}_1\bar{x}.
+\end{equation*}
+
+In general, the ML estimator $\wh{x}_0$ of $x_0$ is difficult to obtain analytically. For example, in a random slope model, $\mc{Y}_0 \sim \mc{N}\left(\beta_0 + \beta_1 x_0, x_0^2\sigma_\alpha^2 + \sigma_\epsilon^2\right)$, thus, the unknown $x_0$ affects both the mean and variance of $\mc{Y}_0$. A reasonable, and more practical approach, is to proceed as before, that is, by solving the equation $y_0 = \mu(x_0)$ for the unknown $x_0$. As shown above, for the balanced random intercept model, this leads to the ML estimate.
+
+We should point out that (in general) the EBLUE of $\bm{\beta}$ (Equation~\eqref{eqn:beta-egls}), depends on the estimated variance components through $\wh{\bm{V}}$. Furthermore, recall that for the linear calibration problem, the bias-adjusted ML estimator of $\sigma_\epsilon^2$ (the only variance component) is 
+\begin{equation}
+\label{eqn:mse-mle}
+  \wh{\sigma}_\epsilon^2 = \frac{1}{n-2}\sum_{i=1}^n(\mc{Y}_i-\wh{\beta}_0-\wh{\beta}_1 x_i)^2 + \frac{1}{m-1}\sum_{i=n+1}^{n+m}(\mc{Y}_i-\overline{\mc{Y}}_0)^2.
+\end{equation}
+The first term in Equation~\eqref{eqn:mse-mle} is the usual unbiased estimator of $\sigma_\epsilon^2$ and the second term is just the sample variance of the $m$ unknowns $\mc{Y}_{01}, \dotsc, \mc{Y}_{0m}$. If there is only one unknown, then the second term in Equation~\eqref{eqn:mse-mle} is zero! Hence, for a single unknown, the ML estimator of the variance $\sigma_\epsilon^2$ (adjusted for bias) is unaffected. We could extrapolate by making a similar argument for calibration in mixed models. That is, if only a single observation, $\mc{Y}_0$, is available from the second stage of the calibration experiment, then the ML estimates of the variance components (adjusted for bias) should be unaffected---this would not be the case for replicate unknowns sharing a single unknown $x_0$. In this chapter, we only concern ourselves with the case of a single unknown; thus, we make the argument that the usual estimates of the variance components are valid for calibration inference. 
+
+% For illustration, we generated $n = 30$ observations for each of $m = 15$ groups from a random intercept model with with fixed effects $\bm{\beta} = \left(0, 1\right)\trans$ and variance components $\sigma_\alpha^2 = 0.01$ and $\sigma_\epsilon^2 = 0.001$. A spaghetti plot of the data is shown in Figure~\ref{fig:simdata-scatter}; notice the apparent linear trend with varying intercepts. For a new observation, $y_0 = 0.75$, the estimate of the corresponding unknown $x_0$ is $\wh{x}_0 = \left(0.75 - \wh{\beta}_0\right)/\wh{\beta}_1 = \Sexpr{simdata.x0.est}$. Since these data are balanced, $\wh{x}_0$ is also the ML estimate and has asymptotic variance $\wh{\var}_\infty\left(\wh{x}_0\right) = \left(\wh{\sigma}_\alpha^2 + \wh{\sigma}_\epsilon^2\right)/\wh{\beta}_1^2 = \Sexpr{(simdata.gls[["sigma"]]/as.numeric(coef(simdata.ols))[2])^2}$. Ignoring the random effects altogether, one still obtains the point estimate $\wh{x}_0 = \Sexpr{simdata.x0.est}$, but the asymptotic variance is now $\Sexpr{(summary(simdata.ols)[["sigma"]]/as.numeric(coef(simdata.ols))[2])^2}$ which, as expected, is slightly smaller. Thus, ignoring the variance-covariance structure of the response can produce misleading standard errors and hence bias our inference.
+
+For illustration, we generated $n = 30$ observations for each of $m = 15$ groups from a random intercept model with with fixed effects $\bm{\beta} = \left(0, 1\right)\trans$ and variance components $\sigma_\alpha^2 = 0.01$ and $\sigma_\epsilon^2 = 0.001$. A spaghetti plot of the data is shown in Figure~\ref{fig:simdata-scatter}; notice the apparent linear trend with varying intercepts. For a new observation, $y_0 = 0.75$, the estimate of the corresponding unknown $x_0$ is $\wh{x}_0 = \left(0.75 - \wh{\beta}_0\right)/\wh{\beta}_1 = \Sexpr{simdata.x0.est}$. Since these data are balanced, $\wh{x}_0$ is also the ML estimate of $x_0$. 
+
+<<simdata-scatter, echo=FALSE, opts.label='fig.7by5', par=TRUE, fig.pos='H', fig.scap='Scatterplot of simulated random intercept data', fig.cap='Simulated random intercept data'>>=
+
+## Scatterplot
+newx <- list(volume = seq(from = 0, to = 1, length = 500))
+p <- xyplot(y ~ x, groups = subject, data = simdata)
+xyplot(y ~ x, groups = subject, data = simdata, type = "l", alpha = 0.75, lwd = 2,
+       scales = list(tck = c(1, 0)),
+       panel = function(x, y, ...) {
+         panel.xyplot(x, y, ...)
+         panel.abline(simdata.ols, col = "black", lwd = 2)
+         panel.arrows(p$x.limits[1], 0.75, simdata.x0.est, 0.75, col = "black", 
+                      lwd = 1, angle = 25)   
+         panel.arrows(simdata.x0.est, 0.75, simdata.x0.est, p$y.limits[1], 
+                      col = "black", lwd = 1, angle = 25)
+       })
+@
+
+\section{Wald interval}
+\label{sec:calibration-lmm-wald}
+The delta method provides the simplest approach to computing confidence intervals, as long as the quantity of interest is a function of random variables that are at least asymptotically normal. Under mild regularity conditions often satisfied in practice, the ML estimator $\wh{\bm{\beta}}$ of $\bm{\beta}$ is consistent and asymptotically normal with mean vector $\bm{\beta}$ and asymptotic variance-covariance matrix $\left(\X\trans\bm{V}^{-1}\X\right)^{-1}$ \citep{pinheiro_topics_1994}. Furthermore, by assumption, $\mc{Y}_0$ is distributed as $\mc{N}\left(\beta_0 + \beta_1 x_0, \sigma_0^2\right)$, where $\sigma_0^2$ denotes the variance of $\mc{Y}_0$ which, depending on the random effects structure of the model, may involve the unknown $x_0$. For instance, if $R\left(x; \bm{\alpha}\right) = \alpha + \epsilon$ (i.e., a random intercept model), then $\sigma_0^2 = \sigma_\alpha^2 + \sigma_\epsilon^2$, whereas if $R\left(x; \bm{\alpha}\right) = \alpha x + \epsilon$ (i.e., a random slope model), then $\sigma_0^2 = x_0^2\sigma_\alpha^2 + \sigma_\epsilon^2$ which depends on $x_0$. Although our attention is restricted to LMMs in this dissertation, the simplicity of the Wald-based approach extends to nonlinear mixed-effects models (NLMMs) as well. For an introduction to NLMMs, see \citet{pinheiro_topics_1994} and \citet{pinheiro_mixed_2009}.
+
+The Wald statistic, denoted $\mc{W}$, is essentially a generalization of the usual $\mc{Z}$-statistic. Here it is the point estimator, normalized by an estimate of its standard error which we obtain using Taylor's theorem. By assumption, for large enough $N$, $\mc{W} = \wh{x}_0^2/\wh{\var}\left\{\wh{x}_0\right\}$ has a $\chi^2(1)$ distribution. As pointed out by \citet[p. 184]{harrell_regression_2001}, most statistical packages treat $\sqrt{\mc{W}}$ as having a $t$-distribution  with degrees of freedom $df$ (rather than a standard normal distribution), however, there is usually no basis for this outside of the ordinary linear model \citep{gould_confidence_1993}.
+
+We discussed the delta method for calibration in Section~\ref{sec:wald_int}, where we used a first-order Taylor series expansion to approximate the variance of $\wh{x}_0$. The same basic procedure holds here for LMMs, except now, $\var\left\{\mc{Y}_0\right\}$ contains additional variability attributed by the random effects. As a simple example, we consider the balanced random intercept model. For this case, we have shown that the ML estimator of $x_0$ is given by $\wh{x}_0 = \left(\mc{Y}_0 - \wh{\beta}_0\right)/\wh{\beta}_1$. We should make clear, however, that even though $\wh{\bm{\beta}}$ does not depend on the variance components, its variance-covariance matrix does! Therefore, we still need to compute the variance-covariance matrix of $\wh{\bm{\beta}}$ from a mixed model; for example, the variance-covariance matrix obtained from the \code{SAS/STAT} \citep{sas_program} software's \code{PROC MIXED} procedure or the \code{lme} function from the \code{R} package \pkg{nlme} \citep{pinheiro_nlme_2013}. The variance-covariance matrix of $\left(\mc{Y}_0, \wh{\bm{\beta}}\right)$ is
+\begin{equation}
+\label{eqn:Sigma}
+\Sigma = \begin{bmatrix}
+           \var\left\{\mc{Y}_0\right\} & \bm{0} \\
+           \bm{0} & \var\left\{\wh{\bm{\beta}}\right\}
+         \end{bmatrix} = \begin{bmatrix}
+           \sigma_0^2 & \bm{0} \\
+           \bm{0} & \left(\X\trans\bm{V}^{-1}\X\right)^{-1}
+         \end{bmatrix},
+\end{equation} 
+Since $\mc{Y}_0$ is independent of $\bc{Y}$, it is also independent of $\wh{\bm{\beta}}$, whence the diagonal structure of $\Sigma$. Recall that our point estimate has the form $x = \mu^{-1}\left(y; \bm{\beta}\right)$. Let $\mu_1^{-1}\left(y; \bm{\beta}\right)$ and the vector-valued function $\mu_2^{-1}\left(y; \bm{\beta}\right)$ be the partial derivatives of $\mu^{-1}$ with respect to the parameters $y$ and $\bm{\beta}$, respectively. Our point estimator is given by $\mu^{-1}\left(\mc{Y}_0; \wh{\bm{\beta}}\right)$, where $\mc{Y}_0$ is a new observation and $\wh{\bm{\beta}}$ is the EBLUE of $\bm{\beta}$. Using a first-order Taylor-series expansion, an approximate variance for $\wh{x}_0$ is given by
+\begin{equation}
+\label{eqn:cal-lmm-approx}
+  \var\left\{\wh{x}_0\right\} = \left[\mu_1^{-1}\left(\mc{Y}_0; \wh{\bm{\beta}}\right)\right]^2\sigma_0^2 + \left[\mu_2^{-1}\left(\mc{Y}_0; \wh{\bm{\beta}}\right)\right]\trans\left(\X\trans\bm{V}^{-1}\X\right)^{-1}\left[\mu_2^{-1}\left(\mc{Y}_0; \wh{\bm{\beta}}\right)\right].
+\end{equation}
+Of course, to obtain $\wh{\var}\left\{\wh{x}_0\right\}$, we need to replace $\sigma_0^2$ and $\bm{V}$ in Equation~\eqref{eqn:cal-lmm-approx} with their corresponding estimates $\wh{\sigma}_0^2$ and $\wh{\bm{V}}$, respectively. Once we have $\wh{\var}\left\{\wh{x}_0\right\}$, an approximate $100(1-\alpha)\%$ confidence interval for $\wh{x}_0$ is given by $\wh{x}_0 \pm z_{1-\alpha/2}\sqrt{\wh{\var}\left\{\wh{x}_0\right\}}$.
+
+As pointed out by \citet[p. 283]{davidian_nonlinear_1995}, the first term in Equation~\eqref{eqn:cal-lmm-approx} usually (but not necessarily) dominates the second term, leaving the cruder approximation $\var\left\{\wh{x}_0\right\} = \left[\mu_1^{-1}\left(\mc{Y}_0; \wh{\bm{\beta}}\right)\right]^2\sigma_0^2$. For example, consider the random intercept model discussed earlier. For this model, we have
+\begin{align*}
+  \mu^{-1}\left(y; \bm{\beta}\right) &= \left(y - \beta_0\right)/\beta_1, \\
+  \frac{\partial}{\partial y}\mu^{-1}\left(y; \bm{\beta}\right) &= 1/\beta_1,
+\end{align*}
+thus, for the balanced case, the crude approximation turns out to be $\var_\mathrm{crude}\left\{\wh{x}_0\right\} = \sigma_\epsilon^2\left(1 + \tau\right)/\wh{\beta}_1^2$. In general, the approximate variance (Equation~\eqref{eqn:cal-lmm-approx}) can be difficult to compute by hand leading to widespread use of the cruder formula. However, given the ease with which complex computations can be carried out numerically (and with great accuracy), it is good practice to compute and use both terms. In Section~\ref{sec:bladder-example}, we illustrate with a real data example how easily this can be done using the software \code{R} (in particular, see Example~\ref{bladder-wald}).
+
+For the simulated data in Figure~\ref{fig:simdata-scatter}, we get an approximate standard error (i.e., using Taylor's theorem) of $\Sexpr{invest.lme(simdata.lme, y0 = 0.75, interval = "Wald")["se"]}$ which produces a Wald-based calibration interval for $x_0$ of $(\Sexpr{invest.lme(simdata.lme, y0 = 0.75, interval = "Wald")["lower"]}, \Sexpr{invest.lme(simdata.lme, y0 = 0.75, interval = "Wald")["upper"]})$. Compare this to the cruder interval $(\Sexpr{simdata.x0.est - qnorm(0.975)*(simdata.gls$sigma/coef(simdata.gls)[2])}, \Sexpr{simdata.x0.est + qnorm(0.975)*(simdata.gls$sigma/coef(simdata.gls)[2])})$, obtained by using $\var_\mathrm{crude}\left\{\wh{x}_0\right\}$ in place of the full Taylor-series estimate \eqref{eqn:cal-lmm-approx}.
+
+Unfortunately, one of the difficulties with inference in LMMs is that 
+\begin{equation*}
+  \var\left\{\wh{\bm{\beta}}\right\} = \left(\X\trans\wh{\bm{V}}^{-1}\X\right)  
+\end{equation*}  
+involves $\wh{\bm{V}}$, but does not take into account its variability. In other words, $\var\left\{\wh{\bm{\beta}}\right\}$ underestimates the true variance of $\wh{\bm{\beta}}$ (see, for example, \citet[pp. 165-167]{mcculloch_generalized_2008}). Thus, any inference relying on $\var\left\{\wh{\bm{\beta}}\right\}$, including the Wald interval for calibration just discussed, may be misleading. An alternative is to use the so-called \textit{parametric bootstrap} to compute a bootstrap estimate of the variance-covariance matrix $\wh{\bm{\beta}}$ to use in place of $\var\left\{\wh{\bm{\beta}}\right\}$ in Equation~\eqref{eqn:Sigma} (see steps (1)-(4) of Algorithm~\ref{alg:parboot_cal} on page~\pageref{alg:parboot_cal}). 
+
+\section{Inversion interval}
+\label{sec:calibration-lmm-inversion}
+We can also obtain a confidence interval for the unknown $x_0$ by inverting an asymptotic prediction interval for $\mc{Y}_0$. Let $\X_0$ have the same form as the $i$-th row of $\X$, but with $x_{ij}$ replaced with $x_0$. For example, if $\mu\left(x_{ij}; \bm{\beta}\right) = \beta_0 + \beta_1 x_{ij} + \beta_2 x_{ij}^2$, then $\X_0 = \left(1, x_0, x_0^2\right)\trans$. 
+
+For brevity, let $\mu_0 = \mu\left(x_0; \bm{\beta}\right)$, $\widetilde{\mu}_0 = \mu\left(x_0; \widetilde{\bm{\beta}}\right)$, and $\wh{\mu}_0 = \mu\left(x_0; \wh{\bm{\beta}}\right)$ where, as before, $\widetilde{\bm{\beta}}$ and $\wh{\bm{\beta}}$ denote the BLUE and EBLUE of $\bm{\beta}$, respectively. A new observation, $\mc{Y}_0$ say, with unknown $x_0$, is distributed as $\mc{N}\left(\mu_0, \sigma_0^2\right)$. Clearly, $\mc{Y}_0 - \widetilde{\mu}_0$ is a normally distributed random variable with expectation zero (since $\E\left\{\mc{Y}_0\right\} = \E\left\{\widetilde{\mu}_0\right\} = \mu_0$). Also, note that $\mc{Y}_0$ and $\widetilde{\mu}_0$ are independent, hence, $\cov\left\{\mc{Y}_0, \widetilde{\mu}_0\right\} = 0$. It therefore follows that the statistic 
+\begin{equation}
+\label{eqn:lmm-predictive-pivot}
+  \mc{Z} = \frac{\mc{Y}_0 - \widetilde{\mu}_0}{\sqrt{\var\left\{\mc{Y}_0\right\} + \var\left\{\widetilde{\mu}_0\right\}}} = \frac{\mc{Y}_0 - \widetilde{\mu}_0}{\sqrt{\sigma_0^2 + \X_0\trans\left(\X\trans\bm{V}^{-1}\X\trans\right)^{-1}\X_0}}
+\end{equation}
+is a \textit{pivotal quantity} that has an asymptotic standard normal distribution or, equivalently, $\mc{Z}^2 \stackrel{\cdot}{\sim} \chi_1^2$ (a Chi-squared distribution with a single degree of freedom). The key here is that $\widetilde{\mu}_0$ is a linear function of $\bc{Y}$. For example, for a balanced random intercept model, Equation \eqref{eqn:lmm-predictive-pivot} reduces to
+\begin{equation*}
+  \mc{Z} = \frac{\mc{Y}_0 - \widetilde{\beta}_0 - \widetilde{\beta}_1 x_0}{\sqrt{\sigma_\epsilon^2 + \sigma_\alpha^2 + \X_0\trans\left[\X\trans\left( \sigma_\alpha^2\bm{I}_m \otimes \bm{J}_n + \sigma_\epsilon^2\bm{I}_N \right)^{-1}\X\right]^{-1}\X_0}},
+\end{equation*}
+where $\bm{J}_n = \bm{1}_n\bm{1}_n\trans$ is an $n \times n$ vector of all ones.
+
+In practice, $\sigma_0^2$ and $\bm{V}$ are usually unknown and need to be estimated from the data. In such cases, an approximate pivot (essentially a Wald statistic), denoted $\mc{W}$, can be obtained by replacing $\sigma_0^2$ and $\bm{V}$ in the above equation with their respective estimates $\wh{\sigma}_0^2$ and $\wh{\bm{V}}$. This suggests an approximate $100(1-\alpha)\%$ confidence interval for $x_0$ of
+\begin{equation}
+\label{eqn:cal-lmm-inversion}
+  %\mc{J}_\mathrm{cal}(x) = \left\{ x: \mc{W}^2 \le z_{1-\alpha/2}^2 \right\},
+  \mc{J}_\mathrm{cal}(x) = \left\{ x: z_{\alpha/2} < \mc{W} \le z_{1-\alpha/2} \right\},
+\end{equation}
+where $z_{\alpha/2} = z_{1-\alpha/2}$ denote the $\alpha/2$ and $1 - \alpha/2$ quantiles of a standard normal distribution, respectively. Similar to the approximate predictive pivot (Equation~\eqref{eqn:approximate-predictive-pivot}), it is unlikely that Equation~\eqref{eqn:cal-lmm-inversion} will yield closed-form solutions, thus, the solution must be obtained numerically. For the simulated data example, a 95\% inversion interval based on Equation~\eqref{eqn:cal-lmm-inversion}, corresponding to $y_0 = 0.75$, is given by $(\Sexpr{invest(simdata.lme, y0 = 0.75)["lower"]}, \Sexpr{invest(simdata.lme, y0 = 0.75)["upper"]})$, which is very similar to the Wald-based intervals obtained earlier.
+
+\section{Parametric bootstrap}
+\label{sec:calibration-lmm-parboot}
+In Section~\ref{sec:boot_int}, we discussed how to calculate calibration intervals based on the nonparametric bootstrap. A crucial assumption for the ordinary nonparametric bootstrap, however, is that the data are independent; for reasons discussed earlier, this assumption is typically not valid for grouped data. Nonetheless, a different kind of bootstrap, called the \textit{parametric bootstrap}, has shown promise as a serious inferential tool. For examples, see \citet[pg. 342]{mcculloch_generalized_2008} and \citet{efron_bootstrap_2011}. When applicable, the parametric bootstrap typically gives answers similar to a Bayesian analysis with uninformative priors, however, it is much faster than MCMC simulations (bootstrap simulations usually only require a few thousand iterations whereas traditional MCMC simulations may require tens or even hundreds of thousands of iterations). The parametric bootstrap essentially entails sampling from the fitted model itself, rather than sampling (with replacement) from the data. For controlled calibration in a mixed model setting, we propose the following algorithm (essentially a parametric version of Algorithm~\ref{alg:boot_cal} based on the LMM instead of the ordinary LM):
+
+\begin{algorithm}[H]
+\begin{singlespace}
+\SetAlgoNoLine
+\For{$r = 1$ \KwTo $R$}{
+\begin{enumerate}[(1)]
+  \item generate $q$ new values of the random effects, denoted $\bm{\alpha}_r^\boot$, from a $\mc{N}\left(\bm{0}, \wh{\bm{G}}\right)$ distribution; 
+  \item generate $N$ new errors, denoted $\bm{\epsilon}_r^\boot$, from a $\mc{N}\left(\bm{0}, \wh{\sigma}_\epsilon^2\bm{I}\right)$ distribution;
+  \item set $\bm{y}_r^\boot = \X\wh{\bm{\beta}} + \Z\bm{\alpha}_r^\boot + \bm{\epsilon}_r^\boot$;
+  \item update the original model using $\bm{y}_r^\boot$ as the response vector to obtain $\wh{\bm{\beta}}_r^\boot$;
+  \item generate $y_{0r}^\boot$ from a $\mc{N}\left(y_0, \wh{\sigma}_0^2\right)$ distribution;
+  \item compute $\wh{x}_{0r}^\boot = \mu^{-1}\left(y_{0r}^\boot; \wh{\bm{\beta}}_r^\boot\right)$.
+\end{enumerate}
+}
+\end{singlespace}
+\caption{Parametric bootstrap for controlled calibration in LMMs. \label{alg:parboot_cal}}
+\end{algorithm}
+
+Note that only steps (5)-(6) are specific to calibration. Similar parametric bootstrap schemes have also been proposed for mixed models. For example, we can condition on the current values of the random effects by ignoring step (1) of Algorithm~\ref{alg:parboot_cal} and using the current EBLUP, $\wh{\bm{\alpha}}$, in place of $\bm{\alpha}^\boot$. Semiparametric variants of Algorithm~\ref{alg:parboot_cal} that involve sampling directly from the EBLUP and residuals have also been proposed, but \citet{morris_blups_2002} considers this to be bad practice because it consistently underestimates the true variation in the data.
+
+<<simdata-parboot, echo = FALSE>>=
+load("/home/w108bmg/Desktop/Dissertation-knitr/Data/simdata-parboot.RData")
+x0.boot.ci <- boot.ci(x0.pb, type = c("norm", "basic", "perc"))
+@
+
+We applied Algorithm~\ref{alg:parboot_cal} to the simulated data from Figure~\ref{fig:simdata-scatter}. A histogram of the $R = 9,999$ bootstrap replicates of $\wh{x}_0$ is shown in Figure~\ref{fig:simdata-parboot-hist}. Not surprisingly, the distribution is reasonably symmetric and approximately normal; the normal Q-Q plot also confirms this. These bootstrap replicates were used to produce the last two confidence intervals in Table~\ref{tab:simdata-intervals}. For comparison, we have also included the calibration intervals computed in the previous sections. The results are all very similar and there is little reason here\footnote{Here the data are well-behaved and simulated from a normal distribution, thus, we don't expect the confidence intervals to differ too much.} for choosing one interval over another. The Wald-based intervals are symmetric, but, as can be seen from Figure~\ref{fig:simdata-parboot-hist}, symmetry is not unrealistic for this example (this is not the case for the example given in the next section). The inversion interval is not symmetric about $\wh{x}_0$, as well as the bootstrap intervals, however, the bootstrap approach has the advantage of providing an estimate of the entire sampling distribution of $\wh{x}_0$. It should be noted, though, that the parametric bootstrap assumes that the model specified for the data is correct! If, however, the data were not normal, then all of these intervals would likely produce misleading results. In the next section, we discuss a potential remedy that can be used for non-Gaussian LMMs, that is, LMMs that do not assume a specific distribution for the random effects or the errors.
+\begin{table}[H]
+\label{tab:simdata-intervals}
+  \begin{tabular}{lccccc}
+    \toprule
+    Interval        & Estimate & Lower 2.5\% & Upper 97.5\% & Length & SE \\
+    \midrule
+    Wald            & \Sexpr{simdata.x0.est} & 0.5859 & 0.9778 & 0.3920 & 0.0999 \\
+    Crude interval  & \Sexpr{simdata.x0.est} & 0.5915 & 0.9722 & 0.3807 & 0.0971 \\
+    Inversion       & \Sexpr{simdata.x0.est} & 0.5859 & 0.9779 & 0.3920 & NA     \\
+    Normal (PB)     & \Sexpr{simdata.x0.est} & 0.5873 & 0.9742 & 0.3870 & 0.0987 \\
+    Percentile (PB) & \Sexpr{simdata.x0.est} & 0.5895 & 0.9789 & 0.3893 & 0.0987 \\
+    \bottomrule
+  \end{tabular}
+\caption[ 95\% calibration intervals for simulated balanced random intercept data]{Approximate 95\% calibration intervals for the simulated balanced random intercept example. The intervals based on the parametric bootstrap are labeled (PB).}
+\end{table}
+
+<<simdata-parboot-hist, echo = FALSE, opts.label = 'fig.7by4', par = TRUE, fig.pos = 'H', fig.scap = 'Bootstrap distribution of $\\wh{x}_0$ for the simulated random intercept data', fig.cap = 'Bootstrap distribution of $\\wh{x}_0$ obtained using Algorithm~\\ref{alg:parboot_cal}. The dotted red curve represents a normal distribution  with mean $\\wh{x}_0$ and standard deviation estimated from the bootstrap replicates $\\wh{x}_{0r}^\\boot$. The vertical black line indicates the position of $\\wh{x}_0$.'>>=
+par(mfrow = c(1, 2))
+hist(x0.pb$t, breaks = 50, freq = FALSE, col = "grey", border = "white",
+     main = "", xlab = "Bootstrap value")
+abline(v = simdata.x0.est, lwd = 3)
+curve(dnorm(x, mean = x0.pb$t0, sd = apply(x0.pb$t, 2, sd)), lwd = 2, 
+      lty = 2, col = set1[1], add = TRUE)
+qqnorm(x0.pb$t, main = "", xlab = "Theoretical quantile", ylab = "Sample quantile")
+qqline(x0.pb$t)
+@
+
+% \subsection{\textbf{Parametric bootstrap adjusted Wald interval}}
+\subsection{Parametric bootstrap adjusted inversion interval}
+Although we favor the bootstrap confidence intervals obtained directly from the $R$ bootstrap replicates of $\wh{x}_0$, researchers are likely more familiar with the inversion and Wald-based intervals discussed in the previous two sections. These intervals, however, use the quantiles from a standard normal distribution, hence, rely on normal approximations. The parametric bootstrap can be used to improve upon these intervals by replacing the standard normal quantiles with more accurate ones. For instance, for the inversion interval, at each run in Algorithm~\ref{alg:parboot_cal} we compute
+\begin{equation*}
+  \mc{W}^\boot = \frac{y_0^\boot - \mu\left(\wh{x}_0; \wh{\bm{\beta}}^\boot\right)}{\sqrt{\wh{\sigma}_0^{2\boot} + \X_0\trans\left(\X\trans\wh{\bm{V}}^{*-1}\X\trans\right)^{-1}\X_0}}.
+\end{equation*}
+As a result, we obtain the $R$ bootstrap values $\mc{W}_r^\boot$. Let $\gamma_{\alpha/2}^\boot$ and $\gamma_{1-\alpha/2}^\boot$ denote the sample $\alpha/2$ and $1-\alpha/2$ quantiles of $\mc{W}_r^\boot$, respectively. A bootstrap adjusted inversion interval is then given by
+\begin{equation}
+\label{eqn:cal-lmm-inversion-boot}
+  %\mc{J}_\mathrm{cal}(x) = \left\{ x: \mc{W}^2 \le z_{1-\alpha/2}^2 \right\},
+  \mc{J}_\mathrm{cal}^\boot(x) = \left\{ x: \gamma_{\alpha/2}^\boot \le \mc{W} \le \gamma_{1-\alpha/2}^\boot \right\}.
+\end{equation}
+We illustrate this on the bladder volume example in Section~\ref{sec:bladder-example}. A similar adjustment can also be made for the Wald-based interval as well; this is very similar to the studentized bootstrap procedure outlined in steps (6)-(7) of Algorithm~\ref{alg:boot_cal}.
+
+\section{Distribution free calibration interval}
+\label{sec:calibration-lmm-distfree}
+For certain cases, we can easily obtain an asymptotic prediction interval for a future observation that does not require normality for the random effects or errors. These intervals are called \textit{distribution-free} prediction intervals; for details the interested reader is pointed to \citet{jiang_distribution_2002} or \citet{jiang_linear_2007}. This suggests the possibility of a distribution-free calibration interval for $x_0$ by inverting a corresponding distribution-free prediction interval.
+
+We consider only the case of \textit{standard} LMMs. Following \citet{jiang_distribution_2002} and \citet{jiang_linear_2007}, an LMM is said to be standard if each $\Z_i$ of Equation~\eqref{eqn:lmm-laird-ware} consists of only 0's and 1's, such that each row contains exactly one 1 and each column has at least one 1. The random intercept model (balanced or unbalanced case) is standard in this sense, the random slope model, however, is not. 
+
+The method for standard LMMs turns out to be quite simple. Compute the ordinary LS estimate $\wh{\bm{\beta}} = \left(\X\trans\X\right)^{-1}\X\trans\bm{y}$, then obtain the residual vector as $\bm{e} = \bm{y} - \X\wh{\bm{\beta}}$. Denote the $\alpha/2$ and $1-\alpha/2$ quantiles of the residuals as $e_{\alpha/2}$ and $e_{1-\alpha/2}$, respectively. Then, a distribution-free prediction interval for a new observation, $y_0$, with asymptotic coverage probability $1-\alpha$ is given by
+$\left[\wh{\mu}(x_0) + e_{\alpha/2}, \wh{\mu}(x_0) + e_{1-\alpha/2}\right]$, where $\wh{\mu}(x_0)$ is the empirical best predictor of $y_0$. For example, for a random intercept model, the interval in question is simply $\left(\wh{\beta}_0 + \wh{\beta}_1 x_0 + e_{\alpha/2}, \wh{\beta}_0 + \wh{\beta}_1 x_0 + e_{1-\alpha/2}\right)$. If $y_0$ is observed and $x_0$ is the unknown, then this formula can be inverted (in closed-form) to produce an asymptotic $100(1-\alpha)\%$ distribution-free confidence interval for $x_0$ of
+\begin{equation} 
+\label{eqn:simdata-x0-df}
+  \left[ \frac{\left(y_0 - e_{1-\alpha/2}\right) - \wh{\beta}_0}{\wh{\beta}_1}, \frac{\left(y_0 - e_{\alpha/2}\right) - \wh{\beta}_0}{\wh{\beta}_1} \right].
+\end{equation}
+Using Equation~\eqref{eqn:simdata-x0-df}, a 95\% distribution-free calibration interval for the simulated random intercept example is $(0.6121, 0.9852)$. However, since these data are normal (we know because we generated the data), the intervals given in Table~\ref{tab:simdata-intervals} are probably more accurate. 
+
+\section{Bladder volume example}
+\label{sec:bladder-example}
+In this section, we discuss an example involving a real dataset taken from \citet{brown_measurement_1993} where the author states
+\begin{quotation}
+\noindent"A series of 23 women patients attending a urodynamic clinic were recruited for the study. After successful voiding of the bladder, sterile water was introduced in additions of 10, 15, and then 25 ml increments up to a final cumulative total of 175 ml. At each volume a measure of height ($\texttt{H}$) in mm and depth ($\texttt{D}$) in mm of largest ultrasound bladder images were taken. The product $\texttt{H} \times \texttt{D}$ was taken as a measure of liquid volume..."
+\end{quotation}
+The product of $\texttt{H}$ and $\texttt{D}$ is plotted against true volume in Figure~\ref{fig:bladder-scatter} for each of the 23 subjects. As can be seen from this plot, each subject has a slightly nonlinear trend and there are some missing observations (i.e., the data are unbalanced). 
+
+<<bladder-scatter, echo = FALSE, opts.label = 'fig.7by5', par = TRUE, fig.pos = 'H', fig.scap = 'Scatterplot of the bladder volume data', fig.cap = 'Scatterplot of the bladder volume data.'>>=
+xyplot(HD ~ volume | subject, data = bladder, xlab = "Volume (ml)", 
+       ylab = expression(paste("HD ", (mm^2))))
+@
+
+Finding an appropriate random effects structure for the model can be difficult. An informal, but simple, approach is to fit the same model to the data for each subject and compare the estimated coefficients. To this end, we fit a simple quadratic model, $\mu(x) = \beta_0 + \beta_1 x + \beta_2 x^2$, to each of the 23 subjects measurements. Plots of the individual 95\% confidence intervals are displayed in Figure~\ref{fig:bladder-intervals}. We should point out that we used orthogonal polynomials to obtain each fit; this was done to remove the correlation between the estimated coefficients. Clearly, the intercept and slope parameters, $\beta_0$ and $\beta_1$, vary greatly between subjects, while $\beta_2$ remains relatively constant throughout. This suggests an LMM with random effects for the intercept and linear terms. In particular, we used the following random coefficient model:
+\begin{equation}
+\label{eqn:bladder-lmm}
+  \texttt{HD}_{ij} = \beta_0+\alpha_{0i} + \left(\beta_1+\alpha_{1i}\right)\texttt{volume}_{ij} + \beta_3\texttt{volume}_{ij}^2.
+\end{equation}
+Notice this is just the linear random trend model (Equation~\eqref{eqn:linear-random-trend}) with an additional quadratic term. Figure~\ref{fig:bladder-fit} shows the subject-specific fits based on model~\eqref{eqn:bladder-lmm}. Clearly, the model does a good job describing the data. Figure~\ref{fig:bladder-fit} also shows how each subject deviates from the overall fitted mean response $\wh{\mu}\left(x\right) = \wh{\beta}_0 + \wh{\beta}_1 x + \wh{\beta}_2 x^2$.
+
+<<bladder-intervals, echo = FALSE, opts.label = 'fig.7by5', par = TRUE, fig.pos = 'H', fig.scap = '95\\% confidence intervals for the bladder volume example', fig.cap = '95\\% confidence intervals for regression coefficients from subject-specific fits to the bladder volume data. Note that we used orthogonal polynomials in order to remove the correlation between the estimated coefficients.'>>=
+bladder.lmList <- lmList(HD ~ poly(volume, degree = 2) | subject, data = bladder)
+bladder.int <- intervals(bladder.lmList)
+attributes(bladder.int)$dimnames[[3]] <- c("beta0", "beta1", "beta2")
+plot(bladder.int) # suggests beta0 and beta1 are random
+@
+
+<<bladder-fit, echo = FALSE, opts.label = 'fig.7by5', par = TRUE, fig.pos = 'H', fig.scap = 'Scatterplot of the bladder volume data with fitted mean response', fig.cap = '\\textit{Left}: Scatterplot of the bladder volume data with fitted mean response (solid black curve). The horizontal red arrows indicate the positions of the unknown $\\texttt{HD}_0 = 70 \\text{ mm}^2$ and the point estimate $\\wh{\\texttt{volume}}_0$ obtained from inverting the fitted mean response. \\textit{Right}: Fitted curves from a quadratic model fit to the bladder volume data. The model includes (uncorrelated) random effects for the intercept and linear term for each subject.'>>=
+newx <- list(volume = seq(from = min(bladder$volume), to = max(bladder$volume), 
+                          length = 500))
+p1 <- xyplot(HD ~ volume, groups = subject, data = bladder)
+p2 <- xyplot(HD ~ volume, groups = subject, data = bladder, type = "b", 
+             alpha = 0.5, xlab = "Volume (ml)", 
+             ylab = expression(paste("HD ", (mm^2))),
+  scales = list(tck = c(1, 0)), panel = function(x, y, ...) {
+    panel.xyplot(x, y, ...)
+    panel.lines(unlist(newx), predict(bladder.lme, newx, level = 0), 
+                col = "black", lwd = 2)
+    panel.arrows(p1$x.limits[1], 70, x0.est, 70, col = "red", angle = 35)   
+    panel.arrows(x0.est, 70, x0.est, p1$y.limits[1], col = "red", angle = 35)
+    })
+p3 <- plot(augPred(bladder.lme3, length.out = 101, level = 1), 
+           xlab = "Volume (ml)", ylab = expression(paste("HD ", (mm^2))))
+print(p2, pos = c(0, 0, 1/2, 1), more = TRUE) 
+print(p3, pos = c(1/2, 0, 1, 1), more = FALSE)
+@
+
+Suppose we obtain a new observation, $\texttt{HD}_0 = 70 \text{ mm}^2$, for which the true volume is unknown. To estimate the unknown volume, denoted $\texttt{volume}_0$, we proceed as discussed at the end of Section~\ref{sec:calibration-lmm-point}. In particular, we solve the equation 
+\begin{equation*}
+\wh{\mu}\left(\texttt{volume}_0\right) = \wh{\beta}_0 + \wh{\beta}_1\texttt{volume}_0 + \wh{\beta}_2\texttt{volume}_0^2 = 70 \text{ mm}^2
+\end{equation*}
+for $\texttt{volume}_0$ using the quadratic formula. The point estimate obtained is $\wh{\texttt{volume}}_0 = \Sexpr{x0.est}$ ml (see Figure~\ref{fig:bladder-fit}). Since $\wh{\texttt{volume}}_0$ is not the ML estimate, we cannot compute an approximate ML interval as we could for the balanced random intercept example. However, the following snippet of \code{R} code shows how to use the well-known \pkg{car} package \citep{fox_r_2011} to compute the approximate standard error based on the first-order Taylor series estimate given in Equation~\eqref{eqn:cal-lmm-approx}. Note that our model has $\var\left\{\mc{Y}_0\right\} = \sigma_0^2 + x_0^2\sigma_1^2 + \sigma_\epsilon^2$ where $\sigma_0^2$ and $\sigma_1^2$ are the variances of the random intercept and linear terms, respectively. If the random effects were correlated, there would be an additional term $x_0\sigma_{01}$ where $\sigma_{01} = \cov\left\{\alpha_{0i}, \alpha_{1i}\right\}$. 
+
+<<bladder-wald, tidy.opts = list(width.cutoff = 62), rexample = TRUE>>=
+## Obtain fitted model
+mod <- lme(HD ~ volume + I(volume^2), random = pdDiag(~volume), data = Bladder)
+b <- as.numeric(fixef(mod)) # vector of fixed effects
+
+## Set up Sigma from Equation (56)
+var.y0 <- getVarCov(mod)[1,1] + x0.est^2*getVarCov(mod)[2,2] + summary(mod)$sigma^2
+covmat <- diag(4)
+covmat[1:3,1:3] <- vcov(mod)
+covmat[4,4] <- var.y0
+
+## Call the deltaMethod() function from package car
+dm <- car:::deltaMethod(c(b0=b[1], b1=b[2], b2=b[3], y0=70), 
+                        g = "(-b1+sqrt(b1^2-4*b2*(b0-y0)))/(2*b2)", 
+                        vcov. = covmat)
+rownames(dm) <- ""
+dm
+@
+
+<<bladder-wald-2, echo = FALSE>>=
+bladder.lm <- lm(HD ~ volume + I(volume^2), data = bladder)
+res <- invest(bladder.lm, y0 = 70, interval = "Wald")
+@
+
+The resulting standard error is $\Sexpr{round(dm[["SE"]], 2)}$ which yields an approximate (Wald-based) 95\% confidence interval for $\texttt{volume}_0$ of $(\Sexpr{round((x0.est + qnorm(c(0.025, 0.975))*dm[["SE"]])[1], 2)}, \Sexpr{round((x0.est + qnorm(c(0.025, 0.975))*dm[["SE"]])[2], 2)})$. For comparison, we computed the same interval assuming the data are cross-sectional, that is, by ignoring the grouped structure of the data and using the methods discussed in Section~\ref{sec:wald_int}. The resulting interval is $(\Sexpr{round(res[["lower"]], 2)}, \Sexpr{round(res[["upper"]], 2)}$) which, as expected, is narrower than the one previously obtained.
+
+<<bladder-parboot, echo = FALSE, opts.label = 'fig.7by5', par = TRUE, fig.pos = 'H', fig.scap = 'Bootstrap distribution of $\\wh{\\texttt{volume}}_0$ for the bladder volume example', fig.cap = 'Bootstrap distribution of $\\wh{\\texttt{volume}}_0$ for the bladder volume example. The solid black line indicates the original poin estimate and the red tick marks indicate the position of the 2.5 and 97.5 percentiles of the bootstrap distribution.'>>=
+load("/home/w108bmg/Desktop/Dissertation-knitr/Data/bladder-parboot.RData")
+W.boot <- bladder.pb$t[,2]
+w.025 <- quantile(W.boot, 0.025)
+w.975 <- quantile(W.boot, 0.975)
+@
+
+Obtaining the inversion interval (Equation~\eqref{eqn:cal-lmm-inversion}) is less straightforward; we have to write our own prediction function in \code{R} that will also return the standard errors of the fitted values. Example~\ref{bladder-inversion} shows the minimal \code{R} code necessary to obtain $\mc{J}_\mathrm{cal}(x)$ for the bladder volume example. The first line simply extracts the point estimate, $\wh{\texttt{volume}}_0$, obtained in Example~\ref{bladder-wald}. The next few lines of code define a new prediction function, \code{predFun}, that simply calls the built-in prediction function, but additionally returns the standard errors of the fitted values. The last block of code finds the roots to the equation $\mc{W}^2 - z_{1-\alpha/2}^2 = 0$ where $\mc{W}$ is the approximate pivot described in Section~\ref{sec:calibration-lmm-inversion}. The resulting interval, $(58.24, 137.05)$, is only slightly larger than the interval based on the delta method. Notice it is also not symmetric about the point estimate $\wh{\texttt{volume}}_0 = \Sexpr{round(dm[["Estimate"]], 2)} \text{ ml}$ which, given the nonlinear trend and increasing variation in the data, is more realistic. 
+
+<<bladder-inversion, tidy.opts = list(width.cutoff = 60), rexample = TRUE>>=
+## Extract point estimate from previous example
+x0.est <- dm[["Estimate"]]
+
+## Function to compute fitted values and their standard errors
+predFun <- function(x) { 
+  z <- list(volume = x)
+  fit <- predict(mod, newdata = z, level = 0)
+  se.fit <- sqrt(diag(cbind(1, unlist(z), unlist(z)^2) %*% mod$varFix %*% 
+                        t(cbind(1, unlist(z), unlist(z)^2))))
+  list(fit = fit, se.fit = se.fit)
+}
+
+## Invert approximate prediction bounds (numerically)
+invBounds <- function(x) { 
+  z <- list(volume = x)
+  (70 - predFun(x)$fit)^2/(var.y0 + predFun(x)$se.fit^2) - qnorm(0.975)^2
+}
+c(uniroot(invBounds, interval = c(10, x0.est), tol = 1e-10)$root,
+  uniroot(invBounds, interval = c(x0.est, 175), tol = 1e-10)$root)
+@
+
+In addition, we can also obtain the bootstrap adjusted inversion interval (Equation~\eqref{eqn:cal-lmm-inversion-boot}) described at the end of Section~\ref{sec:calibration-lmm-parboot}.
+Figure~\ref{fig:bladder-parboot-hist1} shows a histogram of the $R = 9,999$ bootstrap replicates of $W$. As can be seen, the estimated sampling distribution of $W$ is reasonably normal. The necessary quantiles to compute $\mc{J}_\mathrm{cal}^\boot(x)$ are $w_{0.025} = \Sexpr{round(w.025, 2)}$ and $w_{0.975} = \Sexpr{round(w.975, 2)}$ (compare these to the corresponding quantiles from a standard normal distribution; i.e., $\pm 1.96$)). Making the necessary adjustments to the code in Example~\ref{bladder-inversion} yields $\mc{J}_\mathrm{cal}^\boot(x) = (57.94, 138.16)$, which is only slightly wider than the unadjusted inversion interval based on the normal approximation. In short, the normal approximation works quite well for these data.
+
+<<bladder-parboot-hist1, echo = FALSE, opts.label = 'fig.7by5', par = TRUE, fig.pos = 'H', fig.scap = 'Bootstrap distribution of $W$ for the bladder volume example', fig.cap = 'Bootstrap distribution of $W$ for the bladder volume example. A standard normal distribution (solid black curve) is shown for comparison.'>>=
+W.boot <- bladder.pb$t[,2]
+hist(W.boot, breaks = 50, freq = FALSE, col = "skyblue", border = "white",
+     main = "", xlab = "Bootstrap value")
+curve(dnorm(x), lwd = 3, add = TRUE)
+@
+
+Finally, we compute the bootstrap distribution of $\wh{\texttt{volume}}_0$ directly using Algorithm~\ref{alg:parboot_cal}. Our results are based on a bootstrap simulation of size $R = 9,999$. Since we do not expect the sampling distribution of $\wh{\texttt{volume}}_0$ to be symmetric, we provide only a 95\% percentile bootstrap interval; that is, the interval obtained by taking the lower 2.5 and upper 97.5 percentiles of the bootstrap distribution. The resulting interval, $(58.37, 136.02)$, is quite close to the inversion interval previously obtained. A histogram of the $9,999$ bootstrap replicates of $\wh{\texttt{volume}}_0$ is given in Figure~\ref{fig:bladder-parboot-hist2}. As indicated by the normal Q-Q plot in Figure~\ref{fig:bladder-parboot-hist2}, the bootstrap distribution is positively skewed (the estimated skewness is $0.3011$), providing further support for the inversion and percentile intervals over the symmetric Wald-based interval obtained earlier using the delta method. 
+
+<<bladder-parboot-hist2, echo = FALSE, opts.label = 'fig.7by4', par = TRUE, fig.pos = 'H', fig.scap = 'Bootstrap distribution of $\\wh{\\texttt{volume}}_0$ obtained using Algorithm~\\ref{alg:parboot_cal}', fig.cap = '\\textit{Left}: Bootstrap distribution of $\\wh{\\texttt{volume}}_0$ obtained using Algorithm~\\ref{alg:parboot_cal}. The solid black line indicates the original point estimate and the dotted red lines indicate the positions of the sample 2.5 and 97.5 quantiles of the bootstrap distribution. \\textit{Right}: Normal Q-Q plot of the bootstrap replicates of $\\mc{W}$.'>>=
+v0.boot <- bladder.pb$t[,1]
+par(mfrow = c(1, 2))
+hist(v0.boot, breaks = 50, freq = FALSE, col = set1[3], border = "white",
+     main = "", xlab = "Bootstrap value")
+abline(v = x0.est, lwd = 3)
+abline(v = c(58.37, 136.02), lwd = 2, lty = 2, col = set1[1])
+qqnorm(v0.boot, xlab = "Sample quantile", ylab = "Theoretical quantile", 
+       main = "")
+qqline(v0.boot, col = set1[1])
+@
+
+% \begin{table}[H]
+% \label{tab:bladder-20-intervals}
+% \scalebox{0.8}{
+%   \begin{tabular}{lcccc}
+%     \toprule
+%     Interval          & Lower 2.5\% & Upper 97.5\% & Length & SE \\
+%     \midrule
+%     Wald              & ? & ? & ? & ? \\
+%     ML interval       & ? & ? & ? & ? \\
+%     Inversion         & ? & ? & ? & ? \\
+%     Inversion (PB)    & ? & ? & ? & ? \\
+%     Normal (PB)       & ? & ? & ? & ? \\
+%     Percentile (PB)   & ? & ? & ? & ? \\
+%     \bottomrule
+%   \end{tabular}
+% }
+% \caption{Approximate 95\% calibration intervals for the bladder volume data with $\texttt{HD}_0 = 20$ $\mathrm{mm}^2$. The intervals based on the parametric bootstrap are labeled (PB)}
+% \end{table}
+% 
+% \begin{table}[H]
+% \label{tab:bladder-70-intervals}
+% \scalebox{0.8}{
+%   \begin{tabular}{lcccc}
+%     \toprule
+%     Interval          & Lower 2.5\% & Upper 97.5\% & Length & SE \\
+%     \midrule
+%     Wald              & ? & ? & ? & ? \\
+%     ML interval       & ? & ? & ? & ? \\
+%     Inversion         & ? & ? & ? & ? \\
+%     Inversion (PB)    & ? & ? & ? & ? \\
+%     Normal (PB)       & ? & ? & ? & ? \\
+%     Percentile (PB)   & ? & ? & ? & ? \\
+%     \bottomrule
+%   \end{tabular}
+% }
+% \caption{Approximate 95\% calibration intervals for the bladder volume data with $\texttt{HD}_0 = 70$ $\mathrm{mm}^2$. The intervals based on the parametric bootstrap are labeled (PB)}
+% \end{table}
+% 
+% \begin{table}[H]
+% \label{tab:bladder-90-intervals}
+% \scalebox{0.8}{
+%   \begin{tabular}{lcccc}
+%     \toprule
+%     Interval          & Lower 2.5\% & Upper 97.5\% & Length & SE \\
+%     \midrule
+%     Wald              & ? & ? & ? & ? \\
+%     ML interval       & ? & ? & ? & ? \\
+%     Inversion         & ? & ? & ? & ? \\
+%     Inversion (PB)    & ? & ? & ? & ? \\
+%     Normal (PB)       & ? & ? & ? & ? \\
+%     Percentile (PB)   & ? & ? & ? & ? \\
+%     \bottomrule
+%   \end{tabular}
+% }
+% \caption{Approximate 95\% calibration intervals for the bladder volume data with $\texttt{HD}_0 = 90$ $\mathrm{mm}^2$. The intervals based on the parametric bootstrap are labeled (PB)}
+% \end{table}
+
+\section{Discussion}
+We have described a number of techniques for controlled calibration in a (linear) mixed model setting. The Wald-based interval is the simplest, but relies on the asymptotic normality of $\wh{x}_0$ along with a Taylor-series approximation of its variance. Perhaps the biggest drawback to using a Wald-based calibration interval is that it is always symmetric about $\wh{x}_0$. While this is appealing to many researchers, it is not very realistic in standard situations where, say, the data exhibit nonlinear behavior (possibly due to horizontal asymptotes) and nonconstant variance. The asymptotic normality of $\wh{x}_0$ may also be questioned when $\wh{x}_0$ is not the ML estimate (as in the bladder volume example). This is akin to using the Wald-based method for nonlinear calibration problems (the software JMP does this). Nonetheless, the estimated sampling distribution of $\wh{x}_0$ displayed in Figures~\ref{fig:simdata-parboot-hist} and \ref{fig:bladder-parboot-hist2} using the parametric bootstrap are both reasonably normal. Thus, the Wald-based approach may still produce reliable inference when the distribution of $\wh{x}_0$ can be considered symmetric. Although more difficult to obtain, the inversion and parametric bootstrap  intervals are presumably superior to the Wald-based interval.
+
+All the methods we have proposed rely on certain assumptions, for example, normality and large sample size. These assumptions may or may not hold in practice. If the random effects and errors are not normally distributed, then it is possible to fit a non-Gaussian mixed model \citep[p. 8]{jiang_linear_2007}. In this situation, we can still calculate a calibration interval by "inverting" a corresponding distribution-free prediction interval with asymptotic coverage probability $1-\alpha$. As we have shown in Section~\ref{sec:calibration-lmm-distfree}, this is rather simple to do for standard LMMs. If, on the other hand, the data are not normal and the sample size is rather small, then there is not much we can do with the methods discussed in this chapter. 
+
+% For example, Figure~\ref{fig:shm-scatter} shows a sample of structural health monitoring (SHM) data from a laboratory experiment performed at the Air Force Research Laboratory (AFRL). \textbf{\textcolor{red}{Describe the data...}}. 
+% 
+% <<shm-scatter, echo = FALSE, opts.label = 'fig.7by5', par = TRUE, fig.pos = 'H', fig.scap = 'Scatterplot of SHM data', fig.cap = 'Scatterplot of SHM data. Lines connect measurements belonging to the same specimen.'>>=
+% plot(1:25, pch = 1:25)
+% @
+
+%Clearly, these data do not depict a "best-case scenario"---compare Figure~\ref{fig:shm-scatter} with the graphs in Figure~\ref{fig:random-coefficients}. For instance, there are only three specimens, each specimen appears to have a different (nonlinear) trend, and the laboratory experiment itself was not properly designed (for example, the sensors were mounted using the wrong type of glue!). This depicts a very complicated, but hopefully uncommon, situation where there is not much that can be done with the available methods. Not all is lost, however! A cogent analysis for 
+
+Future work on data like these might combine the nonparametric method of calibration proposed in Chapter~\ref{chap:nonparametric} with the application to grouped data discussed in this chapter. In particular, we would recognize the grouped structure of the data but allow each specimen to have its own (nonlinear) trend by introducing subjects-specific spline terms which may or may not have corresponding random effects. This may seem far-fetched at first, but remember that the specific approach we took for nonparametric calibration is already based on an LMM \eqref{eqn:spline-model-lme}. This is an obvious, and likely promising, area of future research and we discuss it, along with some other ideas, in the conclusion to this dissertation.
+

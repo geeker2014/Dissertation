@@ -1,0 +1,218 @@
+% !Rnw root = Master.Rnw
+
+\appendix  	% Appendix begins here
+
+\chapter{Proofs}
+\label{app:proofs}
+In this appendix, we provide the "extra steps" for deriving some of the mathematical results presented in this dissertation.
+
+\section{Conditional posterior of \texorpdfstring{$\left(\boldsymbol{\beta}, \boldsymbol{\alpha}\right)$}{polynomial and spline coefficients}}
+\label{sec:conditional-theta}
+Note that the kernel of a multivariate normal distribution with mean vector $\boldsymbol{\mu}$ and variance-covariance matrix $\boldsymbol{\Sigma}$ is 
+\begin{equation*}
+  K\left(\boldsymbol{x}; \boldsymbol{\mu}, \boldsymbol{\Sigma}\right) \propto \exp\left\{-\frac{1}{2}\left(\boldsymbol{x}-\boldsymbol{\mu}\right)'\boldsymbol{\Sigma}^{-1}\left(\boldsymbol{x}-\boldsymbol{\mu}\right)\right\}.
+\end{equation*}
+Furthermore, let $\boldsymbol{x}$ and $\boldsymbol{\theta}$ be $n \times 1$ vectors, and  $\boldsymbol{A}$ be an invertible $n \times n$ symmetric matrix. We can \href{http://en.wikipedia.org/wiki/Completing_the_square}{complete the square for the quadratic form} $\boldsymbol{x}'\boldsymbol{A}\boldsymbol{x} - \boldsymbol{\theta}'\boldsymbol{x}$ by writing
+\begin{equation*}
+  \boldsymbol{x}'\boldsymbol{A}\boldsymbol{x} - \boldsymbol{\theta}'\boldsymbol{x} = \left(\boldsymbol{x}-\boldsymbol{\mu}\right)'\boldsymbol{A}^{-1}\left(\boldsymbol{x}-\boldsymbol{\mu}\right) + C,
+\end{equation*}
+where 
+\begin{equation*}
+  \boldsymbol{\mu} = \frac{1}{2}\boldsymbol{A}^{-1}\boldsymbol{\theta} \quad \text{and} \quad C = -\frac{1}{4}\boldsymbol{\theta}'\boldsymbol{A}^{-1}\boldsymbol{\theta}.
+\end{equation*}
+
+Let the vectors $\boldsymbol{x}_0$ and $\boldsymbol{z}_0$ have the same form as the $i$-th rows of $\boldsymbol{X}$ and $\boldsymbol{Z}$ in Equation~\eqref{eqn:spline-model-lme}, respectively, but with $x_i$ replaced with $x_0$. Ignoring the constant of proportionality, the conditional posterior of $\left(\boldsymbol{\beta}, \boldsymbol{\alpha}\right)$ is
+\begin{align*}
+  \pi\left(\boldsymbol{\beta}, \boldsymbol{\alpha}|\boldsymbol{y}, y_0, \sigma_\epsilon^2, \sigma_\alpha^2, x0\right) &\propto \pi\left(\boldsymbol{y}|\boldsymbol{\beta}, \boldsymbol{\alpha}, \sigma_\epsilon^2, \sigma_\alpha^2, x_0\right) \pi\left(y_0|\boldsymbol{\beta}, \boldsymbol{\alpha}, \sigma_\epsilon^2, \sigma_\alpha^2, x_0\right) \pi\left(\boldsymbol{\beta}\right) \pi\left(\boldsymbol{\alpha}|\sigma_\alpha^2\right) \\
+  &\propto \exp\left\{-\frac{1}{2\sigma_\epsilon^2}||\boldsymbol{y} - \boldsymbol{X}\boldsymbol{\beta} - \boldsymbol{Z}\boldsymbol{\alpha}||^2 - \frac{1}{2\sigma_\alpha^2}||\boldsymbol{\alpha}||^2 - \frac{1}{2\sigma_\epsilon^2}\left[y_0-\mu(x_0)\right]^2\right\} \\
+  &= \exp\left\{-\frac{1}{2\sigma_\epsilon^2}\left(||\boldsymbol{y} - \boldsymbol{X}\boldsymbol{\beta} - \boldsymbol{Z}\boldsymbol{\alpha}||^2 + \left[y_0-\mu(x_0)\right]^2 + \frac{\sigma_\epsilon^2}{\sigma_\alpha^2}||\boldsymbol{\alpha}||^2\right)\right\} \\
+  &= \exp\left\{-\frac{1}{2\sigma_\epsilon^2}\left(||\boldsymbol{y} - \boldsymbol{X}\boldsymbol{\beta} - \boldsymbol{Z}\boldsymbol{\alpha}||^2 + \left(y_0-\boldsymbol{x}_0'\boldsymbol{\beta} - \boldsymbol{z}_0'\boldsymbol{\alpha}\right)^2 + \frac{\sigma_\epsilon^2}{\sigma_\alpha^2}||\boldsymbol{\alpha}||^2\right)\right\} \\
+  &= \exp\left\{-\frac{1}{2\sigma_\epsilon^2}\left(||\boldsymbol{y}_0 - \boldsymbol{X}_0\boldsymbol{\beta} - \boldsymbol{Z}_0\boldsymbol{\alpha}||^2 + \frac{\sigma_\epsilon^2}{\sigma_\alpha^2}||\boldsymbol{\alpha}||^2\right)\right\},
+\end{align*}
+where 
+\begin{equation*}
+  \boldsymbol{y}_0 = \begin{bmatrix} \boldsymbol{y} \\ y_0 \end{bmatrix}, \quad
+  \boldsymbol{X}_0 = \begin{bmatrix} \boldsymbol{X} \\ \boldsymbol{x}_0' \end{bmatrix}, \quad
+  \boldsymbol{Z}_0 = \begin{bmatrix} \boldsymbol{Z} \\ \boldsymbol{z}_0' \end{bmatrix}
+\end{equation*}
+are augmented data vectors and matrices. To show that the conditional posterior of $\boldsymbol{\theta} = \left(\boldsymbol{\beta}', \boldsymbol{\alpha}'\right)'$ is normal, note that
+\begin{align*}
+  &\exp\left\{-\frac{1}{2\sigma_\epsilon^2}\left(||\boldsymbol{y}_0 - \boldsymbol{X}_0\boldsymbol{\beta} - \boldsymbol{Z}_0\boldsymbol{\alpha}||^2 + \frac{\sigma_\epsilon^2}{\sigma_\alpha^2}||\boldsymbol{\alpha}||^2\right)\right\} \\
+  &= \exp\left\{-\frac{1}{2\sigma_\epsilon^2}||\boldsymbol{y}_0^* - \boldsymbol{X}_0^*\boldsymbol{\beta} - \boldsymbol{Z}_0^*\boldsymbol{\alpha}||^2\right\} \\
+  &= \exp\left\{-\frac{1}{2\sigma_\epsilon^2}||\boldsymbol{y}_0^* - \boldsymbol{\Omega}_0^*\boldsymbol{\theta}||^2\right\},
+\end{align*}
+where, similar to before,
+\begin{equation*}
+  \boldsymbol{y}_0^* = \begin{bmatrix} \boldsymbol{y}_0 \\ \boldsymbol{0} \end{bmatrix}, \quad
+  \boldsymbol{X}_0^* = \begin{bmatrix} \boldsymbol{X}_0 \\ \boldsymbol{0} \end{bmatrix}, \quad
+  \boldsymbol{Z}_0^* = \begin{bmatrix} \boldsymbol{Z}_0 \\ \left(\sigma_\epsilon^2/\sigma_\alpha^2\right)\boldsymbol{I} \end{bmatrix}
+\end{equation*}
+are augmented data vectors and matrices and $\boldsymbol{\Omega}_0^* = \left(\boldsymbol{X}_0^*; \boldsymbol{Z}_0^*\right)$. Now, using basic matrix multiplication,
+\begin{align*}
+  \exp\left\{-\frac{1}{2\sigma_\epsilon^2}||{\boldsymbol{y}_0^*}' - \boldsymbol{\Omega}_0^*\boldsymbol{\theta}||^2\right\}
+  &= \exp\left\{-\frac{1}{2\sigma_\epsilon^2}\left({\boldsymbol{y}_0^*}'\boldsymbol{y}_0^* - 2{\boldsymbol{y}_0^*}'\boldsymbol{\Omega}_0^*\boldsymbol{\theta} + \boldsymbol{\theta}'{\boldsymbol{\Omega}_0^*}'\boldsymbol{\Omega}_0^*\boldsymbol{\theta}\right)\right\} \\
+  &\propto \exp\left\{-\frac{1}{2\sigma_\epsilon^2}\left(\boldsymbol{\theta}'{\boldsymbol{\Omega}_0^*}'\boldsymbol{\Omega}_0^*\boldsymbol{\theta} - 2{\boldsymbol{y}_0^*}'\boldsymbol{\Omega}_0^*\boldsymbol{\theta}\right)\right\}.
+\end{align*}
+Upon completing the square, we get
+\begin{equation*}
+  \exp\left\{-\frac{1}{2\sigma_\epsilon^2}\left(\boldsymbol{\theta}'{\boldsymbol{\Omega}_0^*}'\boldsymbol{\Omega}_0^*\boldsymbol{\theta} - 2{\boldsymbol{y}_0^*}'\boldsymbol{\Omega}_0^*\boldsymbol{\theta}\right)\right\} = \exp\left\{-\frac{1}{2}\left(\boldsymbol{\theta}-\boldsymbol{\mu}_{\boldsymbol{\theta}}\right)'\boldsymbol{\Sigma}_{\boldsymbol{\theta}}^{-1}\left(\boldsymbol{\theta}-\boldsymbol{\mu}_{\boldsymbol{\theta}}\right)\right\},
+\end{equation*}
+where
+\begin{equation*}
+  \boldsymbol{\mu}_{\boldsymbol{\theta}} = \left({\boldsymbol{\Omega}_0^*}'\boldsymbol{\Omega}_0^*\right)^{-1}{\boldsymbol{\Omega}_0^*}'\boldsymbol{y}_0^* = \left({\boldsymbol{\Omega}_0}'\boldsymbol{\Omega}_0 + \frac{\sigma_\epsilon^2}{\sigma_\alpha^2}\boldsymbol{D}\right)^{-1}{\boldsymbol{\Omega}_0}'\boldsymbol{y}_0, \quad \boldsymbol{D} = \textbf{diag}\left\{\boldsymbol{0}_{p \times p}, \boldsymbol{I}_{q \times q}\right\},
+\end{equation*}
+and
+\begin{equation*}
+  \boldsymbol{\Sigma}_{\boldsymbol{\theta}} = \sigma_\epsilon^2\left({\boldsymbol{\Omega}_0^*}'\boldsymbol{\Omega}_0^*\right)^{-1} = \sigma_\epsilon^2\left({\boldsymbol{\Omega}_0}'\boldsymbol{\Omega}_0\right)^{-1}.
+\end{equation*}
+Thus, the conditional posterior of the coefficients $\boldsymbol{\theta}$ is multivariate normal with mean vector $\boldsymbol{\mu}_{\boldsymbol{\theta}}$ and variance-covariance matrix $\boldsymbol{\Sigma}_{\boldsymbol{\theta}}$.
+
+\section{Conditional posteriors of \texorpdfstring{$\sigma_\epsilon^2$ and $\sigma_\alpha^2$}{variance components}}
+\label{sec:conditional-variances}
+Note that since $\sigma_\epsilon^2 \sim \mathcal{IG}\left(a, b\right)$, then 
+\begin{equation*}
+  \pi(\sigma_\epsilon^2) = \frac{b^a}{\Gamma(a)}\left(\sigma_\epsilon^2\right)^{-(a+1)}\exp\left\{-\frac{b}{\sigma_\epsilon^2}\right\}.
+\end{equation*}
+Now, ignoring the constant of proportionality the conditional posterior of $\sigma_\epsilon^2$ is
+\begin{align*}
+  \pi(\sigma_\epsilon^2|\boldsymbol{y}, y_0, \boldsymbol{\beta}, &\boldsymbol{\alpha}, \sigma_\alpha^2, x_0) \propto \pi(\boldsymbol{y}|\boldsymbol{\beta}, \boldsymbol{\alpha}, \sigma_\epsilon^2)\pi(y_0|\boldsymbol{\beta}, \boldsymbol{\alpha}, \sigma_\epsilon^2, x_0)\pi(\sigma_\epsilon^2) \\
+  &\propto \left(\sigma_\epsilon^2\right)^{-(a+1)}\exp\left\{-\frac{||\boldsymbol{y} - \boldsymbol{X}\boldsymbol{\beta} - \boldsymbol{Z}\boldsymbol{\alpha}||^2}{2\sigma_\epsilon^2} - \frac{\left(y_0 - \boldsymbol{x}_0\boldsymbol{\beta} - \boldsymbol{z}_0\boldsymbol{\alpha}\right)^2}{2\sigma_\epsilon^2} - \frac{b}{\sigma_\epsilon^2}\right\} \\
+  &= \left(\sigma_\epsilon^2\right)^{-(a+1)}\exp\left\{\frac{\left(\frac{1}{2}||\boldsymbol{y}_0 - \boldsymbol{X}_0\boldsymbol{\beta} - \boldsymbol{Z}_0\boldsymbol{\alpha}||^2 + b\right)}{\sigma_\epsilon^2}\right\},
+\end{align*}
+which is proportional to the density function of a $\mathcal{IG}\left(a, \frac{1}{2}||\boldsymbol{y}_0 - \boldsymbol{X}_0\boldsymbol{\beta} - \boldsymbol{Z}_0\boldsymbol{\alpha}||^2 + b\right)$ distribution. The proof for the conditional posterior $\pi(\sigma_\alpha^2|\boldsymbol{y}, y_0, \boldsymbol{\beta}, \boldsymbol{\alpha}, \sigma_\epsilon^2, x_0)$ follows in an analogous manner.
+
+\section{LMM log-likelihood}
+\label{eqn:lmm-log-likelihood}
+For the LMM (Equation~\eqref{eqn:lmm-matrix}), we have that
+\begin{equation*}
+  \boldsymbol{\mathcal{Y}} \sim \mathcal{N}\left(\boldsymbol{X}\boldsymbol{\beta}, \boldsymbol{V}\right),
+\end{equation*}
+hence, the density function is
+\begin{equation*}
+  f(\boldsymbol{y}) = \left(2\pi\right)^{-N/2}\left|\boldsymbol{V}\right|^{-1/2}\exp\left\{-\frac{1}{2}\left(\boldsymbol{\mathcal{Y}} - \boldsymbol{X}\boldsymbol{\beta}\right)'\boldsymbol{V}^{-1}\left(\boldsymbol{\mathcal{Y}} - \boldsymbol{X}\boldsymbol{\beta}\right)\right\}.
+\end{equation*}
+Taking the logarithm of $f(\boldsymbol{y})$ gives the log-likelihood 
+\begin{equation*}
+  \ell = -\frac{N}{2}\log(2\pi) - \frac{1}{2}\log\left(\left|\boldsymbol{V}\right|\right) - \frac{1}{2}\left(\boldsymbol{\mathcal{Y}} - \boldsymbol{X}\boldsymbol{\beta}\right)'\boldsymbol{V}^{-1}\left(\boldsymbol{\mathcal{Y}} - \boldsymbol{X}\boldsymbol{\beta}\right).
+\end{equation*}
+Let $\boldsymbol{V}$ have the block diagonal form $\boldsymbol{V} = \sigma_\epsilon^2\Big\{_{\text{diag}} \boldsymbol{I}_{n_i} + \boldsymbol{Z}_i\boldsymbol{G}^*\boldsymbol{Z}_i' \Big\}_{i = 1}^m$. Since the determinant of a block diagonal matrix is just the product of the determinant of the block diagonals, then
+\begin{align*}
+  \log\left(\left|\boldsymbol{V}\right|\right) &= \log\left\{\prod_{i=1}^m\left|\sigma_\epsilon^2\left(\boldsymbol{I}_{n_i} + \boldsymbol{Z}_i\boldsymbol{G}^*\boldsymbol{Z}_i'\right)\right|\right\} \\
+  &= \log\left\{\prod_{i=1}^m\left(\sigma_\epsilon^2\right)^{n_i}\left|\boldsymbol{I}_{n_i} + \boldsymbol{Z}_i\boldsymbol{G}^*\boldsymbol{Z}_i'\right|\right\} \\
+  &= \sum_{i=1}^m n_i \log\left(\sigma_\epsilon^2\right) + \sum_{i=1}^m\log\left(\left|\boldsymbol{I}_{n_i} + \boldsymbol{Z}_i\boldsymbol{G}^*\boldsymbol{Z}_i'\right|\right) \\
+  &= N\log\left(\sigma_\epsilon^2\right) + \sum_{i=1}^m\log\left(\left|\boldsymbol{I}_{n_i} + \boldsymbol{Z}_i\boldsymbol{G}^*\boldsymbol{Z}_i'\right|\right).
+\end{align*}
+Similarly, since the inverse of a block diagonal matrix is another block diagonal matrix, composed of the inverse of each block, it follows that
+\begin{equation*}
+  \left(\boldsymbol{\mathcal{Y}} - \boldsymbol{X}\boldsymbol{\beta}\right)'\boldsymbol{V}^{-1}\left(\boldsymbol{\mathcal{Y}} - \boldsymbol{X}\boldsymbol{\beta}\right) = \sum_{i=1}^m\left(\boldsymbol{\mathcal{Y}}_i - \boldsymbol{X}_i\boldsymbol{\beta}\right)'\boldsymbol{V}_i^{-1}\left(\boldsymbol{\mathcal{Y}}_i - \boldsymbol{X}_i\boldsymbol{\beta}\right),
+\end{equation*}
+where $\boldsymbol{V}_i = \sigma_\epsilon^2\left(\boldsymbol{I}_{n_i} + \boldsymbol{Z}_i\boldsymbol{G}^*\boldsymbol{Z}_i'\right)$. Therefore, the log-likelihood becomes
+\begin{align*}
+    \ell &= -\frac{N}{2}\log(2\pi) - \frac{1}{2}\log\left(\left|\boldsymbol{V}\right|\right) - \frac{1}{2}\left(\boldsymbol{\mathcal{Y}} - \boldsymbol{X}\boldsymbol{\beta}\right)'\boldsymbol{V}^{-1}\left(\boldsymbol{\mathcal{Y}} - \boldsymbol{X}\boldsymbol{\beta}\right) \\
+    &= -\frac{N}{2}\log(2\pi) - \frac{N}{2}\log(\sigma_\epsilon^2) - \frac{1}{2}\sum_{i=1}^m\log\left(\left|\boldsymbol{I}_{n_i} + \boldsymbol{Z}_i\boldsymbol{G}^*\boldsymbol{Z}_i'\right|\right) \newln - \frac{1}{2\sigma_\epsilon^2}\sum_{i=1}^m\left(\boldsymbol{\mathcal{Y}}_i - \boldsymbol{X}_i\boldsymbol{\beta}\right)'\left(\boldsymbol{I}_{n_i} + \boldsymbol{Z}_i\boldsymbol{G}^*\boldsymbol{Z}_i'\right)^{-1}\left(\boldsymbol{\mathcal{Y}}_i - \boldsymbol{X}_i\boldsymbol{\beta}\right).
+\end{align*}
+
+\chapter{The \code{R} Package \pkg{investr}}
+\label{app:investr}
+In this appendix, we describe the \pkg{investr} package for the \code{R} statistical software. The name \pkg{investr} stands for \underline{inv}erse \underline{est}imation in \underline{R}. It is currently listed on CRAN at \url{http://cran.r-project.org/web/packages/investr/index.html}. The source code for additional functions (e.g., \code{pspline}) can be obtained from the GitHub development site at \url{https://github.com/w108bmg/Research/tree/master/Rcode}. To install the package, simply open an \code{R} terminal and type:
+
+<<load-packages, echo = TRUE, eval = FALSE, tidy.opts=list(width.cutoff=60)>>=
+install.packages("investr", dependencies = TRUE) # install package
+library(investr) # load package
+@
+\noindent Once the package is loaded, we have access to all of its functions, datasets, and examples. The three main functions are described in Table~\ref{tab:investr}.
+\begin{table}[H]
+\label{tab:investr}
+\begin{center}
+\begin{tabular}{lp{10cm}}
+  \toprule
+  \textbf{Function} & \textbf{Description} \\
+  \midrule
+  \code{calibrate} & For a vector of $m$ response values with unknown predictor value $x_0$, computes the classical estimate (i.e., ML estimate) $\widehat{x}_0$ and a corresponding Wald or inversion interval for the simple linear calibration problem. \\
+  \code{invest}    & For a vector of $m$ response values with unknown predictor value $x_0$, computes the classical estimate $\widehat{x}_0$ and a corresponding Wald or inversion interval for polynomial and nonlinear calibration problems. \\
+  \code{plotFit}   & For plotting fitted regression models with or without confidence/prediction bands. \\
+  \bottomrule
+\end{tabular}
+\end{center}
+\caption[Functions from the \pkg{investr} package]{Main functions from the \pkg{investr} package.}
+\end{table}
+
+\section{The \code{plotFit} function}
+The \code{plotFit} function is a general purpose function that is also useful outside of statistical calibration problems. Its sole purpose is to plot fitted models for \code{R} objects of class \code{lm} or class \code{nls} with the option of adding a confidence and/or prediction band. For example, the following snippet of \code{R} code fits a simple linear regression model to the $\code{crystal}$ data frame and plots the data along with the fitted regression line and (pointwise) $95\%$ confidence band. Of course, we can change the default $95\%$ confidence level by specifying, for example, $\code{level=0.9}$. Additionally, we can also specify an adjustment for simultaneous inference such as \textit{Scheff\'{e}}, \textit{Bonferroni}, or \textit{Working-Hotelling}. The second call to \code{plotFit} in the code below illustrates the use of both of these options.
+
+<<example-crystal-plotFit, echo=TRUE, fig.width=6, fig.height=3, tidy.opts=list(width.cutoff=50)>>=
+par(mfrow=c(1,2), cex.main=0.8) # side-by-side plots
+crystal.lm <- lm(weight~time, data=crystal) # fit model
+plotFit(crystal.lm, interval="confidence", shade=T, col.conf="skyblue", main="95% pointwise confidence band")
+plotFit(crystal.lm, interval="confidence", shade=T, col.conf="skyblue", level=0.9, adjust="W-H", main="90% Working-Hotelling band")
+@
+
+\noindent More elaborate models can also be plotted in the same way. For example, the following snippet of code fits a simple linear, quadratic, cubic, and natural cubic spline model to the well-known \code{cars} data frame and then plots the corresponding fits with both confidence and prediction bands at the 95\% level.
+
+<<example-cars-plotFit, echo=TRUE, fig.width=7, fig.height=4, tidy.opts=list(width.cutoff=55)>>=
+data(cars, package="datasets") # load cars data frame
+library(splines) # load splines package
+
+## Fit models
+cars.lm1 <- lm(dist ~ poly(speed, degree=3), data=cars)
+cars.lm2 <- lm(dist ~ ns(speed, df=3), data=cars)
+
+## Plot models
+par(mfrow = c(1, 2)) # 2-by-2 grid of plots
+plotFit(cars.lm1, interval="both", xlim=c(-10, 40), ylim=c(-50, 150),
+        main="Cubic polynomial")
+plotFit(cars.lm2, interval="both", xlim=c(-10, 40), ylim=c(-50, 150),
+        main="Natural cubic spline")
+@
+
+\section{The \code{calibrate} function}
+The most basic calibration problem, the one often encountered in more advanced regression texts, is the simple linear calibration problem for which
+\begin{align*}
+  \mathcal{Y}_i &= \beta_0 + \beta_1 x_i + \epsilon_i, \quad \epsilon_i \stackrel{iid}{\sim} \mathcal{N}\left(0, \sigma_\epsilon^2\right), \quad i = 1, \dotsc, n, \\
+  \mathcal{Y}_{0j} &= \beta_0 + \beta_1 x_0 + \epsilon_{0j}, \quad \epsilon_{0j} \stackrel{iid}{\sim} \mathcal{N}\left(0, \sigma_\epsilon^2\right), \quad j = 1, \dotsc, m.
+\end{align*}
+For example, consider the arsenic data introduced in Section~\ref{sec:example_arsenic}. The following snippet of code obtains a 95\% inversion interval and 95\% Wald-based interval for the unknown $x_0$ corresponding to $y_0 = 3$ based on Equations~\eqref{eqn:x0_ci_inv} and \eqref{eqn:x0_ci_wald}, respectively:
+
+<<example-arsenic-1, echo=TRUE, tidy.opts=list(width.cutoff=50)>>=
+calibrate(arsenic.lm, y0 = 3, interval = "inversion")
+calibrate(arsenic.lm, y0 = 3, interval = "Wald")
+@
+
+\noindent If instead we were interested in the unknown $x_0$ corresponding to a fixed mean response of $\mu_0 = 3$ (i.e., a regulation problem) we would instead use
+
+<<example-arsenic-2, echo=TRUE, tidy.opts=list(width.cutoff=50)>>=
+calibrate(arsenic.lm, y0 = 3, interval = "inversion", mean.response = TRUE)
+@
+
+\section{The \code{invest} function}
+In this section, we describe the more general function, \code{invest}, which can be used for more complex univariate calibration problems such as polynomial and nonlinear calibration.
+
+For the quadratic linear model in the whiskey age example of Section\ref{sec:whiskey}, we used the following code to obtain a 95\% inversion interval for the unknown age corresponding to sample with a known proof of $108$:
+
+<<whiskey-invest, echo=TRUE, tidy.opts=list(width.cutoff=50)>>=
+whiskey <- data.frame(
+  age=c(0, 0.5, 1, 2, 3, 4, 5, 6, 7, 8),
+  proof=c(104.6, 104.1, 104.4, 105.0, 106.0, 106.8, 107.7, 108.7, 110.6, 112.1)
+)
+whiskey.lm <- lm(proof ~ age + I(age^2), data=whiskey)
+invest(whiskey.lm, y0=108)
+@
+
+As for a nonlinear regression example, we consider the nasturtium example of Section~\ref{sec:nasturtium}. The following snippet of code fits the log-logistic regression function
+\begin{equation*}
+  \mu(x; \beta_1, \beta_2, \beta_3) = \left\{ \begin{array}{l l}
+                                              \beta_1, &\quad x = 0 \\
+                                              \beta_1 / \left[1 + \exp\left\{\beta_2 + \beta_3\ln(x)\right\}\right], &\quad x > 0
+                                            \end{array} \right..
+\end{equation*}
+to the data and obtains both a 95\% inversion interval and 95\% Wald-based interval for the unknown concentration corresponding to the three unknowns $309$, $296$, and $419$:
+
+<<puromycin-invest, echo=TRUE, fig.width=5, fig.height=5, tidy.opts=list(width.cutoff=55)>>=
+nas.nls <- nls(weight ~ ifelse(conc == 0, theta1, 
+    theta1/(1 + exp(theta2 + theta3*log(conc)))), 
+  data = nasturtium, start = list(theta1 = 1000, theta2 = 0, theta3 = 1))
+invest(nas.nls, y0 = c(309, 296, 419), interval = "inversion")
+invest(nas.nls, y0 = c(309, 296, 419), interval = "Wald")
+@
+
+Bootstrap approaches to obtaining calibration intervals are currently not available in the \pkg{investr} package, however, a future release is likely to contain some bootstrap functionality. Until such time, the well-known \pkg{boot} package can be used to obtain the bootstrap calibration intervals described in Chapter~\ref{chap:lit-review}. The \code{bootMer} function from the \code{R} package \pkg{lme4} ($\ge 1.0-5$) can be used to obtain the parametric bootstrap calibration intervals discussed in Chapter~\ref{chp:cal-dependent}.

@@ -1,0 +1,32 @@
+
+model {
+
+## Likelihood
+for (i in 1:length(y)) {
+  y[i] ~ dnorm(beta[1]+(beta[2]-beta[1])/(1+exp(beta[4]*(log(x[i])-beta[3]))), tau.error) 
+}
+
+## Priors for fixed effects
+for (i in 1:4) {
+  beta[i] ~ dnorm(0, 1.0E-6)
+}
+
+## For calibration
+y0 ~ dnorm(beta[1]+(beta[2]-beta[1])/(1+exp(beta[4]*(log(x0)-beta[3]))), tau.error) 
+x0 ~ dunif(0, 50) 
+
+## Priors for precision parameters
+tau.error ~ dgamma(1.0E-6, 1.0E-6)
+
+## Other calculations
+sigma.error <- 1/sqrt(tau.error)
+
+## Predict new observations
+for (i in 1:250) {
+  epsilon.star[i] ~ dnorm(0, tau.error)
+  y.star[i] <- mu.star[i] + epsilon.star[i]
+  mu.star[i] <- beta[1]+(beta[2]-beta[1])/(1+exp(beta[4]*(log(newx[i])-beta[3])))
+}
+
+}
+

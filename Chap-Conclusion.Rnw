@@ -1,0 +1,20 @@
+% !Rnw root = Master.Rnw
+
+\chapter{Conclusions and Suggestions for Further Research}
+\label{chp:conclusion}
+Statistical calibration is an important application of regression in many areas of science, for example: bioassays, chemometrics, and calibrating laboratory equipment. For many of these applications, the data are inherently nonlinear with no known parametric form, or sometimes the data are collected in such a way that the observations can not be considered as independent. It is necessary, then, to have simple and general methods available for calibration in these situations. This has been the main goal of our research.
+
+\section{Conclusions}
+We discussed (controlled) semiparametric calibration in Chapter~\ref{chap:nonparametric}. We provided a frequentist approach to obtaining calibration intervals that involved inverting bias-corrected prediction intervals based on the simple LMM-based smoother described in \citet{ruppert_semiparametric_2003}. The coverage probability and length of these intervals were investigated using a small Monte Carlo experiment. This experiment showed that these intervals do in fact obtain coverage probability close to the nominal $1-\alpha$ level without sacrificing length. The experiment also highlighted that correcting for bias is more serious for calibration with respect to a mean response (i.e., regulation). A simple Bayesian analog was also proposed that has the benefit of providing the entire posterior distribution of $x_0$. We illustrated these methods using real data analysis examples.
+
+In Chapter~\ref{chp:cal-dependent}, we extended the usual methods of (controlled) calibration (i.e., point estimation and obtaining Wald-based/inversion intervals) for grouped data using the LMM. We also proposed a parametric bootstrap algorithm for controlled calibration in the LMM. This algorithm can be used to obtain confidence intervals for the unknown $x_0$ directly from the estimated sampling distribution of the point estimator $\widehat{x}_0$, or by improving the inversion interval by removing the normality constraint on the approximate predictive pivot $\mathcal{W}$. These strategies were illustrated using real data analysis examples. We also briefly described how to use a distribution-free prediction interval to obtain a distribution-free inversion interval for the unknown $x_0$ in closed form for the random intercept model.
+
+Calibration will always remain an important topic in statistics. We list here some possible topics for future research based on extending the ideas in Chapters~\ref{chap:nonparametric} and \ref{chp:cal-dependent}:
+\begin{itemize}
+  \item Semiparametric calibration with constraints;
+  \item Prior selection for $x_0$ in semiparametric calibration;
+  \item Bootstrap for (controlled) semiparametric calibration;
+  \item Calibration in NLMMs;
+  \item Semiparametric calibration with random coefficients.
+\end{itemize}
+For the most part, these topics were discussed in the conclusions to Chapters~\ref{chap:nonparametric} and \ref{chp:cal-dependent}.

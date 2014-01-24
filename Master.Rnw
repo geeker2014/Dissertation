@@ -1,0 +1,436 @@
+\documentclass[cmfont,usenames,dvipsnames,leqno]{afit-etd}
+
+% The afit-etd class requires the following packages: url, refcount, graphicx,
+%                                                     sf298, hyperref
+%
+% Required files to support the afit-etd class are:
+%      afit-etd.cls
+%      afitlogo.pdf or afitlogo.eps
+%      af298.sty (slight modifications implemented to fix a 'glitch')
+%
+% All of the required files must be located in your LaTeX search path.  The
+% easiest place to put them is in the working directory along with this
+% thesis.tex file.
+
+
+% Additional files used in this shell but not required are:
+%     thesis.bib (used as an example only)
+%     thesnum3.bst (can be replaced with any other bibliography style file)
+%     CampusPhoto.pdf and CampusPhoto.eps (used as an example only)
+%
+% This shell will not process without these files, but if you delete sample
+% text and replace the BST file with another, then these will not be required
+% at all.
+
+
+% Options for the afit-etd class are: 
+%      cmfont    - revert to TeX's computer modern font (Times New Roman is the
+%                  default) 
+%      11pt      - use an 11 pt font instead of the default 12 pt font
+%      nonumbers - employ a format, as shown in the AFIT style guide, that
+%                  omits the section numbers for all headings except chapters
+%      draft     - draws frames where graphics would be instead of actually
+%                  including graphics.  This is a standard LaTeX option and
+%                  will have other effects based on the packages used
+
+% Send bug reports to the author at: Michael.Stepaniak@us.af.mil
+
+% The following packages and macros are recommended but not required:
+\usepackage{mathtools,graphicx,enumerate,float,booktabs,url,amsthm,framed,bm,amsfonts}
+\usepackage[boxed, ruled]{algorithm2e}
+\usepackage[printonlyused]{acronym}  
+\usepackage[round]{natbib}
+%\usepackage[square,sort&compress,numbers]{natbib} % better citations especially
+                                                   % when including a string of 
+                                                   % citations
+
+%% Change hyperlink options
+\hypersetup{
+  colorlinks=true, % false: boxed links; true: colored links
+  linkcolor=blue,   % color of internal links (change box color with linkbordercolor)
+  citecolor=blue, % color of links to bibliography
+  urlcolor=blue    % color of external links
+}
+
+%% Make sure line spacing isn't changed in knitr output
+\renewenvironment{knitrout}{\begin{singlespace}}{\end{singlespace}}
+
+%% Define R example environment
+\newtheorem{rexample}{R Example}[section]
+
+%% Define new commands
+\newcommand{\newln}{\\&\quad\quad\quad\quad{}}
+\newcommand{\boot}{\star} % or possiibly *
+\newcommand{\indep}{\perp \! \! \! \perp} 
+\newcommand{\code}[1]{\texttt{\small{#1}}}
+\newcommand{\pkg}[1]{\textsf{\small{#1}}}
+\newcommand{\norm}[1]{\left\|#1\right\|}
+\newcommand{\trans}{\ensuremath{^\prime}}
+\newcommand{\bc}[1]{\ensuremath{\bm{\mathcal{#1}}}}
+\newcommand{\mc}[1]{\ensuremath{\mathcal{#1}}}
+\newcommand{\wh}[1]{\ensuremath{\widehat{#1}}}
+\newcommand{\wt}[1]{\ensuremath{\widetilde{#1}}}
+\newcommand{\wb}[1]{\ensuremath{\overline{#1}}}
+% \newcommand{\var}{\ensuremath{\mathbb{V}}}
+% \newcommand{\cov}{\ensuremath{\mathrm{cov}}}
+% \newcommand{\se}{\ensuremath{\mathrm{se}}}
+% \newcommand{\E}{\ensuremath{\mathbb{E}}}
+% \newcommand{\Prob}{\ensuremath{\mathbb{P}}}
+
+%% Define new operators
+\newcommand{\E}{\operatorname{E}}
+\newcommand{\var}{\operatorname{Var}}
+\newcommand{\cov}{\operatorname{Cov}}
+\newcommand{\se}{\operatorname{se}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\bias}{\operatorname{Bias}}
+\newcommand{\MSE}{\operatorname{MSE}}
+\newcommand{\PSS}{\operatorname{PSS}}
+\newcommand{\tr}{\operatorname{tr}}
+\newcommand{\X}{\ensuremath{\bm{X}}}
+\newcommand{\Z}{\ensuremath{\bm{Z}}}
+\newcommand{\Prob}{\operatorname{Pr}}
+
+%% Allow display breaks
+%\allowdisplaybreaks
+
+%% Required front matter definitions -------------------------------------------
+
+%\title  {A \LaTeX{} Template for AFIT Theses, Dissertations,\\
+%         and Graduate Research Papers} % \\ can be used to force a linebreak
+\title{Topics in Statistical Calibration}
+\doctype{DISSERTATION} % or GRADUATE RESEARCH PAPER, DISSERTATION, or REPORT PROSPECTUS
+                 % REPORT will generate a simplified format more suitable for
+                 % class assignments
+
+\author          {Brandon M.}{Greenwell}
+\rank            {Civilian}
+\previousdegrees {B.S., M.S.} % Abbreviate any previous degrees
+
+% Uncomment the following lines if there is a second author
+% \coauthor          {FirstName I. LastName} 
+% \corank            {Major, USAF}
+% \copreviousdegrees {B.S.} 
+
+\degree          {Doctor of Philosophy}
+\graduation      {??}{March}{2013} % format is {DD}{Month}{YYYY} where
+                                   % Month must be: March, June,
+                                   % September, or December
+
+\designator{AFIT/ENC/DS/14-01} % assigned by the graduate advisor in
+                               % during the student's final quarter
+
+
+\distribution{DISTRIBUTION STATEMENT A:\\APPROVED FOR PUBLIC RELEASE;
+  DISTRIBUTION UNLIMITED} % or other appropriate distribution statement from the
+                          % AFIT Style Guide
+
+\committee{ % Advisor must be listed first in the list of committee members
+  {Christine Schubert Kabban, PhD (Chairman)},
+  {Raymond Hill, PhD (Member)},
+  {Dursun Bulutoglu, PhD (Member)}
+}
+
+\department {Department of Mathematics and Statistics}
+\school     {Graduate School of Engineering and Management}
+\dean       {Adedeji Badiru} % only used for PhD dissertations
+
+% Uncomment the following line to switch from blank signature lines on
+% the approval page to lines marked with ``/signed/'' and the
+% corresponding dates.  This avoid having to scan the signature page into the
+% final PDF document for the electronic version, but it also doesn't look as 
+% professional.  Similarly, the Dean's signature can be indicated using the 
+% second line below.  Note that the original signatures are still required on
+% the hardcopy submitted to the library.
+
+% \committeeSignedDates{2 Jun 2011,3 Jun 2011,4 Jun 2011}
+% \deanSignedDate{9 Jun 2011}
+
+\abstract{Calibration is an important and controversial topic in statistics. In this dissertation, we consider both semiparametric calibration and the application of calibration to grouped data, both of which may be addressed through the use of the linear mixed-effects model. In Chapter~\ref{chap:nonparametric}, we propose a method for obtaining calibration intervals that have good coverage probability when the calibration curve has been estimated \textit{semiparametrically}. We also expand the traditional Bayesian approach to calibration by allowing for a semiparametric calibration curve. In Chapter~\ref{chp:cal-dependent}, we extend the usual methods for statistical calibration to the case of grouped data, that is, where observations can be categorized into a finite set of homogeneous clusters. An important characteristic of grouped data is that observations belonging to the same cluster are often similar, therefore, cannot be considered as independent; these data must be analysed in a way that accounts for this dependence (e.g., using mixed-effects models). We start by extending the classical Wald and inversion methods for obtaining calibration intervals, then we propose a new parametric bootstrap algorithm that, presumably, performs better for calibration in linear mixed-effects models by relaxing normality assumptions that may not be satisfied in practice. In Appendix~\ref{app:investr}, we describe the R package \texttt{investr} we have developed for analyzing calibration data.}
+% The abstract can also be saved in a separate file, called abstract.tex for 
+% example, and included here using: "\abstract{\input{abstract}}"
+
+% Required SF298 macros. See the SF298 package guide for additional fields.
+\DatesCovered{Oct 2010--Mar 2014} % First quarter of classes to Graduation
+\ContractNumber{}   % "in house" if AFIT sponsored or blank otherwise
+\ProjectNumber{}    % JON number (per advisor) or blank
+\SponsoringAgency{} % sponsor address or '\relax' (will appear blank)
+\Acronyms{}         % sponsor unit/office symbol or blank
+\SMReportNumber{}   % blank unless sponsoring agency assigned a report number
+\AddlSupplementaryNotes{}   % Add any other comments as necessary
+\ReportClassification {U}   % document classification
+\AbstractClassification {U} % abstract classification
+\PageClassification {U}     % SF 298 classification
+\AbstractLimitation {UU}    % change to 'SAR' if limited distribution
+\SubjectTerms{Add four or five key words/phrases for indexing}
+\ResponsiblePerson {Dr. Im N. Charge (ENG)}
+\RPTelephone {(937) 255-3636 x0000 ImNCharge@afit.edu}  
+     % advisor's 4 digit extension and email address.  If necessary to fit into 
+     % the block, the \footnotesize command can be placed before the phone
+     % number to reduce the font size
+
+% \renewcommand\AbstractSize\scriptsize % if the abstract is too long to fit on
+% the SF298, then the abstract should probably be shortened.  However, in a
+% pinch, this command can be used to reduce the fontsize for the abstract on
+% the SF298.
+
+%%%% Optional macro definitions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\dedication{\centering To my parents} 
+
+\acknowledgments{Insert optional acknowledgments or remove/comment out
+ this line completely.} 
+% If you prefer to provide "acknowledgements" instead (note the added "e"
+% between the "g" and the "m") then add the "e" in the macro name so that
+% it reads "\acknowledgements".}
+
+\vita{Insert optional vita or remove/comment out this line completely.}
+
+% The default disclaimer and copyright statement is included by default.  An
+% alternate disclaimer for foreign students or others can also be
+% used by uncommenting the following line:
+%
+% \govtdisclaimer{Alternate Disclaimer.//See the Style Guide for more information}    
+
+% The List of Tables and Figures can be omitted if not needed:
+%
+% \notables  
+% \nofigures
+
+% Additional "lists" can be added to the end of the front matter using the
+% \addlistof macro.  This macro takes three parameters:
+%    \addlistof{name}{header}{list}
+% where
+%    name is used in the title of the list, i.e. "List of name"
+%    header is placed at the top of each page used by this list
+%    list is typeset as provided
+%   
+% For example, one might insert a list of symbols using the tabbing environment
+% with: 
+\addlistof{Common Symbols}{Symbol\quad Definition}{
+\begin{tabbing}
+  Symbol\quad \= Definition \kill % In the tabbing environment this sets up the
+  % tab stop.  The \kill prevents the line from being printed, so use the line
+  % with the longest symbol here.  In this example the header word "Symbol"
+  % with a quad space after it sets the tab stop and is reflected in the
+  % header.  If the header is not the longest line, then the header will need
+  % to be adjusted to make the columns line up, and a \boxtowidth macro is
+  % provided for this purpose.
+  %
+  % For example, if the tab is set using a line of: 
+  %      $\verylongsymbol$\quad \= no real meaning \kill
+  % corresponding to a symbol entry of:
+  %      $verylongsymbol$\quad \= no real meaning \\
+  % then the appropriate header is:
+  %      {\boxtowidth{$verylongsymbol$\quad}{Symbol}Definition}
+
+  $\bm{0}_{m \times n}$  \> $m \times n$ matrix of all $0$'s \\
+  $\bm{I}_{n}$  \> $n \times n$ identity matrix \\
+  $\bm{1}_n$    \> $n \times 1$ vector of all $1$'s \\
+  $\bm{J}_{n}$  \> $n \times n$ matrix of all $1$'s \\
+  $I(\cdot)$    \> the indicator function \\
+  \null\\
+%   \textit{Subscripts}\\
+%   $?$ \> ???? \\
+%   \null\\
+  \textit{Superscripts}\\
+  $\boot$ \> denotes a bootstrapped estimate or sample \\
+\end{tabbing}
+}
+% A disadvantage of the tabbing environment is the lack of automatic
+% wordwrapping.  A list environment might be used instead.  For example:
+% \addlistof{Other Symbols}
+%           {\boxtowidth{$verylongsymbol$\quad}{\hfill Symbol\quad}Definition}{
+%   \begin{list}{}{\setlength\topsep{0pt}
+%                  \settowidth\labelwidth{$verylongsymbol$}
+%                  \settowidth\labelsep{\quad}
+%                  \setlength\leftmargin{\labelwidth}
+%                  \addtolength\leftmargin{\labelsep}
+%   }
+%   \item [$a$] first letter of the alphabet
+%   \item [$verylongsymbol$] no real meaning
+%   \end{list}
+% }
+
+
+% Alternatives to the preceding list of symbols and the following list of
+% acronyms can be created using:
+%
+% \listofsymbols
+% \listofabbreviations[5em]
+% 
+% where the corresponding symbols and abbreviations must then be marked at
+% their first occurence in the text with "\addsymbol{Definition}{Symbol}" or
+% "\addabbrev{Definition}{Symbol}", respectively.  If the symbols are
+% too wide for the table, the alloted width can be increased by including
+% an optional width in square brackets, as in  "\listofsymbols[.3in]".  
+% Both of these lists will be listed in the order that they appear in the text.
+
+% A \singlespace macro is provided to allow a section of the document to by
+% typeset with single spaced lines.  This macro must be enclosed in an
+% environment to limit its scope.  For example:
+%     { \singlespace This text will be set with single spaced lines } and now
+%     the document is back to double spaced lines.
+
+
+\begin{document}
+
+%% Option templates (knitr)
+<<fig-opts, cache = FALSE, echo = FALSE>>=
+opts_template$set(
+  fig.3by3 = list(fig.width = 3, fig.height = 3),
+  fig.5by5 = list(fig.width = 5, fig.height = 5),
+  fig.6by3 = list(fig.width = 6, fig.height = 3),
+  fig.6by4 = list(fig.width = 6, fig.height = 4),
+  fig.6by5 = list(fig.width = 6, fig.height = 5),
+  fig.6by6 = list(fig.width = 6, fig.height = 6),
+  fig.7by4 = list(fig.width = 7, fig.height = 4),
+  fig.7by5 = list(fig.width = 7, fig.height = 5),
+  fig.7by6 = list(fig.width = 7, fig.height = 6),
+  fig.7by7 = list(fig.width = 7, fig.height = 7)
+)
+@
+
+%% Hooks (knitr)
+<<par-hook, cache = FALSE, echo = FALSE>>=
+knit_hooks$set(par = function(before, options, envir) {
+    if (before) par(mar = c(4, 4, 1.1, 0.1), las = 1, cex.axis = 0.9)  
+  })
+@
+
+<<rexample-hook, cache = FALSE, echo = FALSE>>=
+knit_hooks$set(rexample = function(before, options, envir) {
+    if (before) sprintf('\\begin{rexample}\\label{%s}\\hfill{}', options$label)
+    else '\\end{rexample}'})
+@
+
+%% Packages
+<<prelim, echo = FALSE, message = FALSE, warning = FALSE>>=
+
+## Source script files
+source("/home/w108bmg/Desktop/Dissertation-knitr/R code/pspline.R")
+source("/home/w108bmg/Desktop/Dissertation-knitr/R code/invest-lme.R")
+source("/home/w108bmg/Desktop/Dissertation-knitr/R code/bootMer2.R")
+
+## Function to calculate HPD interval
+hdi <- function(x, level = 0.95) {
+  xsort <- sort(x)
+  z <- floor(level * length(xsort))
+  n <- length(xsort) - z
+  width <- rep(0, n)
+  for (i in 1:n) {
+    width[i] <- xsort[i + z] - xsort[i]
+  }
+  c(xsort[which.min(width)], xsort[which.min(width) + z])
+}
+
+## Load required R packages
+library(investr)      # for calibration functions and datasets
+library(boot)         # for calculating bootstrap confidence intervals
+library(nlme)         # for fitting LMMs
+library(lme4)         # for fitting LMMs and bootMer() function 
+library(RColorBrewer) # for fancy colors
+library(rjags)
+library(coda)
+
+## Initialize colors
+set1 <- brewer.pal(9, "Set1")
+dark2 <- brewer.pal(8, "Dark2")
+YlOrRd <- brewer.pal(9, "YlOrRd")
+
+## ELisa data
+elisa <- read.csv("/home/w108bmg/Desktop/Dissertation-knitr/Data/elisa.csv", 
+                  header = TRUE)
+
+## Whiskey data
+whiskey <- data.frame(
+  age = c(0, 0.5, 1, 2, 3, 4, 5, 6, 7, 8),
+  proof = c(104.6, 104.1, 104.4, 105.0, 106.0, 
+            106.8, 107.7, 108.7, 110.6, 112.1)
+)
+
+## Nasturtium data
+nasturtium <- drc::nasturtium
+nasturtium$lconc <- ifelse(nasturtium$conc == 0, log(0.01), 
+                           log(nasturtium$conc))
+
+## Bladder volume data
+load("/home/w108bmg/Desktop/Dissertation-knitr/Data/bladder.RData")
+bladder <- na.omit(bladder)
+bladder2 <- data.frame(logHD = log(bladder$HD), logVolume = log(bladder$volume),
+                       subject = bladder$subject)
+Bladder <- groupedData(HD ~ volume | subject, data = bladder) 
+Bladder2 <- groupedData(logHD ~ logVolume | subject, data = bladder2) 
+@
+
+% The acronym package can be used to add a list of acronyms.  Because
+% the acronym formatting is modified to match the AFIT Style Guide,
+% the following command must be in the body of the document prior to the
+% call to \makePrefatoryPages
+\listofacronyms{
+\begin{acronym}[WPAFB]
+  \acro{BLUE}{Best linear unbiased estimator}
+  \acro{BLUP}{Best linear unbiased predictor}
+  \acro{EBLUE}{Estimated (or empirical) best linear unbiased estimator}
+  \acro{EBLUP}{Estimated (or empirical) best linear unbiased predictor}
+  \acro{GLS}{Generalized least squares}
+  \acro{i.i.d.}{Independent and identically distributed}
+  \acro{LM}{Linear model}
+  \acro{LMM}{Linear mixed-effects model}
+  \acro{LS}{Least squares}
+  \acro{ML}{Maximum likelihood}
+  \acro{MSE}{Mean squared error}
+  \acro{NLMM}{Nonlinear mixed-effects model}
+  \acro{REML}{Restricted (or residual) maximum likelihood}
+
+\end{acronym}
+}
+
+% The following line is required to generate the prefatory pages
+\makePrefatoryPages 
+
+%% Body of the text follows, using \chapter, \section, \subsection,
+%% \subsubsection, \paragraph, and \subparagraph to generate the
+%% section headings.  For convenience, it may be useful to break the
+%% full document into separate files, perhaps divided by chapters.  In
+%% that case, the files would be loaded here using "\input{filename}"
+
+%% Introduction ----------------------------------------------------------------
+<<child='Chap-Introduction.Rnw'>>=
+@
+
+%% Background ------------------------------------------------------------------
+<<child='Chap-Background.Rnw'>>=
+@
+
+%% Literature review -----------------------------------------------------------
+<<child='Chap-LitReview.Rnw'>>=
+@
+
+%% Nonparametric Calibration ---------------------------------------------------
+<<child='Chap-Nonparametric.Rnw'>>=
+@
+
+%% Calibration with Dependent Data ---------------------------------------------
+<<child='Chap-CalDependent.Rnw'>>=
+@
+
+%% Conclusion ------------------------------------------------------------------
+<<child='Chap-Conclusion.Rnw'>>=
+@
+
+%% Appendix --------------------------------------------------------------------
+<<child='Chap-Appendix.Rnw'>>=
+@
+
+% The \references command should be used to insert the list of references.
+% Assuming one is using BibTeX, this should contain both a \bibliographystyle
+% and a \bibliography command referencing a separate bibliography file.
+
+\references{
+  \bibliographystyle{abbrvnat}
+  \bibliography{References}
+}
+
+\end{document}
+

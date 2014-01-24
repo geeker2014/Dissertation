@@ -1,0 +1,391 @@
+% !Rnw root = Master.Rnw
+
+\chapter{Semiparametric Calibration}
+\label{chap:nonparametric}
+So far, we have considered calibration curves in which the mean response $\mu(x) = \E\left\{\mc{Y} | x\right\}$ has a known form that depends on a small number of unknown parameters $\bm{\beta}$. Finding a good parametric model, however, can be time consuming and require a great deal of expertise. Therefore, it is sometimes useful to assess the effects of the explanatory variable $x$ without completely specifying the structural form of $\mu(x)$. In this chapter, we propose a simple and fast \textit{semiparametric} approach to computing calibration curves. By semiparametric, we mean that only part of the model is specified. Our treatment of semiparametric calibration curves follows the work of \citet{brumback_comment_1999}, \citet{ruppert_selecting_2002}, and \citet{ruppert_semiparametric_2003}, and \citet{crainiceanu_bayesian_2005}. Nonparametric calibration has also been discussed in the literature by, for example, \citet{clark_calibration_1979}, \citet{clark_calibration_1980}, and \citet{rosen_constructing_1995}. Our approach to calibration here is similar to that of \citet{clark_calibration_1980} in that we are "inverting" bias-corrected prediction intervals. However, the LMM representation of P-splines \citep{ruppert_semiparametric_2003} we use here yields a rather simple method for correcting this bias. Rosen and Cohen used a nonparametric bootstrap to obtain calibration intervals from a cubic smoothing spline. Their approach, however, made no attempt to correct for bias in the smoothed calibration curve.
+
+In Section~\ref{sec:pspline-lmm}, we discuss the linear mixed-effects model representation of P-splines. Section~\ref{sec:adjusted-calibration}, proposes a method for obtaining bias-corrected calibration intervals based on the mixed model representation. A small Monte Carlo study demonstrates that the these intervals have coverage probability close to the nominal $1-\alpha$ level. A Bayesian analog of this procedure is proposed in Section~\ref{sec:pspline-bayesian}. Section~\ref{sec:semipar-discussion} concludes this chapter with a discussion on ideas for future research.
+
+\section{Mixed model representation of P-splines}
+\label{sec:pspline-lmm}
+Recall the polynomial spline model from Section~\ref{sec:penalized-regression-splines}:
+\begin{equation}
+  \mc{Y}_i = \sum_{j = 0}^p\beta_jx_i^j + \sum_{k = 1}^K \alpha_k\left(x_i - \xi_k\right)_+^p + \epsilon_i, \quad \epsilon_i \stackrel{iid}{\sim} \left(0, \sigma_\epsilon^2\right), \quad i = 1, \dotsc, n.
+\end{equation}
+We can easily write this in matrix form, such as in Equation~\eqref{eqn:spline-model-matrix}, but a more useful form is obtained by separating the polynomial and spline terms as in
+\begin{equation}
+\label{eqn:spline-model-lme}
+  \bc{Y} = \bm{X}\bm{\beta} + \bm{Z}\bm{\alpha} + \bm{\epsilon}, \quad \bm{\epsilon} \sim \left(\bm{0}, \sigma_\epsilon^2\bm{I}\right),
+\end{equation}
+where $\bm{\beta} = (\beta_0, \beta_1, \dotsc, \beta_p)'$ are the coefficients of the polynomial basis functions, $\bm{\alpha} = (\alpha_1, \dotsc, \alpha_K)'$ are the coefficients of the spline basis functions, and $\bm{X}$ and $\bm{Z}$ are known design matrices with $i$-th rows equal to
+\begin{equation*}
+\bm{X}_i = \left(1, x_i, x_i^2, \dotsc, x_i^p \right)' \quad \text{and} \quad  \bm{Z}_i = \left( (x_i - \xi_1)_+^p, \dotsc, (x_i - \xi_K)_+^p \right)',
+\end{equation*}
+respectively. Although we choose $\bm{Z}$ to be the truncated polynomial spline basis matrix, any other basis will do (e.g., radial basis, B-spline basis, etc.). Based on the matrix Equation~\eqref{eqn:spline-model-lme}, the penalized spline fitting criterion, Equation~\eqref{eqn:pss}, becomes
+\begin{equation*}
+  \norm{\bc{Y} - \bm{X}\bm{\beta} - \bm{Z}\bm{\alpha}}^2 + \lambda^{2p}\norm{\bm{\alpha}}^2,
+\end{equation*}
+which is proportional to Equation~\eqref{eqn:lmm-pss}, the PSS for an LMM with hierarchical structure $\bc{Y}|\bm{\alpha} \sim \mc{N}(\bm{X}\bm{\beta} + \bm{Z}\bm{\alpha}, \sigma_\epsilon^2\bm{I})$ and $\bm{\alpha} \sim \mc{N}(0, \sigma_\alpha^2\bm{I})$. Dividing through by the error variance, $\sigma_\epsilon^2$, gives the smoothing parameter as $\lambda^{2p} = \sigma_\epsilon^2/\sigma_\alpha^2$, a simple ratio of the variance components. This leads to the following mixed model representation of P-splines \citep{brumback_comment_1999}:
+\begin{equation}
+\label{eqn:pspline-lmm}
+  \bc{Y} = \bm{X}\bm{\beta} + \bm{Z}\bm{\alpha} + \bm{\epsilon}, \quad 
+  \begin{bmatrix} 
+    \bm{\alpha} \\
+    \bm{\epsilon}
+  \end{bmatrix} \sim 
+    \mc{N}\left(\begin{bmatrix} 
+      \bm{0} \\
+      \bm{0}
+    \end{bmatrix}, \begin{bmatrix} 
+    \sigma_\alpha^2\bm{I} & \bm{0} \\
+    \bm{0} & \sigma_\epsilon^2\bm{I}
+  \end{bmatrix}\right).
+\end{equation}
+The parameters $\bm{\beta}$, $\bm{\alpha}$, $\sigma_\alpha^2$, and $\sigma_\epsilon^2$ can all be estimated using standard mixed model methodology and software. Under this framework, a P-spline is really just the BLUP from a special LMM! The amount of smoothing is determined automatically by $\wh{\lambda} = \wh{\sigma}_\epsilon^2/\wh{\sigma}_\alpha^2$, where $\wh{\sigma}_\epsilon^2$ and $\wh{\sigma}_\alpha^2$ are the REML estimates of $\sigma_\epsilon^2$ and $\sigma_\alpha^2$, respectively. Although $\lambda$ could be estimated via ordinary ML estimation or cross-validation, \citet{krivobokova_note_2007} showed that the REML-based estimate is less affected by the presence of different correlation structures for the errors, $\bm{\epsilon}$. The BLUP of $\bm{\mu}$, denoted $\wt{\bm{\mu}}$, was given in Equation~\eqref{eqn:mu-blup}, however, an equivalent expression for $\wt{\bm{\mu}}$ is given by
+\begin{equation*}
+  \wt{\bm{\mu}} = \bm{\Omega}\left( \bm{\Omega}'\bm{\Omega} + \frac{\sigma_\epsilon^2}{\sigma_\alpha^2}\bm{D} \right)^{-1}\bm{\Omega}'\bc{Y} = \bm{S}\bc{Y}, \quad \bm{\Omega} = \left(\bm{X}; \bm{Z}\right),
+\end{equation*}
+where $\textbf{D} = \diag\left\{\bm{0}_{(p+1) \times (p+1)}, \bm{I}_{K \times K}\right\}$. The vector of fitted values (i.e., the EBLUP of $\bm{\mu}$) is then just
+\begin{equation*}
+  \wh{\bm{\mu}} = \bm{\Omega}\left( \bm{\Omega}'\bm{\Omega} + \frac{\wh{\sigma}_\epsilon^2}{\wh{\sigma}_\alpha^2}\bm{D} \right)^{-1}\bm{\Omega}'\bc{Y},
+\end{equation*}
+where $\wh{\sigma}_\epsilon^2$ and $\wh{\sigma}_\alpha^2$ are the REML estimates of $\sigma_\epsilon^2$ and $\sigma_\alpha^2$, respectively.
+
+As described in \citet{robinson_that_1991}, the LMM has a simple Bayesian analog. For the mixed model representation, Equation~\eqref{eqn:pspline-lmm}, if $\bm{\beta}$, $\sigma_\epsilon^2$, and $\sigma_\alpha^2$ are all given improper uniform priors, then the posterior of $\bm{\mu}$ is $\mc{N}\left( \wh{\bm{\mu}}, \sigma_\epsilon^2 \bm{S} \right)$. Note the use of the variance-covariance matrix $\sigma_\epsilon^2\bm{S}$ rather than the variance-covariance matrix $\sigma_\epsilon^2\bm{S}\bm{S}'$ from Equation~\eqref{eqn:cov}. It is easy to see that $\left[\bm{S}\right]_{ij} \ge \left[\bm{S}\bm{S}'\right]_{ij}$, hence, confidence and prediction intervals based on the Bayesian variance-covariance matrix $\sigma_\epsilon^2\bm{S}$ are wider than those based on $\sigma_\epsilon^2\bm{S}\bm{S}'$. As pointed out by \citet{hastie_gams_1990}, the "extra wideness" is due to the fact that $\bm{S}$ accounts for squared bias whereas $\bm{S}\bm{S}'$ does not.
+
+\section{Bias-corrected calibration intervals}
+\label{sec:adjusted-calibration}
+As mentioned in Section~\ref{sec:pspline-inference}, the estimated mean response $\wh{\mu}(x)$ is biased. Inference for P-splines based on the LMM representation, Equation~\eqref{eqn:pspline-lmm}, differs depending on whether we take the randomness of $\bm{\alpha}$ into account. Ignoring the randomness in $\bm{\alpha}$ leads to the same intervals given in Section~\ref{sec:pspline-inference}. We can account for bias in the confidence and prediction intervals, however, by conditioning on the random effects $\bm{\alpha}$. To see this, note that the bias vector of $\wt{\bm{\mu}}$, conditional on $\bm{\alpha}$, is 
+\begin{equation}
+\label{eqn:conditional-bias}
+  \E\left\{\wt{\bm{\mu}} - \bm{\mu} | \bm{\alpha}\right\} = \bm{X}\left[ \E\left\{\wt{\bm{\beta}} | \bm{\alpha}\right\} - \bm{\beta} \right] + \bm{Z}\Big[ \E\left\{\wt{\bm{\alpha}} | \bm{\alpha}\right\} - \bm{\alpha} \Big].
+\end{equation}
+
+From the properties of conditional expectation \citep[pg. 164]{casella_statistical_2002}, we have that $\E\left\{\E\left(\wt{\bm{\beta}}|\bm{\alpha}\right)\right\} = \E\left\{\wt{\bm{\beta}}\right\}$ and $\E\left\{\E\left(\wt{\bm{\alpha}}|\bm{\alpha}\right)\right\} = \E\left\{\wt{\bm{\alpha}}\right\}$. But since $\E\left\{\wt{\bm{\beta}}\right\} = \bm{\beta}$ and $\E\left\{\wt{\bm{\alpha}}\right\} = \E\left\{\bm{\alpha}\right\} = \bm{0}$, the unconditional bias is just 
+\begin{equation*}
+  %\E\left(\wt{\bm{\mu}} - \bm{\mu}\right) = 
+  \E\left\{\E\left(\wt{\bm{\mu}} - \bm{\mu}|\bm{\alpha}\right)\right\} = \bm{X}\left(\bm{\beta} - \bm{\beta}\right) + \bm{Z}\left(\bm{0} - \bm{0}\right) = \bm{0}. 
+\end{equation*}
+Thus, $\wt{\bm{\mu}}$ is unbiased for $\bm{\mu}$ when averaged over the distribution of $\bm{\alpha}$. This is equivalent to the Bayesian approach where (pointwise) confidence and prediction bands use diagonal entries of $\bm{S}$ in place of the diagonal entries of $\bm{S}\bm{S}'$ described in Section~\ref{sec:pspline-inference}.
+
+Let $\bm{\Omega}_0 = \left(1, x_0, \dotsc, x_0^p, (x_0 - \xi_1)_+^p, \dotsc, (x_0 - \xi_K)_+^p\right)'$ where $x_0$ is an arbitrary value of the explanatory variable $x$. A $100(1 - \alpha)\%$ (bias-corrected) confidence interval for $\mu(x_0)$ is given by
+\begin{equation*}
+  \wh{\mu}(x_0) \pm t_{df}^{1 - \alpha/2} \times \wh{\sigma}_\epsilon\sqrt{\bm{\Omega}_0\left(\bm{\Omega}\bm{\Omega}' + \frac{\wh{\sigma}_\epsilon^2}{\wh{\sigma}_\alpha^2}\bm{D} \right)^{-1}\bm{\Omega}_0'},
+\end{equation*}
+where $df = n - 2\tr\left(\bm{S}\right) + \tr\left(\bm{S}\bm{S}'\right)$. In a similar manner, a $100(1 - \alpha)\%$ (bias-corrected) prediction interval for a new observation, $\mc{Y} = \mu(x_0) + \epsilon_0$ (independent of current ones), is given as
+\begin{equation}
+\label{eqn:bias-corrected-pi}
+  \wh{\mu}(x_0) \pm t_{df}^{1 - \alpha/2} \times \wh{\sigma}_\epsilon\sqrt{1 + \bm{\Omega}_0\left(\bm{\Omega}\bm{\Omega}' + \frac{\wh{\sigma}_\epsilon^2}{\wh{\sigma}_\alpha^2}\bm{D} \right)^{-1}\bm{\Omega}_0'}.
+\end{equation}
+
+Recall the intuition behind the inversion interval. Let $I_\mathrm{pred}(x)$ be a $100(1 - \alpha)\%$ prediction interval for the future observation $\mc{Y}_0$, such that $\Pr\left\{ \mc{Y}_0 \in I_\mathrm{pred}(x) | x_0 = x \right\} = 1 - \alpha$. Then, a confidence interval for $x_0$ corresponding to an observed $\mc{Y}_0$ is just the set $J_\mathrm{cal}(x) = \left\{x : \mc{Y}_0 \in I_\mathrm{pred}(x)\right\}$ since, by construction, 
+\begin{equation*}
+\Pr\left\{x_0 \in J_\mathrm{cal}(\mc{Y}_0)\right\} = \Pr\left\{\mc{Y}_0 \in I_\mathrm{pred}(x) | x_0 = x\right\} = 1 - \alpha,
+\end{equation*}
+\citep{clark_calibration_1980}. In other words, a $100(1 - \alpha)\%$ confidence interval for $x_0$ can be obtained by inverting the a corresponding prediction interval for $\mc{Y}_0$. However, we need to make sure to "invert" an appropriate prediction interval (i.e., one that corrects for bias), otherwise, the resulting interval for $x_0$ will likely not be reliable. This suggests the following (bias-corrected) $100(1-\alpha)\%$ calibration interval for the unknown $x_0$:
+\begin{equation}
+\label{eqn:bc-inversion-interval}
+  \mc{J}_\mathrm{cal}^{BC}(x_0) = \left\{x_0: \frac{y_0 - \wh{\mu}(x_0)}{\wh{\sigma}_\epsilon^2\left[1 + \bm{\Omega}_0\left(\bm{\Omega}'\bm{\Omega} + \frac{\wh{\sigma}_\epsilon^2}{\wh{\sigma}_\alpha^2}\bm{D}\right)^{-1}\bm{\Omega}_0'\right]} < \mc{F}_{1, df}^{1-\alpha}\right\},
+\end{equation}
+where $\mc{F}_{1, df}^{1-\alpha} = \left(t_{df}^{1 - \alpha/2}\right)^2$. As before, great care should be taken to ensure that $\mc{J}_\mathrm{cal}^{BC}(x_0)$ is an interval. This may not be the case, for example, when $\mu(x)$ in not monotonic over the range of interest. Also, as with nonlinear calibration, no closed-form expression exists for $\mc{J}_\mathrm{cal}^{BC}(x)$, thus, iterative techniques are required. In a similar fashion, a $100(1-\alpha)\%$ bias-corrected regulation interval for $x_0$ is obtained by inverting a corresponding bias-corrected confidence interval for the mean response:
+\begin{equation*}
+  \mc{J}_\mathrm{cal}^{BC}(x_0) = \left\{x_0: \frac{y_0 - \wh{\mu}(x_0)}{\wh{\sigma}_\epsilon^2\bm{\Omega}_0\left(\bm{\Omega}'\bm{\Omega} + \frac{\wh{\sigma}_\epsilon^2}{\wh{\sigma}_\alpha^2}\bm{D}\right)^{-1}\bm{\Omega}_0'} < \mc{F}_{1, df}^{1-\alpha}\right\}.
+\end{equation*}
+
+We designed a small Monte Carlo study to investigate the coverage probability of this technique. The results of this study are presented in Tables~\ref{tab:pspline-monte-carlo-1}-\ref{tab:pspline-monte-carlo-2}. The true calibration function is the sine wave $\mu(x) = \sin(\pi x - \pi/2)/2 + 1/2$ plotted in Figure~\ref{fig:sine-wave}. For data following such a pattern it would be tempting to fit a nonlinear model, perhaps modeling $\mu(x)$ as a \textit{logistic} function. Inference based on the resulting fit would then be inaccurate since, for example, the true calibration curve does not have any asymptotes. For situations like this, it would be useful to have a semiparametric alternative for which to compare inference.
+
+<<sine-wave, echo=FALSE, fig.width=5, fig.height=3, par=TRUE, fig.pos='H', fig.scap='Scaled sine wave example', fig.cap='Scaled sine wave function.'>>=
+x0 <- 0.75
+f <- function(x) sin(pi*x-pi/2)/2+1/2
+curve(f, lwd=2, ylab=expression(mu(x)), xlab=expression(x))
+parusr <- par()$usr
+arrows(x0, parusr[3], x0, f(x0))
+arrows(x0, f(x0), parusr[1], f(x0))
+@
+
+Notice that the sine wave plotted in Figure~\ref{fig:sine-wave} is scaled to lie in $[0, 1] \times [0, 1]$ with a period of 2. For each of 1,000 simulations, we used $10$, $30$, and $50$ uniformly spaced designed points on the domain $[0, 1]$ with $1$, $2$, and $3$ independent replicates of the response at each design point. The errors were generated as i.i.d. $\mc{N}(0, 0.05^2)$ random variates and the true unknown was chosen to be $x_0 = \Sexpr{x0}$ (hence, $\mu_0 \approx \Sexpr{round(f(x0), 4)}$).
+
+Tables~\ref{tab:pspline-monte-carlo-1}-\ref{tab:pspline-monte-carlo-2} display the estimated coverage probability for this technique applied to the sine wave experiment for both calibration (Table~\ref{tab:pspline-monte-carlo-1}) and regulation (Table~\ref{tab:pspline-monte-carlo-2}). For comparison, we also transformed the data to an equivalent linear model and applied Fieller's method (which yields an exact $95\%$ confidence interval for $x_0$). Clearly, our bias-corrected intervals performed well for quadratic (degree = 2) and cubic (degree = 3) P-splines with increasing sample size without sacrificing interval length. Notice, however, that the calibration results are somewhat conservative (i.e., the coverage probability is slightly larger than $0.95$) while the regulation intervals tend to hit the target coverage $1-\alpha = 0.95$. The reason for this is that the bias in predicting a future observation is the same as that for estimating the mean response, but the former has larger variance. Therefore, the bias accounts for a smaller portion of the mean-squared error in prediction (i.e., the bias gets "washed out" by a larger variance). Thus, for larger samples (perhaps $n \ge 20$ with $m \ge 1$ replicates at each design point), calibration intervals could be computed with or without adjusting for bias. Regulation intervals, on the other hand, should always be adjusted for bias.
+
+<<sim1-sim2, echo = FALSE>>=
+load("/home/w108bmg/Desktop/Dissertation-knitr/Data/sim1.RData")
+load("/home/w108bmg/Desktop/Dissertation-knitr/Data/sim2.RData")
+load("/home/w108bmg/Desktop/Dissertation-knitr/Data/sim3.RData")
+load("/home/w108bmg/Desktop/Dissertation-knitr/Data/sim4.RData")
+sim1 <- apply(sim1[, 1:2], 2, formatC, format = "f", digits = 2)
+sim2 <- apply(sim2[, 1:2], 2, formatC, format = "f", digits = 2)
+sim3 <- apply(sim3[, 1:2], 2, formatC, format = "f", digits = 2)
+sim4 <- apply(sim4[, 1:2], 2, formatC, format = "f", digits = 2)
+@
+
+\begin{table}[H]%[!htb]
+\centering
+  \begin{tabular}{llcccccccc}
+  \toprule
+  \phantom{abc} & \phantom{abc} & \multicolumn{2}{c}{Degree = 1} & \multicolumn{2}{c}{Degree = 2} & \multicolumn{2}{c}{Degree = 3} & \multicolumn{2}{c}{Fieller} \\
+  \cline{3-10}
+  $n$ & $m$ & CP & Length & CP & Length & CP & Length & CP & Length \\
+  \hline
+  10  &  1  & \Sexpr{sim1[1,1]} & \Sexpr{sim1[1,2]} & \Sexpr{sim1[10,1]} & \Sexpr{sim1[10,2]} & \Sexpr{sim1[19,1]} & \Sexpr{sim1[19, 2]} & \Sexpr{sim2[1, 1]} & \Sexpr{sim2[1, 2]} \\
+  10  &  2  & \Sexpr{sim1[2,1]} & \Sexpr{sim1[2,2]} & \Sexpr{sim1[11,1]} & \Sexpr{sim1[11,2]} & \Sexpr{sim1[20,1]} & \Sexpr{sim1[20, 2]} & \Sexpr{sim2[2, 1]} & \Sexpr{sim2[2, 2]} \\
+  10  &  3  & \Sexpr{sim1[3,1]} & \Sexpr{sim1[3,2]} & \Sexpr{sim1[12,1]} & \Sexpr{sim1[12,2]} & \Sexpr{sim1[21,1]} & \Sexpr{sim1[21, 2]} & \Sexpr{sim2[3, 1]} & \Sexpr{sim2[3, 2]} \\
+  \hline
+  30  &  1  & \Sexpr{sim1[4,1]} & \Sexpr{sim1[4,2]} & \Sexpr{sim1[13,1]} & \Sexpr{sim1[13,2]} & \Sexpr{sim1[22,1]} & \Sexpr{sim1[22, 2]} & \Sexpr{sim2[4, 1]} & \Sexpr{sim2[4, 2]} \\
+  30  &  2  & \Sexpr{sim1[5,1]} & \Sexpr{sim1[5,2]} & \Sexpr{sim1[14,1]} & \Sexpr{sim1[14,2]} & \Sexpr{sim1[23,1]} & \Sexpr{sim1[23, 2]} & \Sexpr{sim2[5, 1]} & \Sexpr{sim2[5, 2]} \\
+  30  &  3  & \Sexpr{sim1[6,1]} & \Sexpr{sim1[6,2]} & \Sexpr{sim1[15,1]} & \Sexpr{sim1[15,2]} & \Sexpr{sim1[24,1]} & \Sexpr{sim1[24, 2]} & \Sexpr{sim2[6, 1]} & \Sexpr{sim2[6, 2]} \\
+  \hline
+  50  &  1  & \Sexpr{sim1[7,1]} & \Sexpr{sim1[7,2]} & \Sexpr{sim1[16,1]} & \Sexpr{sim1[16,2]} & \Sexpr{sim1[25,1]} & \Sexpr{sim1[25, 2]} & \Sexpr{sim2[7, 1]} & \Sexpr{sim2[7, 2]} \\
+  50  &  2  & \Sexpr{sim1[8,1]} & \Sexpr{sim1[8,2]} & \Sexpr{sim1[17,1]} & \Sexpr{sim1[17,2]} & \Sexpr{sim1[26,1]} & \Sexpr{sim1[26, 2]} & \Sexpr{sim2[8, 1]} & \Sexpr{sim2[8, 2]} \\
+  50  &  3  & \Sexpr{sim1[9,1]} & \Sexpr{sim1[9,2]} & \Sexpr{sim1[18,1]} & \Sexpr{sim1[18,2]} & \Sexpr{sim1[27,1]} & \Sexpr{sim1[27, 2]} & \Sexpr{sim2[9, 1]} & \Sexpr{sim2[9, 2]} \\
+  \bottomrule
+  \end{tabular}
+\caption[Semiparametric calibration Monte Carlo simulation]{Coverage and length of $95\%$ calibration intervals for data from the sine wave experiment with $\sigma_\epsilon = 0.05$. \label{tab:pspline-monte-carlo-1}}
+\end{table}
+
+\begin{table}[H]%[!htb]
+\centering
+  \begin{tabular}{llcccccccc}
+  \toprule
+  \phantom{abc} & \phantom{abc} & \multicolumn{2}{c}{Degree = 1} & \multicolumn{2}{c}{Degree = 2} & \multicolumn{2}{c}{Degree = 3} & \multicolumn{2}{c}{Fieller} \\
+  \cline{3-10}
+  $n$ & $m$ & CP & Length & CP & Length & CP & Length & CP & Length \\
+  \hline
+  10  &  1  & \Sexpr{sim3[1,1]} & \Sexpr{sim3[1,2]} & \Sexpr{sim3[10,1]} & \Sexpr{sim3[10,2]} & \Sexpr{sim3[19,1]} & \Sexpr{sim3[19, 2]} & \Sexpr{sim4[1, 1]} & \Sexpr{sim4[1, 2]} \\
+  10  &  2  & \Sexpr{sim3[2,1]} & \Sexpr{sim3[2,2]} & \Sexpr{sim3[11,1]} & \Sexpr{sim3[11,2]} & \Sexpr{sim3[20,1]} & \Sexpr{sim3[20, 2]} & \Sexpr{sim4[2, 1]} & \Sexpr{sim4[2, 2]} \\
+  10  &  3  & \Sexpr{sim3[3,1]} & \Sexpr{sim3[3,2]} & \Sexpr{sim3[12,1]} & \Sexpr{sim3[12,2]} & \Sexpr{sim3[21,1]} & \Sexpr{sim3[21, 2]} & \Sexpr{sim4[3, 1]} & \Sexpr{sim4[3, 2]} \\
+  \hline
+  30  &  1  & \Sexpr{sim3[4,1]} & \Sexpr{sim3[4,2]} & \Sexpr{sim3[13,1]} & \Sexpr{sim3[13,2]} & \Sexpr{sim3[22,1]} & \Sexpr{sim3[22, 2]} & \Sexpr{sim4[4, 1]} & \Sexpr{sim4[4, 2]} \\
+  30  &  2  & \Sexpr{sim3[5,1]} & \Sexpr{sim3[5,2]} & \Sexpr{sim3[14,1]} & \Sexpr{sim3[14,2]} & \Sexpr{sim3[23,1]} & \Sexpr{sim3[23, 2]} & \Sexpr{sim4[5, 1]} & \Sexpr{sim4[5, 2]} \\
+  30  &  3  & \Sexpr{sim3[6,1]} & \Sexpr{sim3[6,2]} & \Sexpr{sim3[15,1]} & \Sexpr{sim3[15,2]} & \Sexpr{sim3[24,1]} & \Sexpr{sim3[24, 2]} & \Sexpr{sim4[6, 1]} & \Sexpr{sim4[6, 2]} \\
+  \hline
+  50  &  1  & \Sexpr{sim3[7,1]} & \Sexpr{sim3[7,2]} & \Sexpr{sim3[16,1]} & \Sexpr{sim3[16,2]} & \Sexpr{sim3[25,1]} & \Sexpr{sim3[25, 2]} & \Sexpr{sim4[7, 1]} & \Sexpr{sim4[7, 2]} \\
+  50  &  2  & \Sexpr{sim3[8,1]} & \Sexpr{sim3[8,2]} & \Sexpr{sim3[17,1]} & \Sexpr{sim3[17,2]} & \Sexpr{sim3[26,1]} & \Sexpr{sim3[26, 2]} & \Sexpr{sim4[8, 1]} & \Sexpr{sim4[8, 2]} \\
+  50  &  3  & \Sexpr{sim3[9,1]} & \Sexpr{sim3[9,2]} & \Sexpr{sim3[18,1]} & \Sexpr{sim3[18,2]} & \Sexpr{sim3[27,1]} & \Sexpr{sim3[27, 2]} & \Sexpr{sim4[9, 1]} & \Sexpr{sim4[9, 2]} \\
+  \bottomrule
+  \end{tabular}
+\caption[Semiparametric regulation Monte Carlo simulation]{Coverage and length of $95\%$ regulation intervals for data from the sine wave experiment with $\sigma_\epsilon = 0.05$. \label{tab:pspline-monte-carlo-2}}
+\end{table}
+
+\subsection{Whiskey age example}
+\label{sec:whiskey}
+The point of this example is to demonstrate how our bias-corrected semiparametric approach to calibration compares against a simpler parametric model (when one is available). To this end, we analyze the whiskey data from \citet{schoeneman_analytical_1971} presented in Figure~\ref{fig:whiskey-scatter}. The data give the proof (measured as twice the percentage of alcohol by volume, denoted 2ABV) of whiskey stored in a charred oak barrel against time in years; clearly, some curvature is present. Suppose a new sample is obtained from the same barrel and that the proof is observed to be $y_0 = 108 \text{ 2ABV}$. It is desired to estimate how long this batch has been aged.
+
+<<whiskey-scatter, echo = FALSE, opts.label = 'fig.7by4', par = TRUE, fig.pos = 'H', fig.scap = 'Scatterplot of the whiskey data', fig.cap = 'Scatterplot of the whiskey data.'>>=
+whiskey <- data.frame(
+  age=c(0, 0.5, 1, 2, 3, 4, 5, 6, 7, 8),
+  proof=c(104.6, 104.1, 104.4, 105.0, 106.0, 106.8, 107.7, 108.7, 110.6, 112.1)
+)
+mod1 <- lm(proof ~ age + I(age^2), data=whiskey)
+mod2 <- with(whiskey, pspline(age, proof, degree=2))
+cal1 <- invest(mod1, y0=108)
+cal2 <- invest(mod2, y0=108)
+plot(proof ~ age, data=whiskey, xlab="Age (years)", ylab="Proof", 
+     pch=19)
+@
+
+We begin by fitting a simple quadratic P-spline with five knots:
+\begin{equation*}
+  \mu(\text{\texttt{age}}_i) = \beta_0 + \beta_1\text{\texttt{age}}_i + \beta_2\text{\texttt{proof}}_i^2 + \sum_{k = 1}^5\alpha_k\left( \text{\texttt{proof}}_i - \xi_k \right)_+^2.
+\end{equation*}
+The number of knots and their placement were determined automatically using the methods described in Section~\ref{sec:penalized-regression-splines}. The fitted model is depicted in the right-hand side of Figure~\ref{fig:whiskey-calibration}. It appears from the scatterplot that a simple quadratic may be sufficient (i.e., $\alpha_i = 0$, $i = 1, \dotsc, 5$); this fit is depicted in the left side of Figure~\ref{fig:whiskey-calibration}. Both models are different, but the fits are indistinguishable to the human eye. In fact, both models produce identical calibration intervals for $x_0$ (when rounded to four decimal places). For the linear model, we have $\wh{x}_0 = \Sexpr{cal1$estimate}$ years with a 95\% confidence interval for $x_0$ of $(\Sexpr{cal1$lower}, \Sexpr{cal1$upper})$. Similarly, for the P-spline model, we have $\wh{x}_0 = \Sexpr{cal2["estimate"]}$ years with a 95\% (bias-corrected) confidence interval for $x_0$ of $(\Sexpr{cal2["lower"]}, \Sexpr{cal2["upper"]})$. The reason we get the same answer from both models is that the polynomial basis part of the penalized spline model is sufficient for modeling the curvature of $\mu(\texttt{age})$, therefore, the spline basis terms are effectively "zeroed out" (see Figure~\ref{fig:whiskey-paths}). Although our P-spline approach to obtaining calibration intervals requires large samples, in this small sample example they happen to coincide with the (classical) inversion limits from the quadratic linear model. If we did not correct for bias in the P-spline model, however, the confidence interval obtained for $x_0$ would be $(4.7223, 5.7016)$, which is too narrow.
+
+<<whiskey-calibration, echo = FALSE, opts.label = 'fig.7by5', par = TRUE, fig.pos = 'H', fig.scap = 'Fitted  models for the whiskey data', fig.cap = 'Fitted  models for the whiskey data. \\textit{Left}: Quadratic linear model with 95\\% (pointwise) prediction band. \\textit{Right}: Quadratic P-spline with five knots and 95\\% (pointwise) bias-corrected prediction band.'>>=
+par(mfrow = c(1, 2))
+plotFit(mod1, xlab = "Age (years)", ylab = "Proof", pch = 19, 
+        lwd.fit = 2, interval = "prediction", shade = T, col.pred = "skyblue")
+parusr <- par("usr")
+abline(h = 108)
+segments(cal1$lower, 108, cal1$lower, parusr[3])
+segments(cal1$upper, 108, cal1$upper, parusr[3])
+segments(cal1$estimate, 108, cal1$estimate, parusr[3])
+
+newx <- seq(from = 0, to = 8, length = 500)
+pred <- predict(mod2, newdata = newx, interval = "prediction")
+plot(whiskey, xlab = "Age (years)", ylab = "Proof", pch = 19, 
+     ylim = c(103.1969, 113.2232), # should get from par("usr")
+     panel.first = {
+       polygon(c(newx, rev(newx)), c(pred$lwr, rev(pred$upr)), col = "plum2", 
+               border = "plum2")
+     })
+parusr <- par("usr")
+lines(newx, pred$fit, lwd = 2)
+abline(h = 108)
+segments(cal2["lower"], 108, cal2["lower"], parusr[3])
+segments(cal2["upper"], 108, cal2["upper"], parusr[3])
+segments(cal2["estimate"], 108, cal2["estimate"], parusr[3])
+@
+
+<<whiskey-paths, echo = FALSE, opts.label = 'fig.7by4', par = TRUE, fig.pos = 'H', fig.scap = 'Spline coefficient paths for the whiskey example', fig.cap = 'Profiles of spline coefficients for the P-spline in Figure~\\ref{fig:whiskey-calibration}, as the smoothing parameter $\\lambda$ is varied from zero to three. Coefficients are plotted versus the smoothing parameter $\\lambda$; the REML estimate is $\\wh{\\lambda} = 385.2228$.'>>=
+C.mat <- mod2$C
+CTC <- t(C.mat) %*% C.mat
+D.mat <- mod2$D
+lambda <- seq(from = 0, to = 3, length = 500)
+alpha.vec <- NULL
+for (i in 1:length(lambda)) {
+  b <- qr.solve(CTC + lambda[i]^4*D.mat, tol = 1e-10) %*% t(C.mat) %*% whiskey$proof
+  alpha.vec <- rbind(alpha.vec, cbind(b[-(1:3)], 1:5, lambda[i]))
+}
+alpha.vec <- as.data.frame(alpha.vec)
+names(alpha.vec) <- c("coef", "sub", "lambda")
+plot(coef ~ lambda, data = alpha.vec, type = "n", 
+     xlab = expression(lambda), ylab = "Spline coefficients")#, log = "x")
+for (i in 1:26) {
+  lines(coef ~ lambda, data = alpha.vec[alpha.vec$sub == i, ], 
+        col = "green3", lwd = 2)
+}
+abline(h = 0, lwd = 2)
+@
+
+\section{Bayesian semiparametric calibration}
+\label{sec:pspline-bayesian}
+The mixed model P-spline, Equation~\eqref{eqn:pspline-lmm}, provides a simple method for estimating the smoothing parameter and accounting for bias in calibration intervals. These intervals, however, do not account for the variability of the estimated smoothing parameter $\wh{\lambda} = \wh{\sigma}_\epsilon^2/\wh{\sigma}_\alpha^2$; similar to inference in LMMs which typically ignores the variability of $\wh{\bm{V}}$. This problem can be remedied by adopting a fully Bayesian approach which we now discuss. 
+
+Let $\pi(\cdot)$ denote a probability density function. Following \citet{hoadley_bayesian_1970}, we assume that the calibration experiment contains no information about $x_0$ and that the priors for $x_0$ and the calibration experiment are independent; thus,
+\begin{equation*}
+  \pi(x_0, \bm{\beta}, \bm{\alpha}, \sigma_\epsilon^2, \sigma_\alpha^2) = \pi(x_0)\pi(\bm{\beta}, \bm{\alpha}, \sigma_\epsilon^2, \sigma_\alpha^2).
+\end{equation*}
+
+The mixed model representation, Equation~\eqref{eqn:pspline-lmm}, has $\bm{\alpha} \sim \mc{N}(0, \sigma_\alpha^2\bm{I})$. A fully Bayesian approach, however, requires a prior distribution on the parameters $(\bm{\beta}, \sigma_\epsilon^2, \sigma_\alpha^2, x_0)$. Following standard convention, we assume, a priori, that the fixed-effects are independent and assign vague, independent priors to $(\bm{\beta}, \sigma_\epsilon^2, \sigma_\alpha^2)$. We used the vague (but proper) priors
+\begin{align*}
+  \beta_j &\sim \mc{N}\left(0, \sigma_\beta^2\right), \quad j = 1, \dotsc, p+1, \\
+  \sigma_\epsilon^2 &\sim \mc{IG}\left(a, b\right), \\
+  \sigma_\alpha^2 &\sim \mc{IG}\left(c, d\right),
+\end{align*}
+where $\mc{IG}$ stands for the inverse gamma distribution. The variance $\sigma_\beta^2$ should be chosen large enough (say $10^6$) so that (for all intents and purposes) the $\beta_j$'s are uniform. Similarly, the parameters $a$, $b$, $c$, and $d$ should be small (say $10^{-6}$). These distributions can be considered as an approximate representation of vagueness in the absence of good prior information. In addition, we assume that the prior for $x_0$, the predictor value of interest, is uniform over the experimental range: $x_0 \sim U[a, b]$. 
+
+The (unnormalized) posterior density of $(x_0, \bm{\beta}, \bm{\alpha}, \sigma_\epsilon^2, \sigma_\alpha^2)$ is given by
+\begin{align*}
+  \pi(x_0, \bm{\beta}, \bm{\alpha}, \sigma_\epsilon^2, \sigma_\alpha^2 | \text{data}) &= \pi(x_0, \bm{\beta}, \bm{\alpha}, \sigma_\epsilon^2, \sigma_\alpha^2 | \bm{y}, \bm{y}_0) \\
+  &\propto \pi(\bm{y}, \bm{y}_0 | x_0, \bm{\beta}, \bm{\alpha}, \sigma_\epsilon^2, \sigma_\alpha^2)\pi(x_0, \bm{\beta}, \bm{\alpha}, \sigma_\epsilon^2, \sigma_\alpha^2) \\
+  &\propto \pi(\bm{y}_0 | x_0, \bm{\beta}, \bm{\alpha}, \sigma_\epsilon^2, \sigma_\alpha^2)\pi(\bm{y} | \bm{\beta}, \bm{\alpha}, \sigma_\epsilon^2, \sigma_\alpha^2)\pi(\bm{\beta}, \bm{\alpha}, \sigma_\epsilon^2, \sigma_\alpha^2)\pi(x_0) \\
+  &\propto \pi(\bm{y}_0 | x_0, \bm{\beta}, \bm{\alpha}, \sigma_\epsilon^2)\pi(\bm{y} | \bm{\beta}, \bm{\alpha}, \sigma_\epsilon^2)\pi(\bm{\beta})\pi(\bm{\alpha}|\sigma_\alpha^2)\pi(\sigma_\epsilon^2)\pi(\sigma_\alpha^2)\pi(x_0),
+  %&\propto \pi(\bm{y}_0 | x_0, \bm{\beta}, \bm{\alpha}, \sigma_\epsilon^2, \sigma_\alpha^2)\pi(\bm{\beta}, \bm{\alpha}, \sigma_\epsilon^2, \sigma_\alpha^2 | \bm{x}, \bm{y})\pi(x_0),
+\end{align*}
+where $\bm{y}$ and $\bm{y}_0$ represent the observed data from the first and second stages of the calibration experiment, respectively. It is relatively straightforward to show that (see Section~\ref{sec:conditional-theta} in the appendix) the conditional posterior of $(\bm{\beta}, \bm{\alpha})$ is proportional to
+\begin{equation*}
+  \exp\left\{ -\frac{1}{2\sigma_\epsilon^2}\left(\norm{\bm{y}_0 - \bm{X}_0\bm{\beta} - \bm{Z}_0\bm{\alpha}}^2 + \frac{\sigma_\epsilon^2}{\sigma_\alpha^2}\norm{\bm{\alpha}}^2\right) \right\},
+\end{equation*}
+where
+\begin{equation*}
+  \bm{y}_0 = \begin{bmatrix} \bm{y} \\ y_0 \end{bmatrix}, \quad
+  \bm{X}_0 = \begin{bmatrix} \bm{X} \\ \bm{x}_0' \end{bmatrix}, \quad
+  \bm{Z}_0 = \begin{bmatrix} \bm{Z} \\ \bm{z}_0' \end{bmatrix}
+\end{equation*}
+are augmented data vectors and matrices. Upon completing the square we have that
+\begin{equation*}
+  \bm{\beta}, \bm{\alpha}|\bm{y}_0, \bm{y}, x_0, \sigma_\epsilon^2, \sigma_\alpha^2 \sim \mc{N}\left\{ \left(\bm{\Omega}_0'\bm{\Omega}_0 + \frac{\sigma_\epsilon^2}{\sigma_\alpha^2}\bm{D}\right)^{-1}\bm{\Omega}_0'\bm{y}_0, \sigma_\epsilon^2\left(\bm{\Omega}_0'\bm{\Omega}_0 + \frac{\sigma_\epsilon^2}{\sigma_\alpha^2}\bm{D}\right)^{-1} \right\},
+\end{equation*}
+where $\bm{\Omega}_0 = (\bm{X}_0, \bm{Z}_0)$. In a similar fashion, the conditional posteriors of $\sigma_\epsilon^2$ and $\sigma_\alpha^2$ are the inverse gammas:
+\begin{align*}
+  \sigma_\epsilon^2|\bm{y}_0, \bm{y}, \bm{\beta}, \bm{\alpha}, \sigma_\alpha^2, x_0 &\sim \mc{IG}\left( a + \frac{n+1}{2}, b + \frac{1}{2}\norm{\bm{y}_0 - \bm{X}_0\bm{\beta} - \bm{Z}_0\bm{\alpha}}^2 \right), \\
+    \sigma_\alpha^2|\bm{y}_0, \bm{y}, \bm{\beta}, \bm{\alpha}, \sigma_\epsilon^2, x_0 &\sim \mc{IG}\left( c + \frac{K}{2}, d + \frac{1}{2}\norm{\bm{\alpha}}^2 \right),
+\end{align*}
+where $K$ is the number of knots or random effects (see Section~\ref{sec:conditional-variances} in the appendix). The conditional posterior of $x_0$ is more difficult to obtain analytically, however, regardless of the prior $\pi(x_0)$. This makes it difficult (or impossible) to obtain a full Gibbs sampler here, nonetheless, we can sample from the posterior of $x_0$ using more specialized Markov Chain Monte Carlo methods such as the \textit{Metropolis-Hastings} algorithm (see, for example, \citet[chap. 7]{robert_monte_2004}). Thus, as discussed in \citep[pg. 292]{gelman_bayesian_2003}, we could update the parameters one at a time using Gibbs sampling for $\left(\bm{\beta}, \bm{\alpha}, \sigma_\epsilon^2, \sigma_\alpha^2\right)$ and a metropolis update for $x_0$. We illustrate this approach with the following example involving radioimmunoassays. The data were analyzed using the \code{JAGS} software within \code{R} via the \pkg{rjags} package.
+
+\subsection{Enzyme-linked immunosorbent assay (ELISA) example}
+\citet{ori_constructing_1995} derived a $95\%$ calibration interval for the unknown concentration in a radioimmunoassay problem using the nonparametric bootstrap. We demonstrate our method on the same dataset and compare the results. The data, plotted in Figure~\ref{fig:elisa-scatter}, consists of 23 distinct concentrations with four (independent) replicates of the response at each concentration. The results from analyzing these data are summarized in Table~\ref{tab:elisa} at the end of this section.
+
+<<elisa-scatter, echo = FALSE, opts.label = 'fig.7by4', par = TRUE, fig.pos = 'H', fig.scap = 'ELISA data', fig.cap = 'ELISA data.', message = FALSE>>=
+plot(elisa, xlab = "Concentration", ylab = "Response")
+@
+
+The four parameter logistic model, 
+\begin{equation*}
+  \mc{Y}_i = \beta_1 + \frac{\beta_2 - \beta_1}{1 + \exp\left\{ \beta_4(\log x_i - \beta_3) \right\}} + \epsilon_i, \quad \epsilon_i \stackrel{iid}{\sim} \mc{N}\left(0, \sigma_\epsilon^2\right), \quad i = 1, \dotsc, n,
+\end{equation*}
+provides a reasonable parametric fit model to the ELISA data. Although we assume the errors are normal with constant variance, \citet{ori_constructing_1995} more generally assumed $\epsilon_i \stackrel{iid}{\sim} (0, \sigma_i^2)$, where $\sigma_i = \sigma\left(\mu(x_i, \bm{\beta})\right)^\theta$. This adds an unnecessary complication to the calibration model and so we simply assume constant variance (standard residual plots do not reveal any serious indication of heteroscedastic errors). Following \citet{ori_constructing_1995}, we assume we have a new observation $y_0 = 20$ with unknown concentration $x_0$. The frequentist (i.e., classical) estimate of $x_0$ is rather straightforward to derive
+\begin{equation*}
+  \wh{x}_0 = \exp\left\{\frac{1}{\wh{\beta}_4}\log\left(\frac{\wh{\beta}_2-y_0}{y_0-\wh{\beta}_1}\right) + \wh{\beta}_3\right\} = 9.1837.
+\end{equation*}
+The 95\% inversion limits for $x_0$ based on Equation~\eqref{eqn:nonlinear-inversion-interval} are $(7.356, 11.657)$---see Figure~\ref{fig:elisa-nls}. 
+
+<<elisa-nls, echo = FALSE, opts.label = 'fig.7by4', par = TRUE, fig.pos = 'H', fig.scap = 'Four parameter logistic model for the ELISA data', fig.cap = 'Nonlinear least squares fit of the ELISA data to the four parameter logistic model with (pointwise) 95\\% prediction band.'>>=
+mod1 <- nls(resp ~ b1 + (b2 - b1)/(1 + exp(b4*(log(conc) - b3))), 
+            start = list(b1 = 25, b2 = 1, b3 = 1, b4 = 1), data = elisa)
+cal1 <- invest(mod1, y0 = 20)
+plotFit(mod1, interval = "prediction", shade = T, #col.pred = "grey", 
+        #border.pred = "black", lty.pred = 2, 
+        lwd.fit = 2, xlab = "Concentration", ylab = "Response")
+abline(h = 20, lwd = 1)
+segments(cal1$lower, -5, cal1$lower, 20, lwd = 1)
+segments(cal1$upper, -5, cal1$upper, 20, lwd = 1)
+segments(cal1$estimate, -5, cal1$estimate, 20, lwd = 1)
+@
+
+Figure~\ref{fig:elisa-jags} shows a fitted semiparametric calibration curve, a quadratic P-spline with five interior knots. Also shown is the posterior mean based on a fully Bayesian P-spline model. Seeing as how the concentration should not be negative, we used a $\mc{U}[0, 50]$ prior for $x_0$, though, lognormal or gamma priors may also be reasonable. The frequentist estimate of $x_0$ is obtained by (numerically) inverting the fitted P-spline: $\wh{x}_0 = 9.345$. A (bias-corrected) inversion interval for $x_0$ based on Equation~\eqref{eqn:bc-inversion-interval} is $(7.462, 11.711)$. As previously mentioned, this interval does not account for the variability of the estimated smoothing parameter $\wh{\sigma}_\epsilon^2/\wh{\sigma}_\alpha^2$, hence, we expect the Bayesian credible interval to be slightly wider. The estimator we use for the Bayesian model is the posterior mode of $x_0$ which is equal to $9.285$. There are a number of ways to compute a 95\% credible interval from a given posterior; for example, \textit{highest posterior density} (HPD) intervals. Here we simply report the 0.025 and 0.975 quantiles of the posterior which are $7.250$ and $11.776$, respectively. As noted earlier, these limits are slightly wider than the corresponding frequentist limits, but this extra wideness is likely due to the added uncertainty of the estimated smoothing parameter. \citet{ori_constructing_1995} also obtained calibration intervals for these data. Their approach involved bootstrapping a cross-validated cubic smoothing spline, but did not account for bias in $\wh{\mu}(x)$. For a brief discussion on bias correction for nonparametric regression using the bootstrap see \citet[pp. 362-366]{davison_bootstrap_1997}.
+
+<<elisa-jags, echo = FALSE, opts.label = 'fig.7by4', par = TRUE, fig.pos = 'H', fig.scap = 'Bayesian nonparametric calibration for ELISA data', fig.cap = 'Nonparametric calibration for ELISA data. \\textit{Left}: Bayesian P-spline with posterior and 95\\% credible interval for $x_0$. The shaded blue region represents the (pointwise) prediction band and the density curve represents the posterior of $x_0$. \\textit{Right}: Mixed-effects model P-spline with bias-corrected 95\\% calibration interval for $x_0$. The shaded blue region represents the (pointwise) bias-corrected predction band.', message = FALSE>>=
+
+## P-spline model and bias-corrected (inversion) calibration intervals
+mod2 <- with(elisa, pspline(conc, resp, degree = 2))
+cal2 <- invest(mod2, y0 = 20)
+
+## Load coda samples from JAGS model
+load("/home/w108bmg/Desktop/JAGS models/elisa-jags/elisa-jags.RData")
+newx <- seq(from = 0, to = 50, length = 250)
+
+## Plot smooths with 95% prediction intervals
+par(las = 1, cex.axis = 0.9, mfrow = c(1, 2))
+
+mu <- apply(mu.post, 2, mean)
+pred <- apply(pred.post, 2, quantile, prob = c(0.025, 0.975))
+plot(elisa, type = "n", ylim = c(0, 30),
+     xlab = "Concentration", ylab = "Response")
+polygon(c(newx, rev(newx)), c(pred[1,], rev(pred[2,])),
+        col = "skyblue", border = "skyblue")
+points(elisa)
+lines(newx, mu, lwd = 2)
+dens.x0 <- density(x0.post)
+polygon(dens.x0$x, (10/max(dens.x0$y))*dens.x0$y, col = "plum2", 
+        border = "black", lwd = 2)
+rug(hdi(x0.post), lwd = 3, lend = 2)
+abline(v = dens.x0$x[which.max(dens.x0$y)], lty = 2)
+
+pspline.lwr <- predict(mod2, newx, interval = "prediction")$lwr
+pspline.upr <- predict(mod2, newx, interval = "prediction")$upr
+plot(elisa, type = "n",
+     xlab = "Concentration", ylab = "Response")
+abline(v = mod2$knots, col = "darkgrey", lty = 1)
+polygon(c(newx, rev(newx)), c(pspline.lwr, rev(pspline.upr)),
+        col = "skyblue", border = "skyblue")
+points(elisa)
+lines(newx, predict(mod2, newx), lwd = 2)
+abline(h = 20, col = "purple", lwd = 1)
+segments(cal2[2], 20, cal2[2], -5, col = "purple", lwd = 1)
+segments(cal2[3], 20, cal2[3], -5, col = "purple", lwd = 1)
+@
+
+\begin{table}[H]
+\label{tab:elisa}
+\centering
+\begin{tabular}{llc}
+  \toprule
+  \textbf{Method} & \textbf{Estimate} & \textbf{95\% interval} \\
+  \midrule
+  Parametric (homoscedastic errors)   & $9.184$ & $(7.356, 11.657)$ \\
+  P-spline (bias-corrected)            & $9.345$ & $(7.462, 11.711)$ \\
+  P-spline (Bayesian)                 & $9.285$ & $(7.250, 11.776)$ \\
+  \bottomrule
+\end{tabular}
+\caption[Calibration results for the ELISA data]{Point and interval estimates for $x_0$ for the ELISA data with $y_0 = 20$.}
+\end{table}
+
+\section{Discussion}
+\label{sec:semipar-discussion}
+We have proposed a new method for calibration in a semiparametric setting based on the mixed model approach to smoothing that corrects for bias in the smoothed calibration curve. While the idea of using LMMs for penalized smoothing is not new (see, for example, \citet[pp. 13 - 17]{demidenko_mixed_2013}), this approach has never been adapted for the calibration problem as we have proposed here. By using a simple Monte Carlo experiment, we have demonstrated that bias-corrected prediction intervals can be used to (numerically) obtain calibration intervals for the unknown $x_0$ that have good coverage probabilities. We have discussed a situation where this bias-correction is more serious (i.e., regulation, or rather, calibration where the unknown $x_0$ corresponds to some specified mean response $\mu_0$). Finally, we developed a Bayesian framework for semiparametric calibration by extending the approach originally put forth by \citet{hoadley_bayesian_1970} for linear calibration (see Section~\ref{sec:bayesian}). The frequentist framework, while fast and simple, has the same disadvantage inherent in LMM inference; that is, the variance of the estimated smoothing parameter (which is a function of the estimated variance components) is ignored. The Bayesian approach handles this by incorporating prior information for all unknown parameters in the model, leading to slightly wider calibration intervals. The Bayesian approach we presented, however, is slower and more difficult to implement in practice.
+
+\subsection{Priors}
+Although we used a uniform prior for $x_0$ in our examples, such a prior for $x$ is unlikely to be useful in general and we recommend a more careful elicitation of prior information. A sensitivity analysis should also be carried out to see if the results are sensitive to the choice of prior for $x_0$. Although inverse gamma priors are commonly used in practice as noninformative priors for scale parameters in hierarchical models (e.g., the variance components in a LMM), \citet{gelman_prior_2006} argued against their use. Instead, Gelman adovcated the use of conditionally conjugate priors from a new folded-noncentral-$t$ family.
+
+\subsection{Future work}
+The methods proposed in this chapter open the door to plenty of future research opportunities. Perhaps, the most interesting (and logical) next step would be the inclusion of constraints. For example, we have assumed that the calibration curve is monotonic over the range of interest. Fortunately, this is not usually a concern when the data are collected from a carefully designed experiment. The semiparametric fit, however, is not necessarily monotonic for every value of the smoothing parameter which may cause problems when, say, obtaining a bias-corrected calibration interval. It is possible, however, to incorporate constraints, such as monotonicity, using the general projection method described in \citet{mammen_general_2001}. Until such a constraint can be smoothly incorporated (no pun intended) into our semiparametric approach to calibration, we can instead rely on inference regarding the first derivative of $f$ as described in \citet[pp. 151-156]{ruppert_semiparametric_2003}. For instance, if we assume that $f$ is monotonically increasing (decreasing) over the interval $[a, b]$, then a plot of the estimated first derivative of the regression function should lie completely above (below) the $x$-axis. This derivative function can be estimated in exactly the same way as the regression function itself, that is, using P-splines. Therefore, a thorough calibration analysis might include a plot of the data with fitted mean response, supplemented by a plot of the estimated first derivative function (possibly with a confidence band). For instance, we might supplement our analysis of the ELISA data with the following graphic:
+
+<<derivative-plot, echo=FALSE, fig.width=5, fig.height=4, par=TRUE, fig.pos='H', fig.scap='First derivative plot for the ELISA example', fig.cap='Estimate of the first derivative of the regression function for the ELISA example with a 95\\% global confidence band. A horizontal reference line is displayed at zero on the $y$-axis. This plot was produced using the \\code{R} package \\pkg{SemiPar}.', error=FALSE, message=FALSE, warning=FALSE>>=
+library(SemiPar)
+attach(elisa)
+elisa.spm <- spm(resp ~ f(conc, basis = "trunc.poly", degree = 2))
+plot(elisa.spm, drv = 1, shade.col = "grey", rug.col = "transparent", 
+     xlab = "x (i.e., Concentration)", ylab = expression(mu * minute (x)))
+detach(elisa)
+detach(package:SemiPar)
+@
