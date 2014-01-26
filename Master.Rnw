@@ -94,6 +94,7 @@
 \newcommand{\X}{\ensuremath{\bm{X}}}
 \newcommand{\Z}{\ensuremath{\bm{Z}}}
 \newcommand{\Prob}{\operatorname{Pr}}
+\newcommand{\RSS}{\operatorname{RSS}}
 
 %% Allow display breaks
 %\allowdisplaybreaks

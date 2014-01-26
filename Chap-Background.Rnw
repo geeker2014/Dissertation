@@ -46,15 +46,10 @@ Another special case of the linear model \eqref{eqn:linmod} is when $x_{ij} = g_
 Notice that a polynomial model is linear in the parameters even though it is nonlinear in the predictor variable; hence, it is a linear model.
 
 \subsection{Estimating the model parameters}
-Estimation of $\bm{\beta}$ in the linear model \eqref{eqn:linmod} can be carried out via \ac{LS}. The ordinary \ac{LS} estimator of $\bm{\beta}$ minimizes the sum of squares, $S\left(\bm{\beta}\right)$, defined by
-\begin{equation}
-\label{eqn:ss-linmod}
-  S(\bm{\beta}) = \norm{\bc{Y} - \X\bm{\beta}}^2.
-\end{equation}
-Simple calculus gives the ordinary \ac{LS} estimator of $\bm{\beta}$ in the \ac{LM} as 
+Estimation of $\bm{\beta}$ in the linear model \eqref{eqn:linmod} can be carried out via \ac{LS}. The ordinary \ac{LS} estimator of $\bm{\beta}$ minimizes the residual sum of squares, 
 \begin{equation}
 \label{eqn:beta-ols}
-  \wh{\bm{\beta}} = \argmin{\bm{\beta}} \norm{\bc{Y} - \X\bm{\beta}}^2 = \left(\X\trans\X\right)^{-1}\X\trans\bc{Y}
+  \wh{\bm{\beta}} = \argmin{\bm{\beta}} \norm{\bc{Y} - \X\bm{\beta}}^2 = \left(\X\trans\X\right)^{-1}\X\trans\bc{Y}.
 \end{equation}
 If we make the additional assumption that the errors are normally distributed, then estimation can also be carried out by the method of \ac{ML}. This has the benefit of simultaneously providing an estimator for both $\bm{\beta}$ and $\sigma_\epsilon^2$. To proceed, we need to maximize the likelihood
 \begin{equation*}
@@ -123,20 +118,20 @@ Often in practice there is an underlying theoretical model relating the response
 where $\mu(\cdot)$ is a known expectation function that is nonlinear in at least one of the parameters in $\bm{\beta}$, and $\epsilon_i \stackrel{iid}{\sim} \mc{N}(0, \sigma_\epsilon^2)$.
 
 \subsection{Estimating the model parameters}
-Borrowing from the notation in \citet{seber_nonlinear_2003}, let $f_i(\bm{\beta}) = \mu(x_i; \bm{\beta})$,
+Borrowing from the notation in \citet{seber_nonlinear_2003}, let $\mu_i(\bm{\beta}) = \mu(x_i; \bm{\beta})$,
 \begin{equation*}
-  \bm{\mu}(\bm{\beta}) = \left( f_1(\bm{\beta}), \dotsc, f_N(\bm{\beta}) \right)\trans,
+  \bm{\mu}(\bm{\beta}) = \left( \mu_1(\bm{\beta}), \dotsc, \mu_N(\bm{\beta}) \right)\trans,
 \end{equation*}
 and
 \begin{equation*}
-  \bm{D}(\bm{\beta}) = \frac{\partial\bm{\mu}(\bm{\beta})}{\partial\bm{\beta}\trans} = \Bigg\lbrace_\text{row } \bigg\lbrace_\text{col } \frac{\partial f_i(\bm{\beta})}{\partial\beta_j} \bigg\rbrace_{i = 1}^n \Bigg\rbrace_{j = 1}^p.
+  \bm{D}(\bm{\beta}) = \frac{\partial\bm{\mu}(\bm{\beta})}{\partial\bm{\beta}\trans} = \Bigg\lbrace_\text{row } \bigg\lbrace_\text{col } \frac{\partial \mu_i(\bm{\beta})}{\partial\beta_j} \bigg\rbrace_{i = 1}^n \Bigg\rbrace_{j = 1}^p.
 \end{equation*}
 For convenience, let $\widehat{\bm{D}} = \bm{D}(\wh{\bm{\beta}})$.
 
-The approach to estimating $\bm{\beta}$ in the nonlinear model \eqref{eqn:nonlinemod} is similar to the approach in the linear model \eqref{eqn:linmod}. That is, we choose the value of $\bm{\beta}$ that minimizes the sum of squares $S(\bm{\beta})$ defined by
+The approach to estimating $\bm{\beta}$ in the nonlinear model \eqref{eqn:nonlinemod} is similar to the approach in the linear model \eqref{eqn:linmod}. That is, we choose the value of $\bm{\beta}$ that minimizes the residual sum of squares, $\RSS(\bm{\beta})$, defined by
 \begin{equation}
 \label{eqn:ss-nonlinear}
-  S(\bm{\beta}) = \norm{\bc{Y} - \bm{\mu}(\bm{\beta})}^2.
+  \RSS(\bm{\beta}) = \norm{\bc{Y} - \bm{\mu}(\bm{\beta})}^2.
 \end{equation}
 However, since $\mu(\cdot)$ is nonlinear in the parameters $\bm{\beta}$, minimizing Equation~\eqref{eqn:ss-nonlinear} requires iterative techniques such as methods of \textit{steepest descent} or the \textit{Gauss-Newton} algorithm, which we describe below. 
 
@@ -147,10 +142,10 @@ Given a starting value or current guess $\bm{\beta}^{(0)}$ of the value of $\bm{
 \end{equation}
 The derivative matrix $\bm{D}(\bm{\beta})$ plays the same role as the design matrix $\X$ in the linear model \eqref{eqn:linmod}, except that $\bm{D}(\bm{\beta})$ may depend on the unknown regression parameters $\bm{\beta}$. Substituting \eqref{eqn:taylor-nonlinear} into Equation~\eqref{eqn:ss-nonlinear}, we get 
 \begin{align}
-  S(\bm{\beta}) &\approx \norm{\bc{Y} - \bm{\mu}(\bm{\beta}^{(0)}) - \bm{D}(\bm{\beta}^{(0)})(\bm{\beta} - \bm{\beta}^{(0)})}^2 \label{eqn:ss-approximate} \\
+  \RSS(\bm{\beta}) &\approx \norm{\bc{Y} - \bm{\mu}(\bm{\beta}^{(0)}) - \bm{D}(\bm{\beta}^{(0)})(\bm{\beta} - \bm{\beta}^{(0)})}^2 \label{eqn:ss-approximate} \\
   &= \norm{\bc{Y}^{(0)} - \X^{(0)}(\bm{\beta} - \bm{\beta}^{(0)})}^2,
 \end{align}
-where $\bc{Y}^{(0)} = \bc{Y} - \bm{\mu}(\bm{\beta}^{(0)})$, and $\X^{(0)} = \bm{D}(\bm{\beta}^{(0)})$. Equation~\eqref{eqn:ss-approximate} is of the same form as the sum of squares for the linear model \eqref{eqn:ss-linmod}. Based on this approximation, the \ac{LS} estimate of $\bm{\beta}$ is then
+where $\bc{Y}^{(0)} = \bc{Y} - \bm{\mu}(\bm{\beta}^{(0)})$, and $\X^{(0)} = \bm{D}(\bm{\beta}^{(0)})$. Equation~\eqref{eqn:ss-approximate} is of the same form as the sum of squares for the linear model. Based on this approximation, the \ac{LS} estimate of $\bm{\beta}$ is then
 \begin{equation*}
   \wh{\bm{\beta}} = \bm{\beta}^{(0)} + \left[ \X^{(0)\trans}\X^{(0)} \right]^{-1}\X^{(0)\trans}\bc{Y}^{(0)}.
 \end{equation*}
@@ -329,20 +324,20 @@ Notice, however, that the \ac{GLS} estimator---which happens to be the \ac{BLUE}
 \end{equation}
 This causes some difficulties, mostly in terms of finite-sample inference, since there is no simple way to account for the variability of $\widehat{\bm{V}}$ when calculating $\var\left\{\wh{\bm{\beta}}\right\}$. See, for example, \citet[pp. 165-167]{mcculloch_generalized_2008}.
 
-A technique known as \textit{best linear unbiased prediction} is commonly used to estimate the random effects $\bm{\alpha}$. It can be shown \citep{henderson_sire_1973} that the \ac{BLUE} of $\bm{\beta}$ and the \ac{BLUP} of $\bm{\alpha}$, denoted $\wt{\bm{\alpha}}$, simultaneously minimize
-\begin{equation}
-\label{eqn:henderson's-justification}
-  (\bc{Y} - \X\bm{\beta} - \Z\bm{\alpha})\trans\bm{R}^{-1}(\bc{Y} - \X\bm{\beta} - \Z\bm{\alpha}) + \bm{\alpha}\trans\bm{G}^{-1}\bm{\alpha}.
-\end{equation} 
-Henderson showed that the minimum of \eqref{eqn:henderson's-justification} occurs at
-\begin{align*}
+A technique known as \textit{best linear unbiased prediction} is commonly used to estimate the random effects $\bm{\alpha}$. It can be shown \citep{henderson_sire_1973} that the \ac{BLUE} of $\bm{\beta}$ and the \ac{BLUP} of $\bm{\alpha}$, denoted $\wt{\bm{\alpha}}$, can be determined simultaneously as the solutions to a penalized least squares problem,
+% \begin{equation}
+% \label{eqn:henderson's-justification}
+%   (\bc{Y} - \X\bm{\beta} - \Z\bm{\alpha})\trans\bm{R}^{-1}(\bc{Y} - \X\bm{\beta} - \Z\bm{\alpha}) + \bm{\alpha}\trans\bm{G}^{-1}\bm{\alpha}.
+% \end{equation} 
+% Henderson showed that the minimum of \eqref{eqn:henderson's-justification} occurs at
+\begin{align}
   \begin{bmatrix} 
     \wt{\bm{\beta}} \\ \wt{\bm{\alpha}} 
-  \end{bmatrix} &= \argmin{\bm{\beta}, \bm{\alpha}} (\bc{Y} - \X\bm{\beta} - \Z\bm{\alpha})\trans\bm{R}^{-1}(\bc{Y} - \X\bm{\beta} - \Z\bm{\alpha}) + \bm{\alpha}\trans\bm{G}^{-1}\bm{\alpha} \\
-  &= \bm{\Omega}(\bm{\Omega}\trans\bm{R}^{-1}\bm{\Omega} + \bm{D})\bm{\Omega}\trans\bm{R}^{-1}\bc{Y},
-\end{align*}
-where $\wt{\bm{\beta}}$ is as in \eqref{eqn:beta-gls}, $\wt{\bm{\alpha}} = \bm{G}\Z\trans\bm{V}^{-1}\left(\bc{Y} - \X\wt{\bm{\beta}}\right)$, $\bm{\Omega} = \left(\X; \Z\right)$ and $\bm{D} = \diag\left\{\bm{0}_{p \times p}, \bm{G}^{-1}\right\}$.
-For the special case $\bm{R} = \sigma_\epsilon^2\bm{I}$ and $\bm{G} = \sigma_\alpha^2\bm{I}$, Equation~\eqref{eqn:henderson's-justification} reduces to the \ac{PSS}
+  \end{bmatrix} &= \argmin{\bm{\beta}, \bm{\alpha}} (\bc{Y} - \X\bm{\beta} - \Z\bm{\alpha})\trans\bm{R}^{-1}(\bc{Y} - \X\bm{\beta} - \Z\bm{\alpha}) + \bm{\alpha}\trans\bm{G}^{-1}\bm{\alpha} \label{eqn:henderson} \\
+  &= \bm{\Omega}(\bm{\Omega}\trans\bm{R}^{-1}\bm{\Omega} + \bm{D})\bm{\Omega}\trans\bm{R}^{-1}\bc{Y} \nonumber,
+\end{align}
+where $\wt{\bm{\beta}}$ is as in \eqref{eqn:beta-gls}, $\wt{\bm{\alpha}} = \bm{G}\Z\trans\bm{V}^{-1}\left(\bc{Y} - \X\wt{\bm{\beta}}\right)$, $\bm{\Omega} = \left(\X; \Z\right)$, and $\bm{D} = \diag\left\{\bm{0}_{p \times p}, \bm{G}^{-1}\right\}$.
+For the special case $\bm{R} = \sigma_\epsilon^2\bm{I}$ and $\bm{G} = \sigma_\alpha^2\bm{I}$, the \ac{PSS}---the minimand in Equation~\eqref{eqn:henderson}--- reduces to
 \begin{equation}
 \label{eqn:lmm-pss}
   \frac{1}{\sigma_\epsilon^2}\norm{\bc{Y} - \X\bm{\beta} - \Z\bm{\alpha}}^2 +\frac{1}{\sigma_\alpha^2}\norm{\bm{\alpha}}^2.
