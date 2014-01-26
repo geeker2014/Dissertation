@@ -82,14 +82,14 @@ Recall the intuition behind the inversion interval. Let $I_\mathrm{pred}(x)$ be 
 \begin{equation*}
 \Pr\left\{x_0 \in J_\mathrm{cal}(\mc{Y}_0)\right\} = \Pr\left\{\mc{Y}_0 \in I_\mathrm{pred}(x) | x_0 = x\right\} = 1 - \alpha,
 \end{equation*}
-\citep{clark_calibration_1980}. In other words, a $100(1 - \alpha)\%$ confidence interval for $x_0$ can be obtained by inverting the a corresponding prediction interval for $\mc{Y}_0$. However, we need to make sure to "invert" an appropriate prediction interval (i.e., one that corrects for bias), otherwise, the resulting interval for $x_0$ will likely not be reliable. This suggests the following (bias-corrected) $100(1-\alpha)\%$ calibration interval for the unknown $x_0$:
+\citep{clark_calibration_1980}. In other words, a $100(1 - \alpha)\%$ confidence interval for $x_0$ can be obtained by inverting the a corresponding prediction interval for $\mc{Y}_0$. However, we need to make sure to "invert" an appropriate prediction interval (i.e., one that corrects for bias), otherwise, the resulting interval for $x_0$ will likely not be reliable. This suggests the following (bias-adjusted) $100(1-\alpha)\%$ calibration interval for the unknown $x_0$:
 \begin{equation}
 \label{eqn:bc-inversion-interval}
-  \mc{J}_\mathrm{cal}^{BC}(x_0) = \left\{x_0: \frac{y_0 - \wh{\mu}(x_0)}{\wh{\sigma}_\epsilon^2\left[1 + \bm{\Omega}_0\left(\bm{\Omega}'\bm{\Omega} + \frac{\wh{\sigma}_\epsilon^2}{\wh{\sigma}_\alpha^2}\bm{D}\right)^{-1}\bm{\Omega}_0'\right]} < \mc{F}_{1, df}^{1-\alpha}\right\},
+  \mc{J}_\mathrm{cal}^{BA}(x_0) = \left\{x_0: \frac{y_0 - \wh{\mu}(x_0)}{\wh{\sigma}_\epsilon^2\left[1 + \bm{\Omega}_0\left(\bm{\Omega}'\bm{\Omega} + \frac{\wh{\sigma}_\epsilon^2}{\wh{\sigma}_\alpha^2}\bm{D}\right)^{-1}\bm{\Omega}_0'\right]} < \mc{F}_{1, df}^{1-\alpha}\right\},
 \end{equation}
-where $\mc{F}_{1, df}^{1-\alpha} = \left(t_{df}^{1 - \alpha/2}\right)^2$. As before, great care should be taken to ensure that $\mc{J}_\mathrm{cal}^{BC}(x_0)$ is an interval. This may not be the case, for example, when $\mu(x)$ in not monotonic over the range of interest. Also, as with nonlinear calibration, no closed-form expression exists for $\mc{J}_\mathrm{cal}^{BC}(x)$, thus, iterative techniques are required. In a similar fashion, a $100(1-\alpha)\%$ bias-corrected regulation interval for $x_0$ is obtained by inverting a corresponding bias-corrected confidence interval for the mean response:
+where $\mc{F}_{1, df}^{1-\alpha} = \left(t_{df}^{1 - \alpha/2}\right)^2$. As before, great care should be taken to ensure that $\mc{J}_\mathrm{cal}^{BA}(x_0)$ is an interval. This may not be the case, for example, when $\mu(x)$ in not monotonic over the range of interest. Also, as with nonlinear calibration, no closed-form expression exists for $\mc{J}_\mathrm{cal}^{BA}(x)$, thus, iterative techniques are required. In a similar fashion, a $100(1-\alpha)\%$ bias-corrected regulation interval for $x_0$ is obtained by inverting a corresponding bias-corrected confidence interval for the mean response:
 \begin{equation*}
-  \mc{J}_\mathrm{cal}^{BC}(x_0) = \left\{x_0: \frac{y_0 - \wh{\mu}(x_0)}{\wh{\sigma}_\epsilon^2\bm{\Omega}_0\left(\bm{\Omega}'\bm{\Omega} + \frac{\wh{\sigma}_\epsilon^2}{\wh{\sigma}_\alpha^2}\bm{D}\right)^{-1}\bm{\Omega}_0'} < \mc{F}_{1, df}^{1-\alpha}\right\}.
+  \mc{J}_\mathrm{cal}^{BA}(x_0) = \left\{x_0: \frac{y_0 - \wh{\mu}(x_0)}{\wh{\sigma}_\epsilon^2\bm{\Omega}_0\left(\bm{\Omega}'\bm{\Omega} + \frac{\wh{\sigma}_\epsilon^2}{\wh{\sigma}_\alpha^2}\bm{D}\right)^{-1}\bm{\Omega}_0'} < \mc{F}_{1, df}^{1-\alpha}\right\}.
 \end{equation*}
 
 We designed a small Monte Carlo study to investigate the coverage probability of this technique. The results of this study are presented in Tables~\ref{tab:pspline-monte-carlo-1}-\ref{tab:pspline-monte-carlo-2}. The true calibration function is the sine wave $\mu(x) = \sin(\pi x - \pi/2)/2 + 1/2$ plotted in Figure~\ref{fig:sine-wave}. For data following such a pattern it would be tempting to fit a nonlinear model, perhaps modeling $\mu(x)$ as a \textit{logistic} function. Inference based on the resulting fit would then be inaccurate since, for example, the true calibration curve does not have any asymptotes. For situations like this, it would be useful to have a semiparametric alternative for which to compare inference.
@@ -108,10 +108,10 @@ Notice that the sine wave plotted in Figure~\ref{fig:sine-wave} is scaled to lie
 Tables~\ref{tab:pspline-monte-carlo-1}-\ref{tab:pspline-monte-carlo-2} display the estimated coverage probability for this technique applied to the sine wave experiment for both calibration (Table~\ref{tab:pspline-monte-carlo-1}) and regulation (Table~\ref{tab:pspline-monte-carlo-2}). For comparison, we also transformed the data to an equivalent linear model and applied Fieller's method (which yields an exact $95\%$ confidence interval for $x_0$). Clearly, our bias-corrected intervals performed well for quadratic (degree = 2) and cubic (degree = 3) P-splines with increasing sample size without sacrificing interval length. Notice, however, that the calibration results are somewhat conservative (i.e., the coverage probability is slightly larger than $0.95$) while the regulation intervals tend to hit the target coverage $1-\alpha = 0.95$. The reason for this is that the bias in predicting a future observation is the same as that for estimating the mean response, but the former has larger variance. Therefore, the bias accounts for a smaller portion of the mean-squared error in prediction (i.e., the bias gets "washed out" by a larger variance). Thus, for larger samples (perhaps $n \ge 20$ with $m \ge 1$ replicates at each design point), calibration intervals could be computed with or without adjusting for bias. Regulation intervals, on the other hand, should always be adjusted for bias.
 
 <<sim1-sim2, echo = FALSE>>=
-load("/home/w108bmg/Desktop/Dissertation-knitr/Data/sim1.RData")
-load("/home/w108bmg/Desktop/Dissertation-knitr/Data/sim2.RData")
-load("/home/w108bmg/Desktop/Dissertation-knitr/Data/sim3.RData")
-load("/home/w108bmg/Desktop/Dissertation-knitr/Data/sim4.RData")
+load("/home/w108bmg/Desktop/Dissertation/Data/sim1.RData")
+load("/home/w108bmg/Desktop/Dissertation/Data/sim2.RData")
+load("/home/w108bmg/Desktop/Dissertation/Data/sim3.RData")
+load("/home/w108bmg/Desktop/Dissertation/Data/sim4.RData")
 sim1 <- apply(sim1[, 1:2], 2, formatC, format = "f", digits = 2)
 sim2 <- apply(sim2[, 1:2], 2, formatC, format = "f", digits = 2)
 sim3 <- apply(sim3[, 1:2], 2, formatC, format = "f", digits = 2)

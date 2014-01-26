@@ -545,7 +545,7 @@ arrows(log(x0.est), mean(y0), log(x0.est), parusr[3], length = 0.15, angle = 25)
 @
 
 <<nasturtium-post-boot, echo=FALSE, fig.width=5, fig.height=4, par=TRUE, fig.pos='H', fig.scap='Posterior and bootstrap results for the nasturtium example', fig.cap = 'Posterior of $x_0$ (solid curve) together with the bootstrap distribution of $\\wh{x}_0$ (histogram).'>>=
-load("/home/w108bmg/Desktop/Dissertation-knitr/R code/nasturtium-x0.RData")
+load("/home/w108bmg/Desktop/Dissertation/R code/nasturtium-x0.RData")
 x0.post <- as.matrix(x0.coda)
 x0.reps <- as.numeric(x0.boot$t)
 x0.dens <- density(x0.post)

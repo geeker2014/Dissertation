@@ -36,9 +36,9 @@
 % Send bug reports to the author at: Michael.Stepaniak@us.af.mil
 
 % The following packages and macros are recommended but not required:
-\usepackage{mathtools,graphicx,enumerate,float,booktabs,url,amsthm,framed,bm,amsfonts}
+\usepackage{mathtools,graphicx,enumerate,float,booktabs,url,amsthm,framed,bm,amsfonts,acronym,mathrsfs}
 \usepackage[boxed, ruled]{algorithm2e}
-\usepackage[printonlyused]{acronym}  
+% \usepackage[printonlyused]{acronym}  
 \usepackage[round]{natbib}
 %\usepackage[square,sort&compress,numbers]{natbib} % better citations especially
                                                    % when including a string of 
@@ -60,6 +60,7 @@
 
 %% Define new commands
 \newcommand{\newln}{\\&\quad\quad\quad\quad{}}
+\newcommand{\loglik}{\mathscr{L}}
 \newcommand{\boot}{\star} % or possiibly *
 \newcommand{\indep}{\perp \! \! \! \perp} 
 \newcommand{\code}[1]{\texttt{\small{#1}}}
@@ -78,6 +79,9 @@
 % \newcommand{\Prob}{\ensuremath{\mathbb{P}}}
 
 %% Define new operators
+%\DeclareMathOperator*{\argmin}{\arg\!\min}
+\newcommand{\argmin}[1]{\underset{#1}{\operatorname{arg}\!\operatorname{min}}\;}
+% \newcommand{\argmin}[1]{\underset{#1}{\arg\!\min}\;}
 \newcommand{\E}{\operatorname{E}}
 \newcommand{\var}{\operatorname{Var}}
 \newcommand{\cov}{\operatorname{Cov}}
@@ -308,9 +312,9 @@ knit_hooks$set(rexample = function(before, options, envir) {
 <<prelim, echo = FALSE, message = FALSE, warning = FALSE>>=
 
 ## Source script files
-source("/home/w108bmg/Desktop/Dissertation-knitr/R code/pspline.R")
-source("/home/w108bmg/Desktop/Dissertation-knitr/R code/invest-lme.R")
-source("/home/w108bmg/Desktop/Dissertation-knitr/R code/bootMer2.R")
+source("/home/w108bmg/Desktop/Dissertation/R code/pspline.R")
+source("/home/w108bmg/Desktop/Dissertation/R code/invest-lme.R")
+source("/home/w108bmg/Desktop/Dissertation/R code/bootMer2.R")
 
 ## Function to calculate HPD interval
 hdi <- function(x, level = 0.95) {
@@ -339,7 +343,7 @@ dark2 <- brewer.pal(8, "Dark2")
 YlOrRd <- brewer.pal(9, "YlOrRd")
 
 ## ELisa data
-elisa <- read.csv("/home/w108bmg/Desktop/Dissertation-knitr/Data/elisa.csv", 
+elisa <- read.csv("/home/w108bmg/Desktop/Dissertation/Data/elisa.csv", 
                   header = TRUE)
 
 ## Whiskey data
@@ -355,7 +359,7 @@ nasturtium$lconc <- ifelse(nasturtium$conc == 0, log(0.01),
                            log(nasturtium$conc))
 
 ## Bladder volume data
-load("/home/w108bmg/Desktop/Dissertation-knitr/Data/bladder.RData")
+load("/home/w108bmg/Desktop/Dissertation/Data/bladder.RData")
 bladder <- na.omit(bladder)
 bladder2 <- data.frame(logHD = log(bladder$HD), logVolume = log(bladder$volume),
                        subject = bladder$subject)
@@ -369,20 +373,21 @@ Bladder2 <- groupedData(logHD ~ logVolume | subject, data = bladder2)
 % call to \makePrefatoryPages
 \listofacronyms{
 \begin{acronym}[WPAFB]
-  \acro{BLUE}{Best linear unbiased estimator}
-  \acro{BLUP}{Best linear unbiased predictor}
-  \acro{EBLUE}{Estimated (or empirical) best linear unbiased estimator}
-  \acro{EBLUP}{Estimated (or empirical) best linear unbiased predictor}
-  \acro{GLS}{Generalized least squares}
-  \acro{i.i.d.}{Independent and identically distributed}
-  \acro{LM}{Linear model}
-  \acro{LMM}{Linear mixed-effects model}
-  \acro{LS}{Least squares}
-  \acro{ML}{Maximum likelihood}
+  \acro{BLUE}{best linear unbiased estimator}
+  \acro{BLUP}{best linear unbiased predictor}
+  \acro{EBLUE}{estimated (or empirical) best linear unbiased estimator}
+  \acro{EBLUP}{estimated (or empirical) best linear unbiased predictor}
+  \acro{GLS}{generalized least squares}
+  \acro{i.i.d.}{independent and identically distributed}
+  \acro{LM}{linear model}
+  \acro{LMM}{linear mixed-effects model}
+  \acro{LS}{least squares}
+  \acro{ML}{maximum likelihood}
   \acro{MSE}{Mean squared error}
   \acro{NLMM}{Nonlinear mixed-effects model}
-  \acro{REML}{Restricted (or residual) maximum likelihood}
-
+  \acro{P-spline}{penalized regression spline}
+  \acro{PSS}{penalized sum of squares}
+  \acro{REML}{restricted (or residual) maximum likelihood}
 \end{acronym}
 }
 

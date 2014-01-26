@@ -337,7 +337,7 @@ In Section~\ref{sec:boot_int}, we discussed how to calculate calibration interva
 Note that only steps (5)-(6) are specific to calibration. Similar parametric bootstrap schemes have also been proposed for mixed models. For example, we can condition on the current values of the random effects by ignoring step (1) of Algorithm~\ref{alg:parboot_cal} and using the current EBLUP, $\wh{\bm{\alpha}}$, in place of $\bm{\alpha}^\boot$. Semiparametric variants of Algorithm~\ref{alg:parboot_cal} that involve sampling directly from the EBLUP and residuals have also been proposed, but \citet{morris_blups_2002} considers this to be bad practice because it consistently underestimates the true variation in the data.
 
 <<simdata-parboot, echo = FALSE>>=
-load("/home/w108bmg/Desktop/Dissertation-knitr/Data/simdata-parboot.RData")
+load("/home/w108bmg/Desktop/Dissertation/Data/simdata-parboot.RData")
 x0.boot.ci <- boot.ci(x0.pb, type = c("norm", "basic", "perc"))
 @
 
@@ -477,7 +477,7 @@ res <- invest(bladder.lm, y0 = 70, interval = "Wald")
 The resulting standard error is $\Sexpr{round(dm[["SE"]], 2)}$ which yields an approximate (Wald-based) 95\% confidence interval for $\texttt{volume}_0$ of $(\Sexpr{round((x0.est + qnorm(c(0.025, 0.975))*dm[["SE"]])[1], 2)}, \Sexpr{round((x0.est + qnorm(c(0.025, 0.975))*dm[["SE"]])[2], 2)})$. For comparison, we computed the same interval assuming the data are cross-sectional, that is, by ignoring the grouped structure of the data and using the methods discussed in Section~\ref{sec:wald_int}. The resulting interval is $(\Sexpr{round(res[["lower"]], 2)}, \Sexpr{round(res[["upper"]], 2)}$) which, as expected, is narrower than the one previously obtained.
 
 <<bladder-parboot, echo = FALSE, opts.label = 'fig.7by5', par = TRUE, fig.pos = 'H', fig.scap = 'Bootstrap distribution of $\\wh{\\texttt{volume}}_0$ for the bladder volume example', fig.cap = 'Bootstrap distribution of $\\wh{\\texttt{volume}}_0$ for the bladder volume example. The solid black line indicates the original poin estimate and the red tick marks indicate the position of the 2.5 and 97.5 percentiles of the bootstrap distribution.'>>=
-load("/home/w108bmg/Desktop/Dissertation-knitr/Data/bladder-parboot.RData")
+load("/home/w108bmg/Desktop/Dissertation/Data/bladder-parboot.RData")
 W.boot <- bladder.pb$t[,2]
 w.025 <- quantile(W.boot, 0.025)
 w.975 <- quantile(W.boot, 0.975)

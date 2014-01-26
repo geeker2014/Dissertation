@@ -85,9 +85,9 @@
 % Send bug reports to the author at: Michael.Stepaniak@us.af.mil
 
 % The following packages and macros are recommended but not required:
-\usepackage{mathtools,graphicx,enumerate,float,booktabs,url,amsthm,framed,bm,amsfonts}
+\usepackage{mathtools,graphicx,enumerate,float,booktabs,url,amsthm,framed,bm,amsfonts,acronym,mathrsfs}
 \usepackage[boxed, ruled]{algorithm2e}
-\usepackage[printonlyused]{acronym}  
+% \usepackage[printonlyused]{acronym}  
 \usepackage[round]{natbib}
 %\usepackage[square,sort&compress,numbers]{natbib} % better citations especially
                                                    % when including a string of 
@@ -109,6 +109,7 @@
 
 %% Define new commands
 \newcommand{\newln}{\\&\quad\quad\quad\quad{}}
+\newcommand{\loglik}{\mathscr{L}}
 \newcommand{\boot}{\star} % or possiibly *
 \newcommand{\indep}{\perp \! \! \! \perp} 
 \newcommand{\code}[1]{\texttt{\small{#1}}}
@@ -127,6 +128,9 @@
 % \newcommand{\Prob}{\ensuremath{\mathbb{P}}}
 
 %% Define new operators
+%\DeclareMathOperator*{\argmin}{\arg\!\min}
+\newcommand{\argmin}[1]{\underset{#1}{\operatorname{arg}\!\operatorname{min}}\;}
+% \newcommand{\argmin}[1]{\underset{#1}{\arg\!\min}\;}
 \newcommand{\E}{\operatorname{E}}
 \newcommand{\var}{\operatorname{Var}}
 \newcommand{\cov}{\operatorname{Cov}}
@@ -346,20 +350,21 @@
 % call to \makePrefatoryPages
 \listofacronyms{
 \begin{acronym}[WPAFB]
-  \acro{BLUE}{Best linear unbiased estimator}
-  \acro{BLUP}{Best linear unbiased predictor}
-  \acro{EBLUE}{Estimated (or empirical) best linear unbiased estimator}
-  \acro{EBLUP}{Estimated (or empirical) best linear unbiased predictor}
-  \acro{GLS}{Generalized least squares}
-  \acro{i.i.d.}{Independent and identically distributed}
-  \acro{LM}{Linear model}
-  \acro{LMM}{Linear mixed-effects model}
-  \acro{LS}{Least squares}
-  \acro{ML}{Maximum likelihood}
+  \acro{BLUE}{best linear unbiased estimator}
+  \acro{BLUP}{best linear unbiased predictor}
+  \acro{EBLUE}{estimated (or empirical) best linear unbiased estimator}
+  \acro{EBLUP}{estimated (or empirical) best linear unbiased predictor}
+  \acro{GLS}{generalized least squares}
+  \acro{i.i.d.}{independent and identically distributed}
+  \acro{LM}{linear model}
+  \acro{LMM}{linear mixed-effects model}
+  \acro{LS}{least squares}
+  \acro{ML}{maximum likelihood}
   \acro{MSE}{Mean squared error}
   \acro{NLMM}{Nonlinear mixed-effects model}
-  \acro{REML}{Restricted (or residual) maximum likelihood}
-
+  \acro{P-spline}{penalized regression spline}
+  \acro{PSS}{penalized sum of squares}
+  \acro{REML}{restricted (or residual) maximum likelihood}
 \end{acronym}
 }
 
@@ -410,7 +415,7 @@ The goal of this work is to extend the methods of calibration to more complicate
 
 \chapter{Statistical Background}
 \label{chp:background}
-This chapter provides an overview of some of the statistical concepts related to inverse estimation. In Section~\ref{sec:notation}, we discuss the basic notational conventions used throughout this dissertation. Section~\ref{sec:lm} introduces the linear regression model. The extension to nonlinear regression models is given in Section~\ref{sec:nonlinear-models}. Section~\ref{sec:penalized-regression-splines} is devoted to penalized regression splines, a type of semiparametric regression model where only part of the model is specified. Finally, in Section~\ref{sec:lmms}, we introduce the linear mixed-effects models, an extension of the linear model (LM) that allows for some of the regression coefficients to vary randomly.
+This chapter provides an overview of some of the statistical concepts related to inverse estimation. In Section~\ref{sec:notation}, we discuss the basic notational conventions used throughout this dissertation. Section~\ref{sec:lm} introduces the linear regression model. The extension to nonlinear regression models is given in Section~\ref{sec:nonlinear-models}. Section~\ref{sec:penalized-regression-splines} is devoted to penalized regression splines, a type of semiparametric regression model where only part of the model is specified. Finally, in Section~\ref{sec:lmms}, we introduce the linear mixed-effects models, an extension of the \ac{LM} that allows for some of the regression coefficients to vary randomly. 
 
 \section{Notation}
 \label{sec:notation}
@@ -454,35 +459,35 @@ Another special case of the linear model \eqref{eqn:linmod} is when $x_{ij} = g_
 Notice that a polynomial model is linear in the parameters even though it is nonlinear in the predictor variable; hence, it is a linear model.
 
 \subsection{Estimating the model parameters}
-Estimation of $\bm{\beta}$ in the linear model \eqref{eqn:linmod} can be carried out via least squares (LS). The ordinary LS estimator minimizes the sum of squares $S(\bm{\beta})$ defined by
+Estimation of $\bm{\beta}$ in the linear model \eqref{eqn:linmod} can be carried out via \ac{LS}. The ordinary \ac{LS} estimator of $\bm{\beta}$ minimizes the sum of squares, $S\left(\bm{\beta}\right)$, defined by
 \begin{equation}
 \label{eqn:ss-linmod}
   S(\bm{\beta}) = \norm{\bc{Y} - \X\bm{\beta}}^2.
 \end{equation}
-The ordinary LS estimator of $\bm{\beta}$ is 
+Simple calculus gives the ordinary \ac{LS} estimator of $\bm{\beta}$ in the \ac{LM} as 
 \begin{equation}
 \label{eqn:beta-ols}
-  \wh{\bm{\beta}} = (\X\trans\X)^{-1}\X\trans\bc{Y}
+  \wh{\bm{\beta}} = \argmin{\bm{\beta}} \norm{\bc{Y} - \X\bm{\beta}}^2 = \left(\X\trans\X\right)^{-1}\X\trans\bc{Y}
 \end{equation}
-If we make the additional assumption that the errors are normally distributed, then estimation can also be carried out by the method of maximum likelihood (ML). This has the benefit of simultaneously providing an estimator for both $\bm{\beta}$ and $\sigma_\epsilon^2$. To proceed, we need to maximize the likelihood
+If we make the additional assumption that the errors are normally distributed, then estimation can also be carried out by the method of \ac{ML}. This has the benefit of simultaneously providing an estimator for both $\bm{\beta}$ and $\sigma_\epsilon^2$. To proceed, we need to maximize the likelihood
 \begin{equation*}
   \mc{L}\left(\bm{\beta}, \sigma_\epsilon^2 | \bc{Y}\right) = \left(2\pi\sigma_\epsilon^2\right)^{-n/2}\exp\left\{ -\frac{1}{2\sigma_\epsilon^2}\norm{\bc{Y} - \X\bm{\beta}}^2 \right\},
 \end{equation*}
 or equivalently, maximize the log likelihood
 \begin{equation*}
-  \ell\left(\bm{\beta}, \sigma_\epsilon^2 | \bc{Y}\right) = -\frac{n}{2}\log\left(2\pi\right) - \frac{n}{2}\log\left(\sigma_\epsilon^2\right) - \frac{1}{2\sigma_\epsilon^2}\norm{\bc{Y} - \X\bm{\beta}}^2.
+  \loglik\left(\bm{\beta}, \sigma_\epsilon^2 | \bc{Y}\right) = -\frac{n}{2}\log\left(2\pi\right) - \frac{n}{2}\log\left(\sigma_\epsilon^2\right) - \frac{1}{2\sigma_\epsilon^2}\norm{\bc{Y} - \X\bm{\beta}}^2.
 \end{equation*}
-The derivatives of $\ell(\bm{\beta}, \sigma_\epsilon^2 | \bc{Y})$ with respect to the parameters $\left(\bm{\beta}, \sigma_\epsilon^2\right)$ are
+The derivatives of $\loglik(\bm{\beta}, \sigma_\epsilon^2 | \bc{Y})$ with respect to the parameters $\left(\bm{\beta}, \sigma_\epsilon^2\right)$ are
 \begin{align*}
-  \frac{\partial\ell}{\partial\bm{\beta}} &= \frac{\X\trans(\bc{Y} - \X\bm{\beta})}{\sigma_\epsilon^2}\\
-  \frac{\partial\ell}{\partial\sigma_\epsilon^2} &= \frac{\norm{\bc{Y} - \X\bm{\beta}}^2}{2\sigma_\epsilon^2} - \frac{N}{2\sigma_\epsilon^2},
+  \frac{\partial\loglik}{\partial\bm{\beta}} &= \frac{\X\trans(\bc{Y} - \X\bm{\beta})}{\sigma_\epsilon^2}\\
+  \frac{\partial\loglik}{\partial\sigma_\epsilon^2} &= \frac{\norm{\bc{Y} - \X\bm{\beta}}^2}{2\sigma_\epsilon^2} - \frac{N}{2\sigma_\epsilon^2},
 \end{align*}
-which, upon setting equal to zero and solving yields the ML estimators
+which, upon setting equal to zero and solving yields the \ac{ML} estimators
 \begin{align*}
   \wh{\bm{\beta}} &= (\X\trans\X)^{-1}\X\trans\bc{Y} \\
   \wh{\sigma}_\epsilon^2 &= \norm{\bc{Y} - \X\wh{\bm{\beta}}}^2/n
 \end{align*}
-Fortunately, for the linear model \eqref{eqn:linmod} with normal errors, the ML estimator of $\bm{\beta}$ is the same as the LS estimator. It is customary to adjust the ML estimator of $\sigma_\epsilon^2$ for bias by replacing it with $\wh{\sigma}_\epsilon^2 = \norm{\bc{Y} - \X\wh{\bm{\beta}}}^2/(n-p-1)$.
+Fortunately, for the linear model \eqref{eqn:linmod} with normal errors, the \ac{ML} estimator of $\bm{\beta}$ is the same as the \ac{LS} estimator. It is customary to adjust the \ac{ML} estimator of $\sigma_\epsilon^2$ for bias by replacing it with $\wh{\sigma}_\epsilon^2 = \norm{\bc{Y} - \X\wh{\bm{\beta}}}^2/(n-p-1)$.
 
 \subsection{Predictions}
 A common use of the fitted regression equation is to make predictions. There are two types of predictions we distinguish:
@@ -492,7 +497,7 @@ A common use of the fitted regression equation is to make predictions. There are
 \end{enumerate}
 Let $\mu_0$ and $\mc{Y}_0$ be the mean response and future observation of interest, respectively. We will see that the point estimators of $\mu_0$ and $\mc{Y}_0$ are the same, namely the fitted value $\wh{\mu}(x)$. Intuitively, the former should have a smaller standard error since there is less variability in estimating a fixed population parameter than in predicting a future value of a random variable. Consequently, a $100(1 - \alpha)\%$ confidence interval for $\mu_0$ at $\X_0$ will always be smaller than a $100(1 - \alpha)\%$ prediction interval for $\mc{Y}_0$ corresponding to $\X_0$.
 
-Let $\X_0$ be an arbitrary value of $\X$. Suppose we are interested in estimating the mean of $\mc{Y}$ given $\X_0$, $\E\left\{\mc{Y} | \X_0\right\} = \mu_0$. For the linear model \eqref{eqn:linmod}, the best linear unbiased estimator (BLUE) of $\mu_0$ is the fitted value $\wh{\mu}_0 = \X_0\trans\wh{\bm{\beta}}$. Furthermore, it is easy to show that
+Let $\X_0$ be an arbitrary value of $\X$. Suppose we are interested in estimating the mean of $\mc{Y}$ given $\X_0$, $\E\left\{\mc{Y} | \X_0\right\} = \mu_0$. For the linear model \eqref{eqn:linmod}, the \ac{BLUE} of $\mu_0$ is the fitted value $\wh{\mu}_0 = \X_0\trans\wh{\bm{\beta}}$. Furthermore, it is easy to show that
 \begin{equation*}
   \E\left\{\wh{\mu}_0\right\} = \X_0\trans\bm{\beta} = \mu_0
 \end{equation*}
@@ -558,7 +563,7 @@ The derivative matrix $\bm{D}(\bm{\beta})$ plays the same role as the design mat
   S(\bm{\beta}) &\approx \norm{\bc{Y} - \bm{\mu}(\bm{\beta}^{(0)}) - \bm{D}(\bm{\beta}^{(0)})(\bm{\beta} - \bm{\beta}^{(0)})}^2 \label{eqn:ss-approximate} \\
   &= \norm{\bc{Y}^{(0)} - \X^{(0)}(\bm{\beta} - \bm{\beta}^{(0)})}^2,
 \end{align}
-where $\bc{Y}^{(0)} = \bc{Y} - \bm{\mu}(\bm{\beta}^{(0)})$, and $\X^{(0)} = \bm{D}(\bm{\beta}^{(0)})$. Equation~\eqref{eqn:ss-approximate} is of the same form as the sum of squares for the linear model \eqref{eqn:ss-linmod}. Based on this approximation, the LS estimate of $\bm{\beta}$ is then
+where $\bc{Y}^{(0)} = \bc{Y} - \bm{\mu}(\bm{\beta}^{(0)})$, and $\X^{(0)} = \bm{D}(\bm{\beta}^{(0)})$. Equation~\eqref{eqn:ss-approximate} is of the same form as the sum of squares for the linear model \eqref{eqn:ss-linmod}. Based on this approximation, the \ac{LS} estimate of $\bm{\beta}$ is then
 \begin{equation*}
   \wh{\bm{\beta}} = \bm{\beta}^{(0)} + \left[ \X^{(0)\trans}\X^{(0)} \right]^{-1}\X^{(0)\trans}\bc{Y}^{(0)}.
 \end{equation*}
@@ -566,7 +571,7 @@ Hence, given a current approximation $\bm{\beta}^{(k)}$ of $\bm{\beta}$, the upd
 \begin{equation*}
   \bm{\beta}^{(k + 1)} = \bm{\beta}^{(k)} + \left[ \X^{(k)\trans}\X^{(k)} \right]^{-1}\X^{(k)\trans}\bc{Y}^{(k)}.
 \end{equation*}
-This process is iterated until a suitable convergence criterion is met. Just as for the linear model, if we assume the errors are normally distributed, then the ML estimate of  $\bm{\beta}$ is the same as the LS solution.
+This process is iterated until a suitable convergence criterion is met. Just as for the linear model, if we assume the errors are normally distributed, then the \ac{ML} estimate of  $\bm{\beta}$ is the same as the \ac{LS} solution.
 
 \subsection{Predictions}
 Let $x_0$ be a known value of the predictor $x_0$. The estimate of the mean response $\left\{\mc{Y} | x_0\right\} = \mu(x_0; \bm{\beta})$ is $\wh{\mu}_0 = \mu(x_0; \wh{\bm{\beta}})$. Furthermore, assuming normal errors, an approximate $100(1 - \alpha)\%$ confidence interval for the mean response $\mu_0$ can be obtained as in Equation~\eqref{eqn:ci-response} but with $\widehat{S}^2$ computed as 
@@ -582,18 +587,18 @@ An approximate $100(1 - \alpha)\%$ prediction interval for a future observation 
 
 \section{Smoothing}
 \label{sec:penalized-regression-splines}
-Let $\X = \left(x_1, \dotsc, x_n \right)\trans$ be a vector of predictor values and $\bc{Y} = \left( \mc{Y}_1, \dotsc, \mc{Y}_n \right)\trans$ be a vector of response variables. We assume that $\X$ and $\bc{Y}$ are related by the regression model
+Let $\bm{x} = \left(x_1, \dotsc, x_n \right)\trans$ be a vector of predictor values and $\bc{Y} = \left( \mc{Y}_1, \dotsc, \mc{Y}_n \right)\trans$ be a vector of response variables. We assume that $\X$ and $\bc{Y}$ are related by the regression model
 \begin{equation*}
-  \bc{Y} = \mu(\X) + \bm{\epsilon}, \quad \bm{\epsilon} \sim \mc{N}(\bm{0}, \sigma_\epsilon^2\bm{I}),
+  \bc{Y} = \mu(\bm{x}) + \bm{\epsilon}, \quad \bm{\epsilon} \sim \mc{N}(\bm{0}, \sigma_\epsilon^2\bm{I}),
 \end{equation*}
-where $\mu(\cdot)$ is an unknown smooth function. In this section, we discuss a technique for estimating $\mu(\cdot)$ nonparametrically, often referred to as \textit{scatterplot smoothing}, or just \textit{smoothing}. In particular, we will focus on an important class of smoothers called \textit{linear smoothers}. For linear smoothers, the prediction at any point $x$, is a linear combination of the response values: $\wh{\mu}(x) = \bm{\omega}\trans\bc{Y}$, where $\bm{\omega}$ is a constant that does not depend on the response vector $\bc{Y}$. The vector of fitted values $\wh{\bm{\mu}} = \left( \mu(x_1), \dotsc, \mu(x_n) \right)\trans$ can be written in matrix form as $\bm{S}\bc{Y}$, where $\bm{S} = \Big\lbrace_\text{row } \ell_{x_i}\trans \Big\rbrace_{i = 1}^n$ is an $n \times n$ \textit{smoother matrix}. Examples of linear smoothers include:
+where $\mu(\cdot)$ is an unknown smooth function. In this section, we discuss a technique for estimating $\mu(\cdot)$ nonparametrically, often referred to as \textit{scatterplot smoothing}, or just \textit{smoothing}. In particular, we will focus on an important class of smoothers called \textit{linear smoothers}. For linear smoothers, the prediction at any point $x$, is a linear combination of the response values: $\wh{\mu}(x) = \bm{\omega}\trans\bc{Y}$, where $\bm{\omega}$ is a constant that does not depend on the response vector $\bc{Y}$. The vector of fitted values $\wh{\bm{\mu}} = \left( \mu(x_1), \dotsc, \mu(x_n) \right)\trans$ can be written in matrix form as $\bm{S}\bc{Y}$, where $\bm{S}$ is an $n \times n$ \textit{smoother matrix}. Examples of linear smoothers include:
 \begin{itemize}
   \item running-mean, running-line, and running-polynomial smoothers;
   \item locally-weighted polynomial smoothers (i.e., LOESS);
   \item spline-based smoothers;
   \item kernel smoothers.
 \end{itemize}
-The remainder of this section discusses spline smoothing, specifically, penalized regression splines (P-splines).  
+The remainder of this section discusses spline smoothing, specifically, the \ac{P-spline}.  
 
 % The smoothing spline arises as the solution to an optimization problem. In particular, find the function $\mu(x)$ that minimizes the penalized residual sum of squares
 % \begin{equation}
@@ -635,16 +640,16 @@ Equation~\eqref{eqn:spline-model-matrix} has the same form as the linear model \
 where $\bm{D} = \diag\left\{\bm{0}_{(p+1) \times (p+1)}, \bm{I}_{K \times K}\right\}$. The penalized least squares solution is then
 \begin{equation}
 \label{eqn:pss-solution}
-  \wh{\bm{\beta}}_\lambda = \left( \X\trans\X + \lambda^{2p}\bm{D} \right)^{-1}\X\trans\bc{Y}.
+  \wh{\bm{\beta}}_\lambda = \argmin{\bm{\beta}} \norm{\bc{Y} - \X\bm{\beta}}^2 + \lambda^{2p}\bm{\beta}\trans\bm{D}\bm{\beta} = \left( \X\trans\X + \lambda^{2p}\bm{D} \right)^{-1}\X\trans\bc{Y}.
 \end{equation}
-Here $\lambda \ge 0$ is a \textit{smoothing parameter} that controls the wiggliness of the fit. Small values of $\lambda$ produce wiggly curves while larger values  produce smoother curves. The term $\lambda^{2p}\bm{\beta}\trans\bm{D}\bm{\beta}$ is called the \textit{roughness penalty}. If $\bm{D} = \bm{I}$, then the penalized least squares solution \eqref{eqn:pss-solution} is equivalent to the ridge regression estimate of $\bm{\beta}$. The roughness penalty can also be written as $\lambda^{2p}\norm{\bm{\alpha}}^2$, where $\bm{\alpha} = (\alpha_1, \dotsc, \alpha_K)\trans$ is the vector of coefficients for the spline basis functions. Hence, P-splines enforce a penalty on the $\ell^2$-norm of $\bm{\alpha}$, so none of the polynomial coefficients are penalized! 
+Here $\lambda \ge 0$ is a \textit{smoothing parameter} that controls the wiggliness of the fit. Small values of $\lambda$ produce wiggly curves while larger values  produce smoother curves. The term $\lambda^{2p}\bm{\beta}\trans\bm{D}\bm{\beta}$ is called the \textit{roughness penalty}. If $\bm{D} = \bm{I}$, then the penalized least squares solution \eqref{eqn:pss-solution} is equivalent to the ridge regression estimate of $\bm{\beta}$. The roughness penalty can also be written as $\lambda^{2p}\norm{\bm{\alpha}}^2$, where $\bm{\alpha} = (\alpha_1, \dotsc, \alpha_K)\trans$ is the vector of coefficients for the spline basis functions. Hence, \ac{P-spline}s enforce a penalty on the $\ell^2$-norm of $\bm{\alpha}$, so none of the polynomial coefficients are penalized! 
 
-The fitted values are given by $\wh{\bm{\mu}} = \bm{S}_\lambda \bc{Y}$, where $\bm{S}_\lambda = \X\left( \X\trans\X + \lambda^{2p}\bm{D} \right)^{-1}\X\trans$. For convenience, we drop the subscript $\lambda$ on the smoother matrix and just write $\bm{S}$ from here on. The smoothing parameter $\lambda$ is unknown but can be specified a priori. However, it is often beneficial to let the data determine the appropriate amount of smoothness. To this end, cross-validation techniques are often used to estimate $\lambda$ from the given data. In Chapter~\ref{chp:cal-dependent}, we discuss an alternative approach to P-splines that automatically selects an appropriate amount of smoothness.
+The fitted values are given by $\wh{\bm{\mu}} = \bm{S}_\lambda \bc{Y}$, where $\bm{S}_\lambda = \X\left( \X\trans\X + \lambda^{2p}\bm{D} \right)^{-1}\X\trans$. For convenience, we drop the subscript $\lambda$ on the smoother matrix and just write $\bm{S}$ from here on. The smoothing parameter $\lambda$ is unknown but can be specified a priori. However, it is often beneficial to let the data determine the appropriate amount of smoothness. To this end, cross-validation techniques are often used to estimate $\lambda$ from the given data. In Chapter~\ref{chp:cal-dependent}, we discuss an alternative approach to \ac{P-spline}s that automatically selects an appropriate amount of smoothness.
 
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{figure}[!htb]
 
-\includegraphics[width=\maxwidth]{figure/sin-example} \caption[Unnormalized sinc function]{\textit{Top}: Scatterplot of 100 observations generated from a regression model with mean response $\mu(x) = \sin(x)/x$ (green line) and i.i.d. $\mc{N}(0, 0.05^2)$ errors. The solid line shows a quadratic P-spline fit with smoothing parameter $\lambda = 0.9986$. The dotted lines indicate the position of the knots $\xi_k$. \textit{Bottom}: Profiles of spline coefficients as the smoothing parameter $\lambda$ is varied. Coefficients are plotted versus $\lambda$. A vertical line is drawn at $\lambda = 0.9986$.\label{fig:sin-example}}
+\includegraphics[width=\maxwidth]{figure/sin-example} \caption[Unnormalized sinc function]{\textit{Top}: Scatterplot of 100 observations generated from a regression model with mean response $\mu(x) = \sin(x)/x$ (green line) and i.i.d. $\mc{N}(0, 0.05^2)$ errors. The solid line shows a quadratic \ac{P-spline} fit with smoothing parameter $\lambda = 0.9986$. The dotted lines indicate the position of the knots $\xi_k$. \textit{Bottom}: Profiles of spline coefficients as the smoothing parameter $\lambda$ is varied. Coefficients are plotted versus $\lambda$. A vertical line is drawn at $\lambda = 0.9986$.\label{fig:sin-example}}
 \end{figure}
 
 
@@ -662,7 +667,7 @@ where $\mu(\cdot)$ is an unknown smooth function. Let $\wh{\mu}(x)$ be an estima
 \label{eqn:cov}
   \var\left\{\wh{\bm{\mu}}\right\} = \bm{S}\left( \sigma_\epsilon^2\bm{I} \right) \bm{S}\trans = \sigma_\epsilon^2   \bm{S}\bm{S}\trans.
 \end{equation}
-For a single point, the quantity $Q = \left[ \wh{\mu}(x) - \mu(x) \right]/\se\left\{ \wh{\mu}(x) \right\}$ is approximately pivotal---the distribution is free of unknown parameters, at least for sufficiently large sample size $n$. Therefore, assuming $\bm{\epsilon} \sim \mc{N}(\bm{0}, \sigma_\epsilon^2\bm{I})$, Equation~\eqref{eqn:cov} can be used to form confidence intervals and prediction intervals. Note, however, that $\E\left( \wh{\bm{\mu}} \right) = \X\left( \X\trans\X + \lambda^{2p}\bm{D} \right)^{-1}\X\trans\X\bc{Y}$; hence, $\wh{\mu}(x)$ is a biased estimator of $\mu(x)$. Unless the bias is negligible, the confidence intervals discussed here only cover $\E\left( \wh{\mu}(x) \right)$ with $100(1 - \alpha)\%$ confidence. This problem is remedied for P-splines in Chapter~\ref{chap:nonparametric} where we discuss an alternative approach using mixed model methodology.  
+For a single point, the quantity $Q = \left[ \wh{\mu}(x) - \mu(x) \right]/\se\left\{ \wh{\mu}(x) \right\}$ is approximately pivotal---the distribution is free of unknown parameters, at least for sufficiently large sample size $n$. Therefore, assuming $\bm{\epsilon} \sim \mc{N}(\bm{0}, \sigma_\epsilon^2\bm{I})$, Equation~\eqref{eqn:cov} can be used to form confidence intervals and prediction intervals. Note, however, that $\E\left\{\wh{\bm{\mu}}\right\} = \X\left( \X\trans\X + \lambda^{2p}\bm{D} \right)^{-1}\X\trans\X\bc{Y}$; hence, $\wh{\mu}(x)$ is a biased estimator of $\mu(x)$. Unless the bias is negligible, the confidence intervals discussed here only cover $\E\left\{\wh{\mu}(x)\right\}$ with $100(1 - \alpha)\%$ confidence. This problem is remedied for \ac{P-spline}s in Chapter~\ref{chap:nonparametric} where we discuss an alternative approach using mixed model methodology.  
 
 Let $x$ be an arbitrary value of the explanatory variable. Recall that, for linear smoothers, the fitted value $\wh{\mu}(x)$ can be written as $\bm{\omega}\trans\bc{Y}$, a linear combination of the response variables. The variance of $\wh{\mu}(x)$ is just $\var\left\{\bm{\omega}\trans\bc{Y}\right\} = \sigma_\epsilon^2\bm{\omega}\trans\bm{\omega}$. Given an estimate $\wh{\sigma}_\epsilon^2$ of $\sigma_\epsilon^2$, an approximate $100(1 - \alpha)\%$ confidence interval for $\mu(x)$ is given by 
 \begin{equation*}
@@ -675,62 +680,63 @@ where $df = n - 2\tr\left( \bm{S} \right) + \tr\left( \bm{S}\bm{S}\trans \right)
 
 \section{Linear mixed effects models}
 \label{sec:lmms}
-Mixed effects models (henceforth referred to as just mixed models) represent a large and growing area of statistics. In this section, we only summarize the key aspects of a special kind of mixed model called linear mixed model (LMM). The extension to nonlinear mixed effects models and generalized linear mixed effects models is discussed in  \citet{pinheiro_mixed_2009} and \citet{mcculloch_generalized_2008}, respectively. Mixed models are useful for describing \textit{grouped data} where observations belonging to the same group are correlated. One way of accounting for such correlation is by introducing random effects into the model which induces a particular correlation structure on the response vector. Different random effects structures induce different correlation structures on the response. 
+Mixed effects models (henceforth referred to as just mixed models) represent a large and growing area of statistics. In this section, we only summarize the key aspects of a special kind of mixed model called the \ac{LMM}. The extension to nonlinear mixed effects models and generalized linear mixed effects models is discussed in  \citet{pinheiro_mixed_2009} and \citet{mcculloch_generalized_2008}, respectively. Mixed models are useful for describing \textit{grouped data} where observations belonging to the same group are correlated. One way of accounting for such correlation is by introducing random effects into the model which induces a particular correlation structure on the response vector. Different random effects structures induce different correlation structures on the response. 
 
-The linear mixed model (LMM) extends the linear model \eqref{eqn:linmod-matrixform} to
+The \ac{LMM} extends the basic \ac{LM} (Equation~\eqref{eqn:linmod-matrixform}) to
 \begin{equation}
 \label{eqn:linmod-mixed}
   \bc{Y} = \X\bm{\beta} + \Z\bm{\alpha} + \bm{\epsilon},
 \end{equation}
 where $\X$ and $\Z$ are known design matrices, $\bm{\beta}$ is a vector of fixed effects, $\bm{\alpha}$ is a vector of random effects distributed as $\bm{\alpha} \sim \mc{N}(0, \bm{G})$, and $\bm{\epsilon}$ is a vector of random errors distributed as $\bm{\epsilon} \sim \mc{N}(\bm{0}, \bm{R})$. Further, it is assumed that the random effects and errors are mutually independent, that is, $\bm{\alpha} \indep \bm{\epsilon}$.
 
-Estimating the fixed effects $\bm{\beta}$ is rather straightforward and does not require normality. Note that $\bc{Y} = \X\bm{\beta} + \bm{\mc{E}}$, where $\E\left(\bm{\mc{E}}\right) = \bm{0}$ and $\var\left\{\bm{\mc{E}}\right\} = \Z\bm{G}\Z\trans + R = \bm{V}$. Assuming normality, the loglikelihood (ignoring constants) is given by
+Estimating the fixed effects $\bm{\beta}$ is rather straightforward and does not require normality. Note that $\bc{Y} = \X\bm{\beta} + \bm{\mc{E}}$, where $\E\left\{\bm{\mc{E}}\right\} = \bm{0}$ and $\var\left\{\bm{\mc{E}}\right\} = \Z\bm{G}\Z\trans + R = \bm{V}$. Assuming normality, the loglikelihood (ignoring constants) is given by
 \begin{equation}
 \label{eqn:lmm-loglik-long}
-  \ell\left(\bm{\beta}, \bm{\theta}\right) = -\frac{1}{2}\log\left|\bm{V}\right| - \frac{1}{2}\left(\bc{Y} - \X\bm{\beta}\right)\trans\bm{V}^{-1}\left(\bc{Y} - \X\bm{\beta}\right),
+  \loglik\left(\bm{\beta}, \bm{\theta}\right) = -\frac{1}{2}\log\left|\bm{V}\right| - \frac{1}{2}\left(\bc{Y} - \X\bm{\beta}\right)\trans\bm{V}^{-1}\left(\bc{Y} - \X\bm{\beta}\right),
 \end{equation}
-where $\bm{\theta}$ is a vector containing the unique elements of $\bm{V}$. Equating the partial derivative of $\ell\left(\bm{\beta}, \bm{\theta}\right)$, with respect to the parameter $\bm{\beta}$, yields the so-called generalized least squares (GLS) estimator
+where $\bm{\theta}$ is a vector containing the unique elements of $\bm{V}$. Equating the partial derivative of $\loglik\left(\bm{\beta}, \bm{\theta}\right)$, with respect to the parameter $\bm{\beta}$, yields the so-called \ac{GLS} estimator
 \begin{equation}
 \label{eqn:beta-gls}
   \wt{\bm{\beta}} = \left(\X\trans\bm{V}^{-1}\X\right)^{-1}\X\trans\bm{V}^{-1}\bc{Y}.
 \end{equation}
-Notice, however, that the GLS estimator---which happens to be the BLUE of $\bm{\beta}$---depends on the variance-covariance matrix $\bm{V}$. Since this is rarely available in practice, the usual procedure is to estimate $\bm{V}$ and then plug this into Equation~\eqref{eqn:beta-gls}. In other words, if $\widehat{\bm{V}}$ is an estimate of $\bm{V}$, then the estimated or empirical BLUE (EBLUE) of $\bm{\beta}$ is 
+Notice, however, that the \ac{GLS} estimator---which happens to be the \ac{BLUE} of $\bm{\beta}$---depends on the variance-covariance matrix $\bm{V}$. Since this is rarely available in practice, the usual procedure is to estimate $\bm{V}$ and then plug this into Equation~\eqref{eqn:beta-gls}. In other words, if $\widehat{\bm{V}}$ is an estimate of $\bm{V}$, then the \ac{EBLUE} of $\bm{\beta}$ is 
 \begin{equation}
 \label{eqn:beta-egls}
   \wh{\bm{\beta}} = \left(\X\trans\widehat{\bm{V}}^{-1}\X\right)^{-1}\X\trans\widehat{\bm{V}}^{-1}\bc{Y}.
 \end{equation}
 This causes some difficulties, mostly in terms of finite-sample inference, since there is no simple way to account for the variability of $\widehat{\bm{V}}$ when calculating $\var\left\{\wh{\bm{\beta}}\right\}$. See, for example, \citet[pp. 165-167]{mcculloch_generalized_2008}.
 
-A technique known as \textit{best linear unbiased prediction} (BLUP) is commonly used to estimate the random effects $\bm{\alpha}$. It can be shown \citep{henderson_sire_1973} that the BLUE of $\bm{\beta}$ and the BLUP of $\bm{\alpha}$, denoted $\wt{\bm{\alpha}}$, simultaneously minimize
+A technique known as \textit{best linear unbiased prediction} is commonly used to estimate the random effects $\bm{\alpha}$. It can be shown \citep{henderson_sire_1973} that the \ac{BLUE} of $\bm{\beta}$ and the \ac{BLUP} of $\bm{\alpha}$, denoted $\wt{\bm{\alpha}}$, simultaneously minimize
 \begin{equation}
 \label{eqn:henderson's-justification}
   (\bc{Y} - \X\bm{\beta} - \Z\bm{\alpha})\trans\bm{R}^{-1}(\bc{Y} - \X\bm{\beta} - \Z\bm{\alpha}) + \bm{\alpha}\trans\bm{G}^{-1}\bm{\alpha}.
 \end{equation} 
 Henderson showed that the minimum of \eqref{eqn:henderson's-justification} occurs at
-\begin{equation*}
+\begin{align*}
   \begin{bmatrix} 
     \wt{\bm{\beta}} \\ \wt{\bm{\alpha}} 
-  \end{bmatrix} = \bm{\Omega}(\bm{\Omega}\trans\bm{R}^{-1}\bm{\Omega} + \bm{D})\bm{\Omega}\trans\bm{R}^{-1}\bc{Y},
-\end{equation*}
+  \end{bmatrix} &= \argmin{\bm{\beta}, \bm{\alpha}} (\bc{Y} - \X\bm{\beta} - \Z\bm{\alpha})\trans\bm{R}^{-1}(\bc{Y} - \X\bm{\beta} - \Z\bm{\alpha}) + \bm{\alpha}\trans\bm{G}^{-1}\bm{\alpha} \\
+  &= \bm{\Omega}(\bm{\Omega}\trans\bm{R}^{-1}\bm{\Omega} + \bm{D})\bm{\Omega}\trans\bm{R}^{-1}\bc{Y},
+\end{align*}
 where $\wt{\bm{\beta}}$ is as in \eqref{eqn:beta-gls}, $\wt{\bm{\alpha}} = \bm{G}\Z\trans\bm{V}^{-1}\left(\bc{Y} - \X\wt{\bm{\beta}}\right)$, $\bm{\Omega} = \left(\X; \Z\right)$ and $\bm{D} = \diag\left\{\bm{0}_{p \times p}, \bm{G}^{-1}\right\}$.
-For the special case $\bm{R} = \sigma_\epsilon^2\bm{I}$ and $\bm{G} = \sigma_\alpha^2\bm{I}$, Equation~\eqref{eqn:henderson's-justification} reduces to the penalized sum of squares (PSS)
+For the special case $\bm{R} = \sigma_\epsilon^2\bm{I}$ and $\bm{G} = \sigma_\alpha^2\bm{I}$, Equation~\eqref{eqn:henderson's-justification} reduces to the \ac{PSS}
 \begin{equation}
 \label{eqn:lmm-pss}
   \frac{1}{\sigma_\epsilon^2}\norm{\bc{Y} - \X\bm{\beta} - \Z\bm{\alpha}}^2 +\frac{1}{\sigma_\alpha^2}\norm{\bm{\alpha}}^2.
 \end{equation}
-Similar to the EBLUE of $\bm{\beta}$, the estimated BLUP (EBLUP) of $\bm{\alpha}$ is just the BLUP $\wt{\bm{\alpha}}$ with $\bm{G}$ and $\bm{V}$ replaced with their respective estimates, $\widehat{\bm{G}}$ and $\widehat{\bm{V}}$:
+Similar to the \ac{EBLUE} of $\bm{\beta}$, the \ac{EBLUP} of $\bm{\alpha}$ is just the \ac{BLUP} $\wt{\bm{\alpha}}$ with $\bm{G}$ and $\bm{V}$ replaced with their respective estimates, $\widehat{\bm{G}}$ and $\widehat{\bm{V}}$:
 \begin{equation}
 \label{eqn:alpha-eblup}
   \wh{\bm{\alpha}} = \widehat{\bm{G}}\Z\trans\widehat{\bm{V}}^{-1}\left(\bc{Y} - \X\wh{\bm{\beta}}\right).
 \end{equation} 
-In a similar fashion, the BLUP and EBLUP of the mean response are given, respectively, by the equations
+In a similar fashion, the \ac{BLUP} and \ac{EBLUP} of the mean response are given, respectively, by the equations
 \begin{align}
   \widetilde{\bm{\mu}} &= \X\wt{\bm{\beta}} + \Z\wt{\bm{\alpha}}, \label{eqn:mu-blup} \\
   \wh{\bm{\mu}} &= \X\wh{\bm{\beta}} + \Z\wh{\bm{\alpha}}. \label{eqn:mu-eblup}
 \end{align}
-Note that the EBLUP $\wh{\bm{\mu}}$ is just the fitted values.
+Note that the \ac{EBLUP} $\wh{\bm{\mu}}$ is just the fitted values.
 
-Obviously, estimating $\wt{\bm{\beta}}$ and $\wt{\bm{\alpha}}$, requires knowledge of the variance-covariance matrices $\bm{G}$ and $\bm{R}$, which are generally unknown. In practice, we often restrict these matrices to have a simple form, usually involving only a few unknown parameters, earlier denoted by $\bm{\theta}$. These parameters can be estimated via ML estimation. ML estimators of the variance components $\bm{\theta}$, however, tend to become badly biased as the number of fixed effects in the model increases. A more effective approach, known as restricted maximum likelihood (REML) estimation, is often used instead (see, for example, \citet[chap. 6]{mcculloch_generalized_2008}). 
+Obviously, estimating $\wt{\bm{\beta}}$ and $\wt{\bm{\alpha}}$, requires knowledge of the variance-covariance matrices $\bm{G}$ and $\bm{R}$, which are generally unknown. In practice, we often restrict these matrices to have a simple form, usually involving only a few unknown parameters, earlier denoted by $\bm{\theta}$. These parameters can be estimated via \ac{ML} estimation. \ac{ML} estimators of the variance components $\bm{\theta}$, however, tend to become badly biased as the number of fixed effects in the model increases. A more effective approach, known as \ac{REML} estimation, is often used instead (see, for example, \citet[chap. 6]{mcculloch_generalized_2008}). 
 
 
 %% Literature review -----------------------------------------------------------
@@ -1295,14 +1301,14 @@ Recall the intuition behind the inversion interval. Let $I_\mathrm{pred}(x)$ be 
 \begin{equation*}
 \Pr\left\{x_0 \in J_\mathrm{cal}(\mc{Y}_0)\right\} = \Pr\left\{\mc{Y}_0 \in I_\mathrm{pred}(x) | x_0 = x\right\} = 1 - \alpha,
 \end{equation*}
-\citep{clark_calibration_1980}. In other words, a $100(1 - \alpha)\%$ confidence interval for $x_0$ can be obtained by inverting the a corresponding prediction interval for $\mc{Y}_0$. However, we need to make sure to "invert" an appropriate prediction interval (i.e., one that corrects for bias), otherwise, the resulting interval for $x_0$ will likely not be reliable. This suggests the following (bias-corrected) $100(1-\alpha)\%$ calibration interval for the unknown $x_0$:
+\citep{clark_calibration_1980}. In other words, a $100(1 - \alpha)\%$ confidence interval for $x_0$ can be obtained by inverting the a corresponding prediction interval for $\mc{Y}_0$. However, we need to make sure to "invert" an appropriate prediction interval (i.e., one that corrects for bias), otherwise, the resulting interval for $x_0$ will likely not be reliable. This suggests the following (bias-adjusted) $100(1-\alpha)\%$ calibration interval for the unknown $x_0$:
 \begin{equation}
 \label{eqn:bc-inversion-interval}
-  \mc{J}_\mathrm{cal}^{BC}(x_0) = \left\{x_0: \frac{y_0 - \wh{\mu}(x_0)}{\wh{\sigma}_\epsilon^2\left[1 + \bm{\Omega}_0\left(\bm{\Omega}'\bm{\Omega} + \frac{\wh{\sigma}_\epsilon^2}{\wh{\sigma}_\alpha^2}\bm{D}\right)^{-1}\bm{\Omega}_0'\right]} < \mc{F}_{1, df}^{1-\alpha}\right\},
+  \mc{J}_\mathrm{cal}^{BA}(x_0) = \left\{x_0: \frac{y_0 - \wh{\mu}(x_0)}{\wh{\sigma}_\epsilon^2\left[1 + \bm{\Omega}_0\left(\bm{\Omega}'\bm{\Omega} + \frac{\wh{\sigma}_\epsilon^2}{\wh{\sigma}_\alpha^2}\bm{D}\right)^{-1}\bm{\Omega}_0'\right]} < \mc{F}_{1, df}^{1-\alpha}\right\},
 \end{equation}
-where $\mc{F}_{1, df}^{1-\alpha} = \left(t_{df}^{1 - \alpha/2}\right)^2$. As before, great care should be taken to ensure that $\mc{J}_\mathrm{cal}^{BC}(x_0)$ is an interval. This may not be the case, for example, when $\mu(x)$ in not monotonic over the range of interest. Also, as with nonlinear calibration, no closed-form expression exists for $\mc{J}_\mathrm{cal}^{BC}(x)$, thus, iterative techniques are required. In a similar fashion, a $100(1-\alpha)\%$ bias-corrected regulation interval for $x_0$ is obtained by inverting a corresponding bias-corrected confidence interval for the mean response:
+where $\mc{F}_{1, df}^{1-\alpha} = \left(t_{df}^{1 - \alpha/2}\right)^2$. As before, great care should be taken to ensure that $\mc{J}_\mathrm{cal}^{BA}(x_0)$ is an interval. This may not be the case, for example, when $\mu(x)$ in not monotonic over the range of interest. Also, as with nonlinear calibration, no closed-form expression exists for $\mc{J}_\mathrm{cal}^{BA}(x)$, thus, iterative techniques are required. In a similar fashion, a $100(1-\alpha)\%$ bias-corrected regulation interval for $x_0$ is obtained by inverting a corresponding bias-corrected confidence interval for the mean response:
 \begin{equation*}
-  \mc{J}_\mathrm{cal}^{BC}(x_0) = \left\{x_0: \frac{y_0 - \wh{\mu}(x_0)}{\wh{\sigma}_\epsilon^2\bm{\Omega}_0\left(\bm{\Omega}'\bm{\Omega} + \frac{\wh{\sigma}_\epsilon^2}{\wh{\sigma}_\alpha^2}\bm{D}\right)^{-1}\bm{\Omega}_0'} < \mc{F}_{1, df}^{1-\alpha}\right\}.
+  \mc{J}_\mathrm{cal}^{BA}(x_0) = \left\{x_0: \frac{y_0 - \wh{\mu}(x_0)}{\wh{\sigma}_\epsilon^2\bm{\Omega}_0\left(\bm{\Omega}'\bm{\Omega} + \frac{\wh{\sigma}_\epsilon^2}{\wh{\sigma}_\alpha^2}\bm{D}\right)^{-1}\bm{\Omega}_0'} < \mc{F}_{1, df}^{1-\alpha}\right\}.
 \end{equation*}
 
 We designed a small Monte Carlo study to investigate the coverage probability of this technique. The results of this study are presented in Tables~\ref{tab:pspline-monte-carlo-1}-\ref{tab:pspline-monte-carlo-2}. The true calibration function is the sine wave $\mu(x) = \sin(\pi x - \pi/2)/2 + 1/2$ plotted in Figure~\ref{fig:sine-wave}. For data following such a pattern it would be tempting to fit a nonlinear model, perhaps modeling $\mu(x)$ as a \textit{logistic} function. Inference based on the resulting fit would then be inaccurate since, for example, the true calibration curve does not have any asymptotes. For situations like this, it would be useful to have a semiparametric alternative for which to compare inference.
