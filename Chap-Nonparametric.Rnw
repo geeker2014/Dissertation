@@ -255,7 +255,7 @@ where $\mc{IG}$ stands for the inverse gamma distribution. The variance $\sigma_
 
 The (unnormalized) posterior density of $(x_0, \bm{\beta}, \bm{\alpha}, \sigma_\epsilon^2, \sigma_\alpha^2)$ is given by
 \begin{align*}
-  \pi(x_0, \bm{\beta}, \bm{\alpha}, \sigma_\epsilon^2, \sigma_\alpha^2 | \text{data}) &= \pi(x_0, \bm{\beta}, \bm{\alpha}, \sigma_\epsilon^2, \sigma_\alpha^2 | \bm{y}, \bm{y}_0) \\
+  \pi(x_0, \bm{\beta}, \bm{\alpha}, \sigma_\epsilon^2, \sigma_\alpha^2 | \mathbf{data}) &= \pi(x_0, \bm{\beta}, \bm{\alpha}, \sigma_\epsilon^2, \sigma_\alpha^2 | \bm{y}, \bm{y}_0) \\
   &\propto \pi(\bm{y}, \bm{y}_0 | x_0, \bm{\beta}, \bm{\alpha}, \sigma_\epsilon^2, \sigma_\alpha^2)\pi(x_0, \bm{\beta}, \bm{\alpha}, \sigma_\epsilon^2, \sigma_\alpha^2) \\
   &\propto \pi(\bm{y}_0 | x_0, \bm{\beta}, \bm{\alpha}, \sigma_\epsilon^2, \sigma_\alpha^2)\pi(\bm{y} | \bm{\beta}, \bm{\alpha}, \sigma_\epsilon^2, \sigma_\alpha^2)\pi(\bm{\beta}, \bm{\alpha}, \sigma_\epsilon^2, \sigma_\alpha^2)\pi(x_0) \\
   &\propto \pi(\bm{y}_0 | x_0, \bm{\beta}, \bm{\alpha}, \sigma_\epsilon^2)\pi(\bm{y} | \bm{\beta}, \bm{\alpha}, \sigma_\epsilon^2)\pi(\bm{\beta})\pi(\bm{\alpha}|\sigma_\alpha^2)\pi(\sigma_\epsilon^2)\pi(\sigma_\alpha^2)\pi(x_0),

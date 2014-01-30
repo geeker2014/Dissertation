@@ -303,11 +303,11 @@ is a \textit{pivotal quantity} that has an asymptotic standard normal distributi
 \end{equation*}
 where $\bm{J}_n = \bm{1}_n\bm{1}_n\trans$ is an $n \times n$ vector of all ones.
 
-In practice, $\sigma_0^2$ and $\bm{V}$ are usually unknown and need to be estimated from the data. In such cases, an approximate pivot (essentially a Wald statistic), denoted $\mc{W}$, can be obtained by replacing $\sigma_0^2$ and $\bm{V}$ in the above equation with their respective estimates $\wh{\sigma}_0^2$ and $\wh{\bm{V}}$. This suggests an approximate $100(1-\alpha)\%$ confidence interval for $x_0$ of
+In practice, $\sigma_0^2$ and $\bm{V}$ are usually unknown and need to be estimated from the data. In such cases, an approximate pivot (essentially a Wald statistic), denoted $\mc{Q}$, can be obtained by replacing $\sigma_0^2$ and $\bm{V}$ in the above equation with their respective estimates $\wh{\sigma}_0^2$ and $\wh{\bm{V}}$. This suggests an approximate $100(1-\alpha)\%$ confidence interval for $x_0$ of
 \begin{equation}
 \label{eqn:cal-lmm-inversion}
-  %\mc{J}_\mathrm{cal}(x) = \left\{ x: \mc{W}^2 \le z_{1-\alpha/2}^2 \right\},
-  \mc{J}_\mathrm{cal}(x) = \left\{ x: z_{\alpha/2} < \mc{W} \le z_{1-\alpha/2} \right\},
+  %\mc{J}_\mathrm{cal}(x) = \left\{ x: \mc{Q}^2 \le z_{1-\alpha/2}^2 \right\},
+  \mc{J}_\mathrm{cal}(x) = \left\{ x: z_{\alpha/2} < \mc{Q} \le z_{1-\alpha/2} \right\},
 \end{equation}
 where $z_{\alpha/2} = z_{1-\alpha/2}$ denote the $\alpha/2$ and $1 - \alpha/2$ quantiles of a standard normal distribution, respectively. Similar to the approximate predictive pivot (Equation~\eqref{eqn:approximate-predictive-pivot}), it is unlikely that Equation~\eqref{eqn:cal-lmm-inversion} will yield closed-form solutions, thus, the solution must be obtained numerically. For the simulated data example, a 95\% inversion interval based on Equation~\eqref{eqn:cal-lmm-inversion}, corresponding to $y_0 = 0.75$, is given by $(\Sexpr{invest(simdata.lme, y0 = 0.75)["lower"]}, \Sexpr{invest(simdata.lme, y0 = 0.75)["upper"]})$, which is very similar to the Wald-based intervals obtained earlier.
 
@@ -371,13 +371,13 @@ qqline(x0.pb$t)
 \subsection{Parametric bootstrap adjusted inversion interval}
 Although we favor the bootstrap confidence intervals obtained directly from the $R$ bootstrap replicates of $\wh{x}_0$, researchers are likely more familiar with the inversion and Wald-based intervals discussed in the previous two sections. These intervals, however, use the quantiles from a standard normal distribution, hence, rely on normal approximations. The parametric bootstrap can be used to improve upon these intervals by replacing the standard normal quantiles with more accurate ones. For instance, for the inversion interval, at each run in Algorithm~\ref{alg:parboot_cal} we compute
 \begin{equation*}
-  \mc{W}^\boot = \frac{y_0^\boot - \mu\left(\wh{x}_0; \wh{\bm{\beta}}^\boot\right)}{\sqrt{\wh{\sigma}_0^{2\boot} + \X_0\trans\left(\X\trans\wh{\bm{V}}^{*-1}\X\trans\right)^{-1}\X_0}}.
+  \mc{Q}^\boot = \frac{y_0^\boot - \mu\left(\wh{x}_0; \wh{\bm{\beta}}^\boot\right)}{\sqrt{\wh{\sigma}_0^{2\boot} + \X_0\trans\left(\X\trans\wh{\bm{V}}^{*-1}\X\trans\right)^{-1}\X_0}}.
 \end{equation*}
-As a result, we obtain the $R$ bootstrap values $\mc{W}_r^\boot$. Let $\gamma_{\alpha/2}^\boot$ and $\gamma_{1-\alpha/2}^\boot$ denote the sample $\alpha/2$ and $1-\alpha/2$ quantiles of $\mc{W}_r^\boot$, respectively. A bootstrap adjusted inversion interval is then given by
+As a result, we obtain the $R$ bootstrap values $\mc{Q}_r^\boot$. Let $\gamma_{\alpha/2}^\boot$ and $\gamma_{1-\alpha/2}^\boot$ denote the sample $\alpha/2$ and $1-\alpha/2$ quantiles of $\mc{Q}_r^\boot$, respectively. A bootstrap adjusted inversion interval is then given by
 \begin{equation}
 \label{eqn:cal-lmm-inversion-boot}
-  %\mc{J}_\mathrm{cal}(x) = \left\{ x: \mc{W}^2 \le z_{1-\alpha/2}^2 \right\},
-  \mc{J}_\mathrm{cal}^\boot(x) = \left\{ x: \gamma_{\alpha/2}^\boot \le \mc{W} \le \gamma_{1-\alpha/2}^\boot \right\}.
+  %\mc{J}_\mathrm{cal}(x) = \left\{ x: \mc{Q}^2 \le z_{1-\alpha/2}^2 \right\},
+  \mc{J}_\mathrm{cal}^\boot(x) = \left\{ x: \gamma_{\alpha/2}^\boot \le \mc{Q} \le \gamma_{1-\alpha/2}^\boot \right\}.
 \end{equation}
 We illustrate this on the bladder volume example in Section~\ref{sec:bladder-example}. A similar adjustment can also be made for the Wald-based interval as well; this is very similar to the studentized bootstrap procedure outlined in steps (6)-(7) of Algorithm~\ref{alg:boot_cal}.
 
@@ -476,12 +476,12 @@ The resulting standard error is $\Sexpr{round(dm[["SE"]], 2)}$ which yields an a
 
 <<bladder-parboot, echo = FALSE, opts.label = 'fig.7by5', par = TRUE, fig.pos = 'H', fig.scap = 'Bootstrap distribution of $\\wh{\\texttt{volume}}_0$ for the bladder volume example', fig.cap = 'Bootstrap distribution of $\\wh{\\texttt{volume}}_0$ for the bladder volume example. The solid black line indicates the original poin estimate and the red tick marks indicate the position of the 2.5 and 97.5 percentiles of the bootstrap distribution.'>>=
 load("/home/w108bmg/Desktop/Dissertation/Data/bladder-parboot.RData")
-W.boot <- bladder.pb$t[,2]
-w.025 <- quantile(W.boot, 0.025)
-w.975 <- quantile(W.boot, 0.975)
+Q.boot <- bladder.pb$t[,2]
+q.025 <- quantile(Q.boot, 0.025)
+q.975 <- quantile(Q.boot, 0.975)
 @
 
-Obtaining the inversion interval (Equation~\eqref{eqn:cal-lmm-inversion}) is less straightforward; we have to write our own prediction function in \code{R} that will also return the standard errors of the fitted values. Example~\ref{bladder-inversion} shows the minimal \code{R} code necessary to obtain $\mc{J}_\mathrm{cal}(x)$ for the bladder volume example. The first line simply extracts the point estimate, $\wh{\texttt{volume}}_0$, obtained in Example~\ref{bladder-wald}. The next few lines of code define a new prediction function, \code{predFun}, that simply calls the built-in prediction function, but additionally returns the standard errors of the fitted values. The last block of code finds the roots to the equation $\mc{W}^2 - z_{1-\alpha/2}^2 = 0$ where $\mc{W}$ is the approximate pivot described in Section~\ref{sec:calibration-lmm-inversion}. The resulting interval, $(58.24, 137.05)$, is only slightly larger than the interval based on the delta method. Notice it is also not symmetric about the point estimate $\wh{\texttt{volume}}_0 = \Sexpr{round(dm[["Estimate"]], 2)} \text{ ml}$ which, given the nonlinear trend and increasing variation in the data, is more realistic. 
+Obtaining the inversion interval (Equation~\eqref{eqn:cal-lmm-inversion}) is less straightforward; we have to write our own prediction function in \code{R} that will also return the standard errors of the fitted values. Example~\ref{bladder-inversion} shows the minimal \code{R} code necessary to obtain $\mc{J}_\mathrm{cal}(x)$ for the bladder volume example. The first line simply extracts the point estimate, $\wh{\texttt{volume}}_0$, obtained in Example~\ref{bladder-wald}. The next few lines of code define a new prediction function, \code{predFun}, that simply calls the built-in prediction function, but additionally returns the standard errors of the fitted values. The last block of code finds the roots to the equation $\mc{Q}^2 - z_{1-\alpha/2}^2 = 0$ where $\mc{Q}$ is the approximate pivot described in Section~\ref{sec:calibration-lmm-inversion}. The resulting interval, $(58.24, 137.05)$, is only slightly larger than the interval based on the delta method. Notice it is also not symmetric about the point estimate $\wh{\texttt{volume}}_0 = \Sexpr{round(dm[["Estimate"]], 2)} \text{ ml}$ which, given the nonlinear trend and increasing variation in the data, is more realistic. 
 
 <<bladder-inversion, tidy.opts = list(width.cutoff = 60), rexample = TRUE>>=
 ## Extract point estimate from previous example
@@ -506,18 +506,18 @@ c(uniroot(invBounds, interval = c(10, x0.est), tol = 1e-10)$root,
 @
 
 In addition, we can also obtain the bootstrap adjusted inversion interval (Equation~\eqref{eqn:cal-lmm-inversion-boot}) described at the end of Section~\ref{sec:calibration-lmm-parboot}.
-Figure~\ref{fig:bladder-parboot-hist1} shows a histogram of the $R = 9,999$ bootstrap replicates of $W$. As can be seen, the estimated sampling distribution of $W$ is reasonably normal. The necessary quantiles to compute $\mc{J}_\mathrm{cal}^\boot(x)$ are $w_{0.025} = \Sexpr{round(w.025, 2)}$ and $w_{0.975} = \Sexpr{round(w.975, 2)}$ (compare these to the corresponding quantiles from a standard normal distribution; i.e., $\pm 1.96$)). Making the necessary adjustments to the code in Example~\ref{bladder-inversion} yields $\mc{J}_\mathrm{cal}^\boot(x) = (57.94, 138.16)$, which is only slightly wider than the unadjusted inversion interval based on the normal approximation. In short, the normal approximation works quite well for these data.
+Figure~\ref{fig:bladder-parboot-hist1} shows a histogram of the $R = 9,999$ bootstrap replicates of $W$. As can be seen, the estimated sampling distribution of $W$ is reasonably normal. The necessary quantiles to compute $\mc{J}_\mathrm{cal}^\boot(x)$ are $q_{0.025}^\boot = \Sexpr{round(q.025, 2)}$ and $q_{0.975}^\boot = \Sexpr{round(q.975, 2)}$ (compare these to the corresponding quantiles from a standard normal distribution; i.e., $\pm 1.96$)). Making the necessary adjustments to the code in Example~\ref{bladder-inversion} yields $\mc{J}_\mathrm{cal}^\boot(x) = (57.94, 138.16)$, which is only slightly wider than the unadjusted inversion interval based on the normal approximation. In short, the normal approximation works quite well for these data.
 
-<<bladder-parboot-hist1, echo = FALSE, opts.label = 'fig.7by5', par = TRUE, fig.pos = 'H', fig.scap = 'Bootstrap distribution of $W$ for the bladder volume example', fig.cap = 'Bootstrap distribution of $W$ for the bladder volume example. A standard normal distribution (solid black curve) is shown for comparison.'>>=
-W.boot <- bladder.pb$t[,2]
-hist(W.boot, breaks = 50, freq = FALSE, col = "skyblue", border = "white",
+<<bladder-parboot-hist1, echo = FALSE, opts.label = 'fig.7by5', par = TRUE, fig.pos = 'H', fig.scap = 'Bootstrap distribution of $\\mc{Q}$ for the bladder volume example', fig.cap = 'Bootstrap distribution of $W$ for the bladder volume example. A standard normal distribution (solid black curve) is shown for comparison.'>>=
+Q.boot <- bladder.pb$t[,2]
+hist(Q.boot, breaks = 50, freq = FALSE, col = "skyblue", border = "white",
      main = "", xlab = "Bootstrap value")
 curve(dnorm(x), lwd = 3, add = TRUE)
 @
 
 Finally, we compute the bootstrap distribution of $\wh{\texttt{volume}}_0$ directly using Algorithm~\ref{alg:parboot_cal}. Our results are based on a bootstrap simulation of size $R = 9,999$. Since we do not expect the sampling distribution of $\wh{\texttt{volume}}_0$ to be symmetric, we provide only a 95\% percentile bootstrap interval; that is, the interval obtained by taking the lower 2.5 and upper 97.5 percentiles of the bootstrap distribution. The resulting interval, $(58.37, 136.02)$, is quite close to the inversion interval previously obtained. A histogram of the $9,999$ bootstrap replicates of $\wh{\texttt{volume}}_0$ is given in Figure~\ref{fig:bladder-parboot-hist2}. As indicated by the normal Q-Q plot in Figure~\ref{fig:bladder-parboot-hist2}, the bootstrap distribution is positively skewed (the estimated skewness is $0.3011$), providing further support for the inversion and percentile intervals over the symmetric Wald-based interval obtained earlier using the delta method. 
 
-<<bladder-parboot-hist2, echo = FALSE, opts.label = 'fig.7by4', par = TRUE, fig.pos = 'H', fig.scap = 'Bootstrap distribution of $\\wh{\\texttt{volume}}_0$ obtained using Algorithm~\\ref{alg:parboot_cal}', fig.cap = '\\textit{Left}: Bootstrap distribution of $\\wh{\\texttt{volume}}_0$ obtained using Algorithm~\\ref{alg:parboot_cal}. The solid black line indicates the original point estimate and the dotted red lines indicate the positions of the sample 2.5 and 97.5 quantiles of the bootstrap distribution. \\textit{Right}: Normal Q-Q plot of the bootstrap replicates of $\\mc{W}$.'>>=
+<<bladder-parboot-hist2, echo = FALSE, opts.label = 'fig.7by4', par = TRUE, fig.pos = 'H', fig.scap = 'Bootstrap distribution of $\\wh{\\texttt{volume}}_0$ obtained using Algorithm~\\ref{alg:parboot_cal}', fig.cap = '\\textit{Left}: Bootstrap distribution of $\\wh{\\texttt{volume}}_0$ obtained using Algorithm~\\ref{alg:parboot_cal}. The solid black line indicates the original point estimate and the dotted red lines indicate the positions of the sample 2.5 and 97.5 quantiles of the bootstrap distribution. \\textit{Right}: Normal Q-Q plot of the bootstrap replicates of $\\wh{\\texttt{volume}}_0$.'>>=
 v0.boot <- bladder.pb$t[,1]
 par(mfrow = c(1, 2))
 hist(v0.boot, breaks = 50, freq = FALSE, col = set1[3], border = "white",
@@ -528,63 +528,6 @@ qqnorm(v0.boot, xlab = "Sample quantile", ylab = "Theoretical quantile",
        main = "")
 qqline(v0.boot, col = set1[1])
 @
-
-% \begin{table}[H]
-% \label{tab:bladder-20-intervals}
-% \scalebox{0.8}{
-%   \begin{tabular}{lcccc}
-%     \toprule
-%     Interval          & Lower 2.5\% & Upper 97.5\% & Length & SE \\
-%     \midrule
-%     Wald              & ? & ? & ? & ? \\
-%     ML interval       & ? & ? & ? & ? \\
-%     Inversion         & ? & ? & ? & ? \\
-%     Inversion (PB)    & ? & ? & ? & ? \\
-%     Normal (PB)       & ? & ? & ? & ? \\
-%     Percentile (PB)   & ? & ? & ? & ? \\
-%     \bottomrule
-%   \end{tabular}
-% }
-% \caption{Approximate 95\% calibration intervals for the bladder volume data with $\texttt{HD}_0 = 20$ $\mathrm{mm}^2$. The intervals based on the parametric bootstrap are labeled (PB)}
-% \end{table}
-% 
-% \begin{table}[H]
-% \label{tab:bladder-70-intervals}
-% \scalebox{0.8}{
-%   \begin{tabular}{lcccc}
-%     \toprule
-%     Interval          & Lower 2.5\% & Upper 97.5\% & Length & SE \\
-%     \midrule
-%     Wald              & ? & ? & ? & ? \\
-%     ML interval       & ? & ? & ? & ? \\
-%     Inversion         & ? & ? & ? & ? \\
-%     Inversion (PB)    & ? & ? & ? & ? \\
-%     Normal (PB)       & ? & ? & ? & ? \\
-%     Percentile (PB)   & ? & ? & ? & ? \\
-%     \bottomrule
-%   \end{tabular}
-% }
-% \caption{Approximate 95\% calibration intervals for the bladder volume data with $\texttt{HD}_0 = 70$ $\mathrm{mm}^2$. The intervals based on the parametric bootstrap are labeled (PB)}
-% \end{table}
-% 
-% \begin{table}[H]
-% \label{tab:bladder-90-intervals}
-% \scalebox{0.8}{
-%   \begin{tabular}{lcccc}
-%     \toprule
-%     Interval          & Lower 2.5\% & Upper 97.5\% & Length & SE \\
-%     \midrule
-%     Wald              & ? & ? & ? & ? \\
-%     ML interval       & ? & ? & ? & ? \\
-%     Inversion         & ? & ? & ? & ? \\
-%     Inversion (PB)    & ? & ? & ? & ? \\
-%     Normal (PB)       & ? & ? & ? & ? \\
-%     Percentile (PB)   & ? & ? & ? & ? \\
-%     \bottomrule
-%   \end{tabular}
-% }
-% \caption{Approximate 95\% calibration intervals for the bladder volume data with $\texttt{HD}_0 = 90$ $\mathrm{mm}^2$. The intervals based on the parametric bootstrap are labeled (PB)}
-% \end{table}
 
 \section{Discussion}
 We have described a number of techniques for controlled calibration in a (linear) mixed model setting. The Wald-based interval is the simplest, but relies on the asymptotic normality of $\wh{x}_0$ along with a Taylor-series approximation of its variance. Perhaps the biggest drawback to using a Wald-based calibration interval is that it is always symmetric about $\wh{x}_0$. While this is appealing to many researchers, it is not very realistic in standard situations where, say, the data exhibit nonlinear behavior (possibly due to horizontal asymptotes) and nonconstant variance. The asymptotic normality of $\wh{x}_0$ may also be questioned when $\wh{x}_0$ is not the \ac{ML} estimate (as in the bladder volume example). This is akin to using the Wald-based method for nonlinear calibration problems (the software JMP does this). Nonetheless, the estimated sampling distribution of $\wh{x}_0$ displayed in Figures~\ref{fig:simdata-parboot-hist} and \ref{fig:bladder-parboot-hist2} using the parametric bootstrap are both reasonably normal. Thus, the Wald-based approach may still produce reliable inference when the distribution of $\wh{x}_0$ can be considered symmetric. Although more difficult to obtain, the inversion and parametric bootstrap  intervals are presumably superior to the Wald-based interval.

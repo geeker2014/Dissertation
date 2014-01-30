@@ -118,11 +118,11 @@
 % \copreviousdegrees {B.S.} 
 
 \degree          {Doctor of Philosophy}
-\graduation      {??}{March}{2013} % format is {DD}{Month}{YYYY} where
+\graduation      {27}{March}{2014} % format is {DD}{Month}{YYYY} where
                                    % Month must be: March, June,
                                    % September, or December
 
-\designator{AFIT/ENC/DS/14-01} % assigned by the graduate advisor in
+\designator{AFIT-ENC-DS-14-M-01} % assigned by the graduate advisor in
                                % during the student's final quarter
 
 
@@ -131,14 +131,14 @@
                           % AFIT Style Guide
 
 \committee{ % Advisor must be listed first in the list of committee members
-  {Christine Schubert Kabban, PhD (Chairman)},
+  {Christine M. Schubert Kabban, PhD (Chairman)},
   {Raymond Hill, PhD (Member)},
   {Dursun Bulutoglu, PhD (Member)}
 }
 
 \department {Department of Mathematics and Statistics}
 \school     {Graduate School of Engineering and Management}
-\dean       {Adedeji Badiru} % only used for PhD dissertations
+\dean       {ADEDEJI B. BADIRU{,} PhD} % only used for PhD dissertations
 
 % Uncomment the following line to switch from blank signature lines on
 % the approval page to lines marked with ``/signed/'' and the
@@ -151,25 +151,25 @@
 % \committeeSignedDates{2 Jun 2011,3 Jun 2011,4 Jun 2011}
 % \deanSignedDate{9 Jun 2011}
 
-\abstract{Calibration is an important and controversial topic in statistics. In this dissertation, we consider both semiparametric calibration and the application of calibration to grouped data, both of which may be addressed through the use of the linear mixed-effects model. In Chapter~\ref{chap:nonparametric}, we propose a method for obtaining calibration intervals that have good coverage probability when the calibration curve has been estimated \textit{semiparametrically}. We also expand the traditional Bayesian approach to calibration by allowing for a semiparametric calibration curve. In Chapter~\ref{chp:cal-dependent}, we extend the usual methods for statistical calibration to the case of grouped data, that is, where observations can be categorized into a finite set of homogeneous clusters. An important characteristic of grouped data is that observations belonging to the same cluster are often similar, therefore, cannot be considered as independent; these data must be analysed in a way that accounts for this dependence (e.g., using mixed-effects models). We start by extending the classical Wald and inversion methods for obtaining calibration intervals, then we propose a new parametric bootstrap algorithm that, presumably, performs better for calibration in linear mixed-effects models by relaxing normality assumptions that may not be satisfied in practice. In Appendix~\ref{app:investr}, we describe the R package \texttt{investr} we have developed for analyzing calibration data.}
+\abstract{Calibration is an important and controversial topic in statistics. In this dissertation, we consider both semiparametric calibration and the application of calibration to grouped data, both of which may be addressed through the use of mixed-effects models. In Chapter~\ref{chap:nonparametric}, we propose a method for obtaining calibration intervals that have good coverage probability when the calibration curve has been estimated \textit{semiparametrically} and is biased. We also expand the traditional Bayesian approach to calibration by allowing for a semiparametric estimate of the calibration curve. In Chapter~\ref{chp:cal-dependent}, we extend the usual methods for statistical calibration to the case of grouped data, that is, where observations can be categorized into a finite set of homogeneous clusters. Observations belonging to the same cluster are often similar and cannot be considered as independent; hence, we must account for within-subject correlation when making inference. We start by extending the familiar Wald-based and inversion methods using the linear mixed-effects model. Then, we propose a simple parametric bootstrap algorithm that can be used to either obtain calibration intervals directly or to improve the inversion interval by relaxing the normality constraint on the approximate predictive pivot. In Appendix~\ref{app:investr}, we describe the R package \texttt{investr} we have developed for analyzing calibration data.}
 % The abstract can also be saved in a separate file, called abstract.tex for 
 % example, and included here using: "\abstract{\input{abstract}}"
 
 % Required SF298 macros. See the SF298 package guide for additional fields.
-\DatesCovered{Oct 2010--Mar 2014} % First quarter of classes to Graduation
+\DatesCovered{Oct 2011--Mar 2014} % First quarter of classes to Graduation
 \ContractNumber{}   % "in house" if AFIT sponsored or blank otherwise
 \ProjectNumber{}    % JON number (per advisor) or blank
-\SponsoringAgency{} % sponsor address or '\relax' (will appear blank)
-\Acronyms{}         % sponsor unit/office symbol or blank
+\SponsoringAgency{Air Force Office of Scientific Research} % sponsor address or '\relax' (will appear blank)
+\Acronyms{AFOSR/RTA}         % sponsor unit/office symbol or blank
 \SMReportNumber{}   % blank unless sponsoring agency assigned a report number
 \AddlSupplementaryNotes{}   % Add any other comments as necessary
 \ReportClassification {U}   % document classification
 \AbstractClassification {U} % abstract classification
 \PageClassification {U}     % SF 298 classification
 \AbstractLimitation {UU}    % change to 'SAR' if limited distribution
-\SubjectTerms{Add four or five key words/phrases for indexing}
-\ResponsiblePerson {Dr. Im N. Charge (ENG)}
-\RPTelephone {(937) 255-3636 x0000 ImNCharge@afit.edu}  
+\SubjectTerms{Calibration, Bootstrap, Linear mixed-effects model, Smoothing}
+\ResponsiblePerson {Dr. Christine M. Schubert Kabban}
+\RPTelephone {(937) 255-3636 x4549 christine.schubertkabban@afit.edu}  
      % advisor's 4 digit extension and email address.  If necessary to fit into 
      % the block, the \footnotesize command can be placed before the phone
      % number to reduce the font size
@@ -183,13 +183,13 @@
 
 \dedication{\centering To my parents} 
 
-\acknowledgments{Insert optional acknowledgments or remove/comment out
- this line completely.} 
+% \acknowledgments{Insert optional acknowledgments or remove/comment out
+%  this line completely.} 
 % If you prefer to provide "acknowledgements" instead (note the added "e"
 % between the "g" and the "m") then add the "e" in the macro name so that
 % it reads "\acknowledgements".}
 
-\vita{Insert optional vita or remove/comment out this line completely.}
+% \vita{Insert optional vita or remove/comment out this line completely.}
 
 % The default disclaimer and copyright statement is included by default.  An
 % alternate disclaimer for foreign students or others can also be

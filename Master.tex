@@ -167,11 +167,11 @@
 % \copreviousdegrees {B.S.} 
 
 \degree          {Doctor of Philosophy}
-\graduation      {??}{March}{2013} % format is {DD}{Month}{YYYY} where
+\graduation      {27}{March}{2014} % format is {DD}{Month}{YYYY} where
                                    % Month must be: March, June,
                                    % September, or December
 
-\designator{AFIT/ENC/DS/14-01} % assigned by the graduate advisor in
+\designator{AFIT-ENC-DS-14-M-01} % assigned by the graduate advisor in
                                % during the student's final quarter
 
 
@@ -180,14 +180,14 @@
                           % AFIT Style Guide
 
 \committee{ % Advisor must be listed first in the list of committee members
-  {Christine Schubert Kabban, PhD (Chairman)},
+  {Christine M. Schubert Kabban, PhD (Chairman)},
   {Raymond Hill, PhD (Member)},
   {Dursun Bulutoglu, PhD (Member)}
 }
 
 \department {Department of Mathematics and Statistics}
 \school     {Graduate School of Engineering and Management}
-\dean       {Adedeji Badiru} % only used for PhD dissertations
+\dean       {ADEDEJI B. BADIRU{,} PhD} % only used for PhD dissertations
 
 % Uncomment the following line to switch from blank signature lines on
 % the approval page to lines marked with ``/signed/'' and the
@@ -200,25 +200,25 @@
 % \committeeSignedDates{2 Jun 2011,3 Jun 2011,4 Jun 2011}
 % \deanSignedDate{9 Jun 2011}
 
-\abstract{Calibration is an important and controversial topic in statistics. In this dissertation, we consider both semiparametric calibration and the application of calibration to grouped data, both of which may be addressed through the use of the linear mixed-effects model. In Chapter~\ref{chap:nonparametric}, we propose a method for obtaining calibration intervals that have good coverage probability when the calibration curve has been estimated \textit{semiparametrically}. We also expand the traditional Bayesian approach to calibration by allowing for a semiparametric calibration curve. In Chapter~\ref{chp:cal-dependent}, we extend the usual methods for statistical calibration to the case of grouped data, that is, where observations can be categorized into a finite set of homogeneous clusters. An important characteristic of grouped data is that observations belonging to the same cluster are often similar, therefore, cannot be considered as independent; these data must be analysed in a way that accounts for this dependence (e.g., using mixed-effects models). We start by extending the classical Wald and inversion methods for obtaining calibration intervals, then we propose a new parametric bootstrap algorithm that, presumably, performs better for calibration in linear mixed-effects models by relaxing normality assumptions that may not be satisfied in practice. In Appendix~\ref{app:investr}, we describe the R package \texttt{investr} we have developed for analyzing calibration data.}
+\abstract{Calibration is an important and controversial topic in statistics. In this dissertation, we consider both semiparametric calibration and the application of calibration to grouped data, both of which may be addressed through the use of mixed-effects models. In Chapter~\ref{chap:nonparametric}, we propose a method for obtaining calibration intervals that have good coverage probability when the calibration curve has been estimated \textit{semiparametrically} and is biased. We also expand the traditional Bayesian approach to calibration by allowing for a semiparametric estimate of the calibration curve. In Chapter~\ref{chp:cal-dependent}, we extend the usual methods for statistical calibration to the case of grouped data, that is, where observations can be categorized into a finite set of homogeneous clusters. Observations belonging to the same cluster are often similar and cannot be considered as independent; hence, we must account for within-subject correlation when making inference. We start by extending the familiar Wald-based and inversion methods using the linear mixed-effects model. Then, we propose a simple parametric bootstrap algorithm that can be used to either obtain calibration intervals directly or to improve the inversion interval by relaxing the normality constraint on the approximate predictive pivot. In Appendix~\ref{app:investr}, we describe the R package \texttt{investr} we have developed for analyzing calibration data.}
 % The abstract can also be saved in a separate file, called abstract.tex for 
 % example, and included here using: "\abstract{\input{abstract}}"
 
 % Required SF298 macros. See the SF298 package guide for additional fields.
-\DatesCovered{Oct 2010--Mar 2014} % First quarter of classes to Graduation
+\DatesCovered{Oct 2011--Mar 2014} % First quarter of classes to Graduation
 \ContractNumber{}   % "in house" if AFIT sponsored or blank otherwise
 \ProjectNumber{}    % JON number (per advisor) or blank
-\SponsoringAgency{} % sponsor address or '\relax' (will appear blank)
-\Acronyms{}         % sponsor unit/office symbol or blank
+\SponsoringAgency{Air Force Office of Scientific Research} % sponsor address or '\relax' (will appear blank)
+\Acronyms{AFOSR/RTA}         % sponsor unit/office symbol or blank
 \SMReportNumber{}   % blank unless sponsoring agency assigned a report number
 \AddlSupplementaryNotes{}   % Add any other comments as necessary
 \ReportClassification {U}   % document classification
 \AbstractClassification {U} % abstract classification
 \PageClassification {U}     % SF 298 classification
 \AbstractLimitation {UU}    % change to 'SAR' if limited distribution
-\SubjectTerms{Add four or five key words/phrases for indexing}
-\ResponsiblePerson {Dr. Im N. Charge (ENG)}
-\RPTelephone {(937) 255-3636 x0000 ImNCharge@afit.edu}  
+\SubjectTerms{Calibration, Bootstrap, Linear mixed-effects model, Smoothing}
+\ResponsiblePerson {Dr. Christine M. Schubert Kabban}
+\RPTelephone {(937) 255-3636 x4549 christine.schubertkabban@afit.edu}  
      % advisor's 4 digit extension and email address.  If necessary to fit into 
      % the block, the \footnotesize command can be placed before the phone
      % number to reduce the font size
@@ -232,13 +232,13 @@
 
 \dedication{\centering To my parents} 
 
-\acknowledgments{Insert optional acknowledgments or remove/comment out
- this line completely.} 
+% \acknowledgments{Insert optional acknowledgments or remove/comment out
+%  this line completely.} 
 % If you prefer to provide "acknowledgements" instead (note the added "e"
 % between the "g" and the "m") then add the "e" in the macro name so that
 % it reads "\acknowledgements".}
 
-\vita{Insert optional vita or remove/comment out this line completely.}
+% \vita{Insert optional vita or remove/comment out this line completely.}
 
 % The default disclaimer and copyright statement is included by default.  An
 % alternate disclaimer for foreign students or others can also be
@@ -750,7 +750,7 @@ Calibration experiments can be classified as one of two types: \textit{controlle
 \section{Point estimation}
 \label{sec:point-estimation}
 
-Here, we discuss point estimation of $x_0$ for the linear calibration problem, that is, when the calibration curve has the form of the simple linear regression model. The two most popular estimators of $x_0$ are the \textit{classical estimator} and the \textit{inverse estimator}. The classical estimator, which dates back to \citet{eisenhart_interpretation_1939}, is based on "inverting" the calibration curve at $y_0$ (i.e., solving the fitted regression equation for $x_0$) and is easily extended to polynomial and nonlinear calibration problems. The inverse estimator, as we will see in Section~\ref{sec:bayesian}, is more useful under a specific Bayesian framework.  
+Here, we discuss point estimation of $x_0$ for the linear calibration problem, that is, when the calibration curve has the form of the simple linear regression model. The two most popular estimators of $x_0$ are the \textit{classical estimator} and the \textit{inverse estimator}. The classical estimator, which dates back to \citet{eisenhart_interpretation_1939}, is based on inverting the calibration curve at $y_0$ (i.e., solving the fitted regression equation for $x_0$) and is easily extended to polynomial and nonlinear calibration problems. The inverse estimator, as we will see in Section~\ref{sec:bayesian}, is more useful under a specific Bayesian framework.  
 
 \subsection{The classical estimator}
 Suppose we have $n$ observations $(x_i, \mc{Y}_i)$. We assume the $x_i$'s were measured without error. (The case where there is error in both variables is discussed in \citet{carroll_effect_1986}.) Generally, the model considered is of the form
@@ -765,10 +765,10 @@ The fitted calibration line is given as
 \label{eqn:fitted-slr-model}
   \wh{\mu} = \wh{\beta}_0 + \wh{\beta}_1 x,
 \end{equation}
-where $\wh{\beta}_0$ and $\wh{\beta}_1$ are the \ac{ML} estimates of $\beta_0$ and $\beta_1$, respectively. If we observe $\mc{Y}_0 = y_0$, where $\mc{Y}_0 \sim \mc{N}(\beta_0 + \beta_1 x_0, \sigma_\epsilon^2)$, then the obvious estimate of $x_0$ is obtained by "inverting" the calibration line:
+where $\wh{\beta}_0$ and $\wh{\beta}_1$ are the \ac{ML} estimates of $\beta_0$ and $\beta_1$, respectively. If we observe $\mc{Y}_0 = y_0$, where $\mc{Y}_0 \sim \mc{N}(\beta_0 + \beta_1 x_0, \sigma_\epsilon^2)$, then the obvious estimate of $x_0$ is obtained by inverting the calibration line:
 \begin{equation}
 \label{eqn:x0-mle}
-  \wh{x}_0 = {f}^{-1}(y_0; \bm{\beta}) = \frac{y_0 - \wh{\beta}_0}{\wh{\beta}_1} = \bar{x} + \frac{S_{xx}}{S_{xy}}(y_0 - \bar{y}),
+  \wh{x}_0 = \mu^{-1}(y_0; \bm{\beta}) = \frac{y_0 - \wh{\beta}_0}{\wh{\beta}_1} = \bar{x} + \frac{S_{xx}}{S_{xy}}(y_0 - \bar{y}),
 \end{equation}
 where $S_{xy} = \sum(x_i-\bar{x})(y_i-\bar{y})$, and $S_{xx} = \sum(x_i-\bar{x})^2$. Under the assumption of i.i.d. normal errors, Equation~\eqref{eqn:x0-mle} is the \ac{ML} estimate of $x_0$. More generally, suppose in addition to the standards 
 \begin{equation*}
@@ -791,10 +791,10 @@ In practice, assuming that $\sigma_{\text{I}}^2 = \sigma_{\text{II}}^2$ is often
 The log-likelihood for all $n + m$ observations is
 \begin{equation*}
 \begin{split}
-  \ell\left(\beta_0, \beta_1, \sigma_\epsilon^2, x_0\right) = &-\frac{n+m}{2}\log(2\pi\sigma_\epsilon^2)-\\ &\quad \frac{1}{2\sigma_\epsilon^2}\left[\sum_{i=1}^n(\mc{Y}_i-\beta_0-\beta_1x_i)^2 + \sum_{i=n+1}^{n+m}(\mc{Y}_i-\beta_0-\beta_1x_0)^2\right].
+  \loglik\left(\beta_0, \beta_1, \sigma_\epsilon^2, x_0\right) = &-\frac{n+m}{2}\log(2\pi\sigma_\epsilon^2)-\\ &\quad \frac{1}{2\sigma_\epsilon^2}\left[\sum_{i=1}^n(\mc{Y}_i-\beta_0-\beta_1x_i)^2 + \sum_{i=n+1}^{n+m}(\mc{Y}_i-\beta_0-\beta_1x_0)^2\right].
 \end{split}
 \end{equation*}
-Equating the partial derivatives of $\ell\left(\beta_0, \beta_1, \sigma_\epsilon^2, x_0\right)$ to zero and solving for the parameters produces the usual \ac{ML} estimators of the slope and intercept, but also yields
+Equating the partial derivatives of $\loglik\left(\beta_0, \beta_1, \sigma_\epsilon^2, x_0\right)$ to zero and solving for the parameters produces the usual \ac{ML} estimators of the slope and intercept, but also yields
 \begin{align}
   \wh{x}_0 &= \frac{\wb{\mc{Y}}_0-\wh{\beta}_0}{\wh{\beta}_1} \label{eqn:x0-mle2} \\
   \wh{\sigma}_\epsilon^2 &= \frac{1}{n+m-3}\left[\sum_{i=1}^n\left(\mc{Y}_i-\wh{\beta}_0-\wh{\beta}_1 x_i\right)^2 + \sum_{i=n+1}^{n+m}\left(\mc{Y}_i-\wb{\mc{Y}}_0\right)^2\right] \label{eqn:pooledvar},
@@ -830,7 +830,7 @@ Using extensive Monte Carlo simulations, \citet{krutchkoff_classical_1967} argue
 When the error distribution is normal and $n \ge 4$, the inverse estimator has finite \ac{MSE} \citep{oman_exact_1985}; whereas the classical estimator has infinite \ac{MSE} for finite $n$ \citep{williams_note_1969}. Further, \citet{williams_note_1969} established that "...no unbiased estimator [of $x_0$] will have finite variance", arguing that \ac{MSE} is an inappropriate criterion for comparing the two estimators. \citet{halperin_inverse_1970} agreed with Williams and suggested the use of the \textit{Pitman closeness} criterion (\citealt{pitman_closest_1937}; \citealt[pg. 290]{mood_introduction_1974}) instead. For a parameter $\phi$ with parameter space $\Phi$, an estimator $T_1$ is said to be Pitman closer (to $\phi$) than another estimator $T_2$ if for all $\phi \in \Phi$,
 \begin{equation}
 %\label{eqn:pitman}
-  P_\phi(|T_1 - \phi| < |T_2 - \phi|) > 0.5.
+  \Prob_\phi\left(|T_1 - \phi| < |T_2 - \phi|\right) > 0.5.
 \end{equation}
 Unlike the \ac{MSE} criterion, Pitman closeness takes into consideration the correlation between the two estimators being compared (here, they are perfectly correlated). With respect to the Pitman closeness criterion, Halperin claimed that the classical estimator is superior both outside and within the range of predictor values; though, Halperin's conclusions were based on asymptotic approximations. In addition, Halperin also compared the two estimators in terms of consistency and \ac{MSE} of the relevant asymptotic distributions, showing that Krutchkoff's findings were only true for a closed interval around $\bar{x}$. The width of this interval depends on the product of the standardized slope and standard deviation of the predictor values, $\sigma_x$. Halperin also preferred the classical estimator on the basis that it yields an exact $100(1 - \alpha)\%$ confidence region for $x_0$ (see Section~\ref{sec:inversion-interval}). In response, \citet{krutchkoff_calibration_1972} used the Pitman closeness criterion in Monte Carlo simulations and obtained the opposite results; that is, the inverse estimator was overall superior to the classical estimator. The contradiction seems to stem from the range of predictor values considered by both authors.
 
@@ -875,14 +875,14 @@ Much effort has been put into deriving and comparing point estimators for $x_0$.
 %% Inversion interval
 \subsection{Inversion interval}
 \label{sec:inversion-interval}
-Similar to "inverting" the calibration curve to obtain a point estimate, a confidence interval for $x_0$ can be constructed by "inverting" a prediction interval for the response. We refer to this type of calibration interval as the inversion interval. The inversion interval relies on the distribution of the \textit{predictive pivot}, $\mc{W}$, which for the linear calibration problem is given by
+Similar to inverting the calibration curve to obtain a point estimate, a confidence interval for $x_0$ can be constructed by inverting a prediction interval for the response. We refer to this type of calibration interval as the inversion interval. The inversion interval relies on the distribution of the \textit{predictive pivot}, $\mc{Q}$, which for the linear calibration problem is given by
 \begin{equation}
 \label{eqn:predictive-pivot}
-  \mc{W} = \frac{\wb{\mc{Y}}_0-\wh{\beta}_0-\wh{\beta}_1 x_0}{\sqrt{\wh{\sigma}_\epsilon^2\left[\frac{1}{m}+\frac{1}{n}+\frac{(x_0-\bar{x})^2}{S_{xx}}\right]}}.
+  \mc{Q} = \frac{\wb{\mc{Y}}_0-\wh{\beta}_0-\wh{\beta}_1 x_0}{\sqrt{\wh{\sigma}_\epsilon^2\left[\frac{1}{m}+\frac{1}{n}+\frac{(x_0-\bar{x})^2}{S_{xx}}\right]}}.
 \end{equation}
-It can be shown \citep{graybill_theory_1976} that $\mc{W} \sim t_{n+m-3}$, hence, 
+It can be shown \citep{graybill_theory_1976} that $\mc{Q} \sim t_{n+m-3}$, hence, 
 \begin{equation*}
-  \Prob\left(|\mc{W}| < t_{n+m-3}^{1-\alpha/2}\right) = 1 - \alpha. 
+  \Prob\left(|\mc{Q}| < t_{n+m-3}^{1-\alpha/2}\right) = 1 - \alpha. 
 \end{equation*}
 Squaring both sides of the inequality and expanding, we obtain a simple quadratic in $x_0$:
 \begin{equation}
@@ -937,12 +937,12 @@ This approximation is useful when $g$ is small, say $g < 0.05$ \citep{draper_app
 For nonlinear calibration curves, 
 \begin{equation}
 \label{eqn:approximate-predictive-pivot}
-  \mc{W} = \frac{\wb{\mc{Y}}_0 - \mu\left(x_0; \wh{\bm{\beta}}\right)}{\sqrt{\wh{\sigma}_\epsilon^2/m + \wh{\var}\left\{\mu\left(x_0; \wh{\bm{\beta}}\right)\right\}}}
+  \mc{Q} = \frac{\wb{\mc{Y}}_0 - \mu\left(x_0; \wh{\bm{\beta}}\right)}{\sqrt{\wh{\sigma}_\epsilon^2/m + \wh{\var}\left\{\mu\left(x_0; \wh{\bm{\beta}}\right)\right\}}}
 \end{equation}
-is only an approximate pivot. We assume $\mc{W} \sim \mc{N}(0, 1)$ as $n$ goes to $\infty$. An approximate $100(1 - \alpha)\%$ confidence interval for $x_0$ based on Equation~\eqref{eqn:approximate-predictive-pivot} is the set 
+is only an approximate pivot. We assume $\mc{Q} \sim \mc{N}(0, 1)$ as $n$ goes to $\infty$. An approximate $100(1 - \alpha)\%$ confidence interval for $x_0$ based on Equation~\eqref{eqn:approximate-predictive-pivot} is the set 
 \begin{equation}
 \label{eqn:nonlinear-inversion-interval}
-  \mc{J}_\mathrm{cal}(x) = \left\{x: \left|\bar{y}_0 - \mu\left(x; \wh{\bm{\beta}}\right)\right| \le z_{1-\alpha/2} \cdot \sqrt{\wh{\sigma}_\epsilon^2/m + \wh{\var}\left\{\mu\left(x; \wh{\bm{\beta}}\right)\right\}}\right\},
+  \mc{J}_\mathrm{cal}(x) = \left\{x: \left|\bar{y}_0 - \mu\left(x; \wh{\bm{\beta}}\right)\right| \le z_{1-\alpha/2} \sqrt{\wh{\sigma}_\epsilon^2/m + \wh{\var}\left\{\mu\left(x; \wh{\bm{\beta}}\right)\right\}}\right\},
 \end{equation}
 where $z_{1-\alpha/2}$ is the $1 - \alpha/2$ quantile of the standard normal distribution. To be more conservative, we can replace $z_{1-\alpha/2}$ with $t_{n+m-p-1}^{1-\alpha/2}$, the $1-\alpha/2$ quantile of a Student's $t$-distribution with $n+m-p-1$ degrees of freedom ($p$ being the dimension $\bm{\beta}$). Unlike the linear calibration problem, the solution to Equation~\eqref{eqn:nonlinear-inversion-interval} cannot be written in closed-form and will require iterative techniques. 
 
@@ -993,14 +993,14 @@ The estimated standard error ($\se$) of $\wh{x}_0$ is just $\se\left\{\wh{x}_0\r
 Assuming that
 \begin{equation}
 \label{eqn:approx_pivot}
-  Q = \frac{\wh{x}_0 - x_0}{\wh{\se}\left\{\wh{x}_0\right\}} \stackrel{\cdot}{\sim} \mc{N}(0, 1)
+  \mc{W} = \frac{\wh{x}_0 - x_0}{\wh{\se}\left\{\wh{x}_0\right\}} \stackrel{\cdot}{\sim} \mc{N}(0, 1)
 \end{equation}
 for "large" $n$ leads to an approximate $100(1-\alpha)\%$ Wald-based confidence interval for $x_0$ of 
 \begin{equation}
 \label{eqn:x0_ci_wald}
   \wh{x}_0 \pm t_{n+m-p-1}^{1-\alpha/2} \cdot \wh{\se}\left\{\wh{x}_0\right\},
 \end{equation}
-where $t_{n+m-p-1}^{1-\alpha/2}$ is the $1-\alpha/2$ quantile of a Student's $t$-distribution with $n+m-p-1$ degrees of freedom. If the sample size is large enough, we could replace $t_{n+m-p-1}^{1-\alpha/2}$ with $z_{1-\alpha/2}$, the $1-\alpha/2$ quantile of a standard normal distribution. Unlike the inversion interval, Equation~\eqref{eqn:nonlinear-inversion-interval}, the Wald-based interval always exists and is symmetric about the point estimate $\wh{x}_0$. This approach is useful when it is difficult (or impossible) to invert a corresponding prediction interval. The symmetry of the Wald interval, however, may be unrealistic in nonlinear calibration problems when, for example, $\bar{y}_0$ is near a horizontal asymptote \citep{schwenke_callibration_1991}. Perhaps the biggest drawback of the Wald interval is the approximate normality assumption for $Q$, which is not always reasonable in practice. For example, in simple linear calibration, the distribution of $\wh{x}_0$ may not even be unimodal \citep{buonaccorsi_design_1986}. On the other hand, for the simple linear calibration problem, the Wald-based interval is equivalent to the approximate inversion interval given in Equation~\eqref{eqn:x0_ci_inv_approx}. Thus, provided $g$ is "small", the Wald interval may perform well even when $Q$ is not asymptotically normal.
+where $t_{n+m-p-1}^{1-\alpha/2}$ is the $1-\alpha/2$ quantile of a Student's $t$-distribution with $n+m-p-1$ degrees of freedom. If the sample size is large enough, we could replace $t_{n+m-p-1}^{1-\alpha/2}$ with $z_{1-\alpha/2}$, the $1-\alpha/2$ quantile of a standard normal distribution. Unlike the inversion interval, Equation~\eqref{eqn:nonlinear-inversion-interval}, the Wald-based interval always exists and is symmetric about the point estimate $\wh{x}_0$. This approach is useful when it is difficult (or impossible) to invert a corresponding prediction interval. The symmetry of the Wald interval, however, may be unrealistic in nonlinear calibration problems when, for example, $\bar{y}_0$ is near a horizontal asymptote \citep{schwenke_callibration_1991}. Perhaps the biggest drawback is the approximate normality assumption for $\mc{W}$, which is not always reasonable in practice. For example, in simple linear calibration, the distribution of $\wh{x}_0$ may not even be unimodal \citep{buonaccorsi_design_1986}. On the other hand, for the simple linear calibration problem, the Wald-based interval is equivalent to the approximate inversion interval given in Equation~\eqref{eqn:x0_ci_inv_approx}. Thus, provided $g$ is "small", the Wald interval may perform well even when $\mc{W}$ is not asymptotically normal.
 
 \citet{schwenke_callibration_1991} discuss the inversion and Wald confidence intervals for nonlinear calibration. Using simulation, they showed that the inversion and Wald intervals can attain the desired confidence level in samples of size 20 for a nonlinear exponential decay model. They also discuss testing the equality of two calibration points. However, Schwenke and Millikem treat $\mc{Y}_0$ as a fixed constant. In regulation-type problems, this is the correct approach. However, in calibration, the confidence interval for $x_0$ will be too narrow. To illustrate, consider the conventional treatment group of the postmortem data analyzed in \citet{schwenke_callibration_1991}. In essence, Schwenke and Millikem computed the time corresponding to a mean pH level of 6.0, not an observed pH level of 6.0. They list a 95\% Wald-based confidence interval for $x_0$ of $(3.315, 4.317)$. Accounting for the correct variation, however, this interval should actually be $(2.615, 5.016)$. The standard error they computed for $\wh{x}_0$ is based on $\bm{T} = (\wh{\beta}_0, \wh{\beta}_1, \wh{\beta}_2)\trans$ whereas here it is based on $\bm{T} = (\mc{Y}_0, \wh{\beta}_0, \wh{\beta}_1, \wh{\beta}_2)\trans$. In short, Schwenke and Millikem only account for the variance of the estimated regression parameters whereas in a true calibration problem, the variance of $\mc{Y}_0$ needs to be taken into account. 
 
@@ -1041,10 +1041,10 @@ In this section, we outline a general bootstrap approach to controlled calibrati
 	  \begin{enumerate}[(a)]
       \item set $x_i^\boot = x_i$\;
 	    \item randomly sample $\epsilon_i^\boot$ from the centered residuals $e_1', \dotsc, e_n'$\;
-	    \item set $y_i^\boot = \mu(x_i; \wh{\bm{\beta}}) + \epsilon_i^\boot$\;
+	    \item set $y_i^\boot = \mu\left(x_i; \wh{\bm{\beta}}\right) + \epsilon_i^\boot$\;
 		\end{enumerate}
   }
-	\item Fit model to $(x_1^\boot, y_1^\boot), \dotsc, (x_n^\boot, y_n^\boot)$, giving estimates $\wh{\bm{\beta}}_r^\boot$, $\wh{\sigma}_r^{2\boot}$\;
+	\item Fit model to $\left(x_1^\boot, y_1^\boot\right), \dotsc, \left(x_n^\boot, y_n^\boot\right)$, giving estimates $\wh{\bm{\beta}}_r^\boot$, $\wh{\sigma}_r^{2\boot}$\;
 	\item \For{$j = 1$ \KwTo $m$}{
 	  \begin{enumerate}
 		  \item randomly sample $\epsilon_j^\boot$ from the centered residuals $e_1', \dotsc, e_n'$\;
@@ -1052,7 +1052,7 @@ In this section, we outline a general bootstrap approach to controlled calibrati
 		\end{enumerate}
 	}
 	\item Set $\bar{y}_{0r}^\boot = \sum_{k=1}^m y_{0k}^\boot/m$\;
-	\item Set $\wh{x}_{0r}^\boot = \mu^{-1}(\bar{y}_{0r}^\boot; \wh{\bm{\beta}}_r^\boot)$\;
+	\item Set $\wh{x}_{0r}^\boot = \mu^{-1}\left(\bar{y}_{0r}^\boot; \wh{\bm{\beta}}_r^\boot\right)$\;
 \end{enumerate}
 \vspace{5pt}
 \textit{if calculating an interval based on the studentized bootstrap, then additionally:}
@@ -1060,31 +1060,31 @@ In this section, we outline a general bootstrap approach to controlled calibrati
 \begin{enumerate}[(1)]
   \setcounter{enumi}{5}
 	\item Compute $\wh{\se}\left\{\wh{x}_{0r}^\boot\right\}$\;
-	\item Set $Q_r^\boot = (\wh{x}_{0r}^\boot - \wh{x}_0) / \wh{\se}\left\{\wh{x}_{0r}^\boot\right\}$\;
+	\item Set $\mc{W}_r^\boot = (\wh{x}_{0r}^\boot - \wh{x}_0) / \wh{\se}\left\{\wh{x}_{0r}^\boot\right\}$\;
 \end{enumerate}
 }
 \end{singlespace}
 \caption{Model-based resampling for controlled calibration. \label{alg:boot_cal}}
 \end{algorithm}
 
-A few issues regarding the residuals in Algorithm~\ref{alg:boot_cal} are worth considering. For the linear case, it is preferable to scale the residuals before centering \citep{davison_bootstrap_1997}. In particular, compute $r_i = e_i/\sqrt{1-h_{ii}}$, where $h_{ii}$ are the diagonal elements of the hat matrix $\bm{H} = \X\trans(\X\trans\X)^{-1}\X$. We then sample $\epsilon_j^\boot$ from the modified residuals $r_1 - \bar{r}, \dotsc, r_n - \bar{r}$. This transforms the residuals so that they are centered and have constant variance $\sigma_\epsilon^2$. For nonlinear calibration curves, the residuals should be corrected for bias in addition to centering them \citep{davison_bootstrap_1997}. When there are outliers in the residuals, the bootstrap distribution of $\wh{x}_0$ can become skewed or multimodal. One suggestion is to replace the residuals in step (3) with something smoother, say random variates from a normal distribution. For the case $m > 1$, \citet{jones_bootstrapping_1999} suggests using a "residual pool" formed by $e_1, \dotsc, e_n$ plus residuals computed from the unknowns: $e_{n+j} = y_{n+j} - \bar{y}_0$ $(j = 1, 2, \dotsc, m)$. In Section~\ref{sec:point-estimation}, we mentioned that it is often reasonable to assume $\sigma_{\text{I}}^2 = \sigma_{\text{II}}^2$. However, if this assumption is not valid, then we can still proceed by resampling seperately from the two sets of residuals $\big\{e_i\big\}_{i = 1}^n$ and $\big\{e_j\big\}_{j = n + 1}^{n + m}$ \citep{gruet_calibration_1993, jones_bootstrapping_1999}. For instance, we can resample from $\big\{e_i\big\}_{i = 1}^n$ in step (1) and from $\big\{e_j\big\}_{j = n + 1}^{n + m}$ in step (3) of Algorithm~\ref{alg:boot_cal}. We can also accommodate nonconstant variance (i.e., heteroscedasticity) by applying the \textit{wild bootstrap} \citep[pp. 272]{davison_bootstrap_1997}. This approach is discussed in \citet[pp. 142]{huet_statistical_2004}.
+A few issues regarding the residuals in Algorithm~\ref{alg:boot_cal} are worth considering. For the linear case, it is preferable to scale the residuals before centering \citep{davison_bootstrap_1997}. In particular, compute $r_i = e_i/\sqrt{1-h_{ii}}$, where $h_{ii}$ are the diagonal elements of the hat matrix, $\bm{H} = \X\trans(\X\trans\X)^{-1}\X$. We then sample $\epsilon_j^\boot$ from the modified residuals $r_1 - \bar{r}, \dotsc, r_n - \bar{r}$. This transforms the residuals so that they are centered and have constant variance $\sigma_\epsilon^2$. For nonlinear calibration curves, the residuals should be corrected for bias in addition to centering them \citep{davison_bootstrap_1997}. When there are outliers in the residuals, the bootstrap distribution of $\wh{x}_0$ can become skewed or multimodal. One suggestion is to replace the residuals in step (3) with something smoother, say random variates from a normal distribution. For the case $m > 1$, \citet{jones_bootstrapping_1999} suggests using a "residual pool" formed by $e_1, \dotsc, e_n$ plus residuals computed from the unknowns: $e_{n+j} = y_{n+j} - \bar{y}_0$ $(j = 1, 2, \dotsc, m)$. In Section~\ref{sec:point-estimation}, we mentioned that it is often reasonable to assume $\sigma_{\text{I}}^2 = \sigma_{\text{II}}^2$. However, if this assumption is not valid, then we can still proceed by resampling seperately from the two sets of residuals $\big\{e_i\big\}_{i = 1}^n$ and $\big\{e_j\big\}_{j = n + 1}^{n + m}$ \citep{gruet_calibration_1993, jones_bootstrapping_1999}. For instance, we can resample from $\big\{e_i\big\}_{i = 1}^n$ in step (1) and from $\big\{e_j\big\}_{j = n + 1}^{n + m}$ in step (3) of Algorithm~\ref{alg:boot_cal}. We can also accommodate nonconstant variance (i.e., heteroscedasticity) by applying the \textit{wild bootstrap} \citep[pp. 272]{davison_bootstrap_1997}. This approach is discussed in \citet[pp. 142]{huet_statistical_2004}.
 
-Once we have our bootstrap replicates, a number of different bootstrap confidence intervals can be constructed. For a studentized interval, we compute $R$ bootstrap replicates of $Q$ \eqref{eqn:approx_pivot}: $Q_1^\boot, \dotsc, Q_R^\boot$. This is outlined in steps (6)-(7) of Algorithm~\ref{alg:boot_cal}. Instead of relying on normal theory assumptions about $Q$, as when computing the Wald interval, the bootstrap estimates the distribution of $Q$ directly from the data. Thus, instead of approximating the quantiles of $Q$ using a standard table, a "table is built for the data at hand" \citep{efron_boot_1994}. An approximate $100(1 - \alpha)\%$ confidence interval for $x_0$ based on the studentized bootstrap is given by
+Once we have our bootstrap replicates, a number of different bootstrap confidence intervals can be constructed. For a studentized interval, we compute $R$ bootstrap replicates of $\mc{W}$ (Equation~\eqref{eqn:approx_pivot}): $\mc{W}_1^\boot, \mc{W}_2^\boot, \dotsc, \mc{W}_R^\boot$. This is outlined in steps (6)-(7) of Algorithm~\ref{alg:boot_cal}. Instead of relying on normal theory assumptions about $\mc{W}$, as when computing the Wald interval, the bootstrap estimates the distribution of $\mc{W}$ directly from the data. Thus, instead of approximating the quantiles of $\mc{W}$ using a standard table, a "table is built for the data at hand" \citep{efron_boot_1994}. An approximate $100(1 - \alpha)\%$ confidence interval for $x_0$ based on the studentized bootstrap is given by
 \begin{equation}
 \label{eqn:student_int}
   \left( \wh{x}_0 - \gamma_{1-\alpha/2}^\boot \cdot \wh{\se}\left\{\wh{x}_0\right\}, \wh{x}_0 - \gamma_{\alpha/2}^\boot \cdot \wh{\se}\left\{\wh{x}_0\right\} \right),
 \end{equation}
-where $\gamma_{\alpha/2}^\boot$ and $\gamma_{1 - \alpha/2}^\boot$ are the sample quantiles from the bootstrap distribution of $Q$. One drawback of this approach is that it requires an estimate of the standard error, $\wh{\se}\left\{\wh{x}_{0r}^\boot\right\}$. We could use a Taylor series approximation, as in the delta method, but this is known to be unreliable for small samples. Another alternative is to use the bootstrap to estimate the standard error of each $\wh{x}_{0r}^\boot$. This implies a second level of bootstrapping nested within the first and can be computationally expensive. The studentized interval for controlled calibration using the large-sample formula for the standard error (see Equation~\eqref{eqn:x0-lm-delta}) is discussed by \citet{zeng_bootstrap-adjusted_1997} and  \citet{jones_bootstrapping_1999}. This interval can perform poorly in practice and is easily influenced by outliers in the data. 
+where $\gamma_{\alpha/2}^\boot$ and $\gamma_{1 - \alpha/2}^\boot$ are the sample quantiles from the bootstrap distribution of $\mc{W}$. One drawback of this approach is that it requires an estimate of the standard error, $\wh{\se}\left\{\wh{x}_{0r}^\boot\right\}$. We could use a Taylor series approximation, as in the delta method, but this is known to be unreliable for small samples. Another alternative is to use the bootstrap to estimate the standard error of each $\wh{x}_{0r}^\boot$. This implies a second level of bootstrapping nested within the first and can be computationally expensive. The studentized interval for controlled calibration using the large-sample formula for the standard error (see Equation~\eqref{eqn:x0-lm-delta}) is discussed by \citet{zeng_bootstrap-adjusted_1997} and  \citet{jones_bootstrapping_1999}. This interval can perform poorly in practice and is easily influenced by outliers in the data. 
 
 Yet another technique \citep{jones_bootstrapping_1999, huet_statistical_2004} is to bootstrap the predictive pivot in Equation~\eqref{eqn:approximate-predictive-pivot}:
 \begin{equation*}
-  \mc{W}^{\boot} = \frac{\bar{y}_0^\boot - \mu\left(\wh{x}_0; \wh{\bm{\beta}}^\boot\right)}{\wh{\se}^\boot\left\{\bar{y}_0^\boot - \mu\left(\wh{x}_0; \wh{\bm{\beta}}^\boot\right)\right\}} = \frac{\bar{y}_0^\boot - \mu\left(\wh{x}_0; \wh{\bm{\beta}}^\boot\right)}{\sqrt{\wh{\sigma}_\epsilon^{2\boot}/m + \wh{\var}^\boot\left\{\mu\left(\wh{x}_0; \wh{\bm{\beta}}^\boot\right)\right\}}}.
+  \mc{Q}^{\boot} = \frac{\bar{y}_0^\boot - \mu\left(\wh{x}_0; \wh{\bm{\beta}}^\boot\right)}{\wh{\se}^\boot\left\{\bar{y}_0^\boot - \mu\left(\wh{x}_0; \wh{\bm{\beta}}^\boot\right)\right\}} = \frac{\bar{y}_0^\boot - \mu\left(\wh{x}_0; \wh{\bm{\beta}}^\boot\right)}{\sqrt{\wh{\sigma}_\epsilon^{2\boot}/m + \wh{\var}^\boot\left\{\mu\left(\wh{x}_0; \wh{\bm{\beta}}^\boot\right)\right\}}}.
 \end{equation*}
-For the linear calibration problem, $\mc{W}^{*} = Q^{*}$, hence the resulting interval is the same. For the nonlinear calibration problem, however, a $100(1-\alpha)\%$ confidence interval for $x_0$ based on the predictive pivot is given by the set
+For the linear calibration problem, $\mc{Q}^\boot = \mc{W}^\boot$, hence the resulting interval is the same. For the nonlinear calibration problem, however, a $100(1-\alpha)\%$ confidence interval for $x_0$ based on the predictive pivot is given by the set
 \begin{equation*}
-	\mc{J}_\mathrm{cal}^\boot(x) = \left\{x: \gamma_{\alpha/2}^\boot \le \mc{W} \le \gamma_{1-\alpha/2}^\boot\right\},
+	\mc{J}_\mathrm{cal}^\boot(x) = \left\{x: \gamma_{\alpha/2}^\boot \le \mc{Q} \le \gamma_{1-\alpha/2}^\boot\right\},
 \end{equation*}
-where $\gamma_{\alpha/2}^\boot$ and $\gamma_{1-\alpha/2}^\boot$ are the $\alpha/2$ and $1-\alpha/2$ quantiles of the bootstrap distribution of $\mc{W}$. This mimics the inversion method discussed in Section~\ref{sec:inversion-interval} but usually performs better. Therefore, we might think of this as a bootstrap adjusted inversion interval. According to \citet{huet_statistical_2004} this procedure performs reasonably well in practice, even with small sample sizes and $R$ as small as 200.
+where $\gamma_{\alpha/2}^\boot$ and $\gamma_{1-\alpha/2}^\boot$ are the $\alpha/2$ and $1-\alpha/2$ quantiles of the bootstrap distribution of $\mc{Q}$. This mimics the inversion method discussed in Section~\ref{sec:inversion-interval} but usually performs better. Therefore, we might think of this as a bootstrap adjusted inversion interval. According to \citet{huet_statistical_2004} this procedure performs reasonably well in practice, even with small sample sizes and $R$ as small as 200.
 
 On the other hand, we can avoid computing a pivot altogether by working directly with the bootstrap replicates of $\wh{x}_0$ from step (5) of Algorithm~\ref{alg:boot_cal}. A simple and often satisfactory procedure, known as the percentile bootstrap, uses the sample $\alpha/2$ and $1 - \alpha/2$ quantiles of $\wh{x}_{01}^\boot, \dotsc, \wh{x}_{0R}^\boot$ as a confidence interval for $x_0$. A more accurate technique is the \textit{bias-corrected and accelerated} ($BC_a$) interval, which is essentially a modification of the percentile interval; for details see \citet[chap. 14, sec. 3]{efron_boot_1994}. The $BC_a$ method tends to work well, but usually requires $R$ to be large. It is both second-order accurate \citep[pp. 187]{efron_boot_1994} and transformation respecting. For example, if we want a $BC_a$ confidence interval for $\log(x_0)$, we can simply log the endpoints of the corresponding $BC_a$ interval for $x_0$. The studentized interval is also second-order accurate, but not transformation respecting, while the percentile interval is transformation respecting but only first-order accurate. For an in-depth discussion regarding the different bootstrap confidence interval procedures see \citet[chap. 5]{davison_bootstrap_1997}.
 
@@ -1097,13 +1097,13 @@ where $\wh{\beta}_{(-i)}$ denotes the estimate of $\beta$ with the $i$-th observ
 %% Bayesian calibration
 \section{Bayesian calibration}
 \label{sec:bayesian}
-Although calibration has been the subject of much discussion and debate from a frequentist point of view, it is just as intriguing from a Bayesian perspective. Let $\text{data}_\text{I}$, $\text{data}_\text{II}$, and $\text{data}_{\text{I}, \text{II}}$ represent the data from the standards, unknowns, and both, respectively. Also, if $x$ has a nonstandardized $t$-distribution with mean $\mu$, precision $\tau$ (i.e., recipricol of the variance), and $k$ degrees of freedom---denoted $x \sim t_k(\mu, \tau)$---then the probability density function of $x$ is
+Although calibration has been the subject of much discussion and debate from a frequentist point of view, it is just as intriguing from a Bayesian perspective. Let $\bm{y}$, $\bm{y}_0$, and $\mathbf{data}$ represent the data from the standards, unknowns, and both, respectively. Also, if $x$ has a nonstandardized $t$-distribution with mean $\mu$, precision $\tau$ (i.e., recipricol of the variance), and $k$ degrees of freedom---denoted $x \sim t_k(\mu, \tau)$---then the probability density function of $x$ is
 \begin{equation*}
   f(x;\mu, \tau, k) = \frac{\Gamma{(k/2+1/2)}}{\Gamma{(k/2)}\sqrt{\tau k \pi}}\left[ 1 + \frac{(x-\mu)^2}{\tau k} \right]^{-(k+1)/2},
 \end{equation*}
 for $-\infty < x < \infty$, $-\infty < \mu < \infty$, $\tau > 0$, and $k \ge 1$.
 
-Two influential papers on Bayesian calibration are \citet{hoadley_bayesian_1970} and \citet{hunter_bayesian_1981}. \citet[chap. 10]{aitchison_statistical_1980} discuss Bayesian solutions to the linear calibration problem for both natural and controlled calibration experiments. They also briefly discuss calibration under a general utility structure. \citet{dunsmore_bayesian_1967} derived the inverse estimator \eqref{eqn:x0-inverse} as the conditional mean of $x_0|\text{data}_{\text{I}, \text{II}}$ assuming independent observations from a bivariate normal distribution (i.e., Gaussian data from a natural calibration experiment). For controlled calibration experiments, \citet{hoadley_bayesian_1970} argued that the classical estimator is unsatisfactory, since the width of the inversion interval \eqref{eqn:x0_ci_inv} depends on the magnitude of the F-statistic for testing the significance of the slope; in other words, the data contain information about the precision of $\wh{x}_0$. Because of this, Hoadley argues that less weight should be given to this estimator when it is known to be unreliable which is what a Bayes estimator does. He proposed a class of Bayesian solutions assuming, \textit{a priori}, that $x_0$ is independent of $(\beta_0, \beta_1, \sigma_\epsilon^2)$. His results are based on a general prior of the form 
+Two influential papers on Bayesian calibration are \citet{hoadley_bayesian_1970} and \citet{hunter_bayesian_1981}. \citet[chap. 10]{aitchison_statistical_1980} discuss Bayesian solutions to the linear calibration problem for both natural and controlled calibration experiments. They also briefly discuss calibration under a general utility structure. \citet{dunsmore_bayesian_1967} derived the inverse estimator \eqref{eqn:x0-inverse} as the conditional mean of $x_0|\mathbf{data}$ assuming independent observations from a bivariate normal distribution (i.e., Gaussian data from a natural calibration experiment). For controlled calibration experiments, \citet{hoadley_bayesian_1970} argued that the classical estimator is unsatisfactory, since the width of the inversion interval \eqref{eqn:x0_ci_inv} depends on the magnitude of the F-statistic for testing the significance of the slope; in other words, the data contain information about the precision of $\wh{x}_0$. Because of this, Hoadley argues that less weight should be given to this estimator when it is known to be unreliable which is what a Bayes estimator does. He proposed a class of Bayesian solutions assuming, \textit{a priori}, that $x_0$ is independent of $(\beta_0, \beta_1, \sigma_\epsilon^2)$. His results are based on a general prior of the form 
 \begin{equation*}
   \pi\left(\beta_0, \beta_1, \sigma_\epsilon^2, x_0\right) = \pi\left(\beta_0, \beta_1, \sigma_\epsilon^2\right) \pi\left(x_0\right), 
 \end{equation*}
@@ -1115,7 +1115,7 @@ but he obtained explicit results for the diffuse prior $\pi\left(\beta_0, \beta_
 This leads to the very simple result
 \begin{equation}
 \label{eqn:x0post}
-  x_0|\text{data}_{\text{I}, \text{II}} \sim t_{n-2}\left\{\wt{x}_0, \frac{\wh{\sigma}_\epsilon^2 S_{xx}}{S_{yy}}\left( 1+\frac{1}{n}+\frac{(y_0 - \bar{y})^2}{S_{yy}} \right)\right\}. 
+  x_0|\mathbf{data} \sim t_{n-2}\left\{\wt{x}_0, \frac{\wh{\sigma}_\epsilon^2 S_{xx}}{S_{yy}}\left( 1+\frac{1}{n}+\frac{(y_0 - \bar{y})^2}{S_{yy}} \right)\right\}. 
 \end{equation}
 A $100(1-\alpha)\%$ shortest credible interval for $x_0$ can be obtained from \eqref{eqn:x0post} and is given by
 \begin{equation}
@@ -1137,7 +1137,7 @@ Although this provides some theoretical justification for using the inverse esti
 
 \citet{hunter_bayesian_1981} also considered the linear calibration problem, but proposed a slightly different approach. Let $\eta = \beta_0 + \beta_1 x_0$ and assume,\textit{a priori}, that $\eta$ and $(\beta_0, \beta_1, \sigma_\epsilon^2)$ are independent. Assuming normal errors, a prior for the unknown $x_0 = (\eta - \beta_0)/\beta_1$ is induced by specifying improper reference priors for $\eta$, $\beta_0$, $\beta_1$, and $\sigma_\epsilon^2$. That is, assuming 
 \begin{equation*}
-  \pi\left(\eta, \beta_0, \beta_1, \sigma_\epsilon^2\right) = \pi\left(\beta_0, \beta_1, \sigma_\epsilon^2\right) \cdot \pi\left(\eta\right) \propto 1/\sigma_\epsilon^2. 
+  \pi\left(\eta, \beta_0, \beta_1, \sigma_\epsilon^2\right) = \pi\left(\beta_0, \beta_1, \sigma_\epsilon^2\right) \pi\left(\eta\right) \propto 1/\sigma_\epsilon^2. 
 \end{equation*}
 This is quite different from the approach put forth by \citet{hoadley_bayesian_1970} who does not treat $x_0$ as an explicit function of $\eta$, $\beta_0$, and $\beta_1$. Hunter and Lamboy also discuss the case where $\sigma_\epsilon^2$ is known, or at least, assumed known. The posterior they obtain for $x_0$ is equivalent to the posterior density for the ratio of bivariate normal random variables ($\sigma_\epsilon^2$ known) or bivariate $t$ random variables ($\sigma_\epsilon^2$ unknown), both of which have infinite variance. The later is actually a generalization of the structural distribution for $x_0$ obtained by \citet{kalotay_structural_1971}. A more thorough analysis of these posteriors is given by \citet{hunter_bayesian_1979} and \citet{hunter_making_1979}. Hunter and Lamboy claim that, under reasonable conditions, the inversion and Wald intervals (Section~\ref{sec:inversion-interval} and Section~\ref{sec:wald_int}) provide accurate approximations to the highest posterior density (HPD) region for $x_0$. That said, \citet{hill_discussion_1981}, \citet{orban_discussion_1981}, \citet{lwin_discussion_1981}, and \citet{brown_multivariate_1982} all noted that Hunter and Lamboy's method offer some Bayesian justification for the classical estimator and confidence intervals. 
 
@@ -1153,13 +1153,14 @@ On the other hand, \citet{lwin_discussion_1981} considered their approach somewh
 
 Bayesian methods can easily be extended to handle more complex situations. For example, \citet{racine-poon_bayesian_1988} discusses the essential role of calibration in assay-type problems where relationships are inherently nonlinear. Following \citet{hoadley_bayesian_1970}, Poon assumes that, \textit{a priori}, $x_0$ and $(\bm{\beta}, \sigma_\epsilon^2)$ are independent, that is,
 \begin{equation*}
-  \pi\left(\bm{\beta}, \sigma_\epsilon^2, x_0\right) = \pi\left(\bm{\beta}, \sigma_\epsilon^2\right) \cdot \pi\left(x_0\right).
+  \pi\left(\bm{\beta}, \sigma_\epsilon^2, x_0\right) = \pi\left(\bm{\beta}, \sigma_\epsilon^2\right) \pi\left(x_0\right).
 \end{equation*}
 The resulting posterior is then given by
 \begin{equation*}
-  \pi\left(\bm{\beta}, \sigma_\epsilon^2, x_0|\text{data}_{\text{I}, \text{II}}\right) \propto \pi\left(\text{data}_\text{II}|x_0, \bm{\beta}, \sigma_\epsilon^2\right)\pi\left(\bm{\beta}, \sigma_\epsilon^2|\text{data}_\text{I}\right)\pi\left(x_0\right).
+%   \pi\left(\bm{\beta}, \sigma_\epsilon^2, x_0|\mathbf{data}\right) \propto \pi\left(\bm{y}_0|x_0, \bm{\beta}, \sigma_\epsilon^2\right)\pi\left(\bm{\beta}, \sigma_\epsilon^2|\bm{y}\right)\pi\left(x_0\right).
+  \pi\left(\bm{\beta}, \sigma_\epsilon^2, x_0|\mathbf{data}\right) \propto \pi\left(\bm{y}_0|x_0, \bm{\beta}, \sigma_\epsilon^2\right) \pi\left(\bm{y}|\bm{\beta}, \sigma_\epsilon^2\right) \pi\left(\bm{\beta}, \sigma_\epsilon^2\right) \pi\left(x_0\right).
 \end{equation*}
-Poon noted the substantial amount of numerical integration was involved in obtaining the posterior of $x_0$ and proposed instead an approximation method. Given the current state of statistical software such as R \citep{rprogram} and OpenBUGS \citep{lunn_bugs_2009}, this is less of an issue. A good discussion on nonlinear calibration problems using proper priors is given by \citet{hamada_bayesian_2003}. \citet{plessis_bayesian_1996} uses Bayesian calibration to estimate the age of rhinoceros, a multivariate, nonlinear calibration problem. 
+Poon noted the substantial amount of numerical integration involved in obtaining the posterior of $x_0$ and proposed instead an approximation method. Given the current state of statistical software such as R \citep{rprogram} and OpenBUGS \citep{lunn_bugs_2009}, this is less of an issue. A good discussion on nonlinear calibration problems using proper priors is given by \citet{hamada_bayesian_2003}. \citet{plessis_bayesian_1996} uses Bayesian calibration to estimate the age of rhinoceros, a multivariate, nonlinear calibration problem. 
 
 %% Example--nasturtium data
 \subsection{Nasturtium example}
@@ -1193,7 +1194,7 @@ A logit-log regression function is used to describe the data:
                                               \beta_1 / \left[1 + \exp\left\{\beta_2 + \beta_3\ln(x)\right\}\right], &\quad x > 0,
                                             \end{array} \right..
 \end{equation*}
-The errors are assumed to be normally distributed with mean zero and constant variance $\sigma_\epsilon^2$. Normality was checked using a normal Q-Q plot of the residuals and the constant variance assumption appears reasonable from the scatterplot. In the second stage of the experiment, the observed weights corresponding to three new soil samples all sharing the same concentration $x_0$ were observed to be 309, 296, and 419 mg. An estimate of the unknown concentration is obtained by inverting the fitted calibration curve and found to be 2.2639; this is shown in Figure~\ref{fig:nasturtium-scatter}. We follow Poon in assuming, \textit{a priori}, that $x_0$ is independent of $(\beta_1, \beta_2, \beta_3, \sigma_\epsilon^2)$. Improper uniform priors were given to the parameters $(\beta_1, \beta_2, \beta_3, \sigma_\epsilon^2)$ and the prior for $x_0$ was chosen to be uniform over the experimental range: $x_0 \sim \mc{U}(0, 4)$. The posterior for $x_0$ is shown in Figure~\ref{fig:nasturtium-post-boot} and is nearly identical to the approximation obtained by \citet[fig. 9]{racine-poon_bayesian_1988}. A histogram of the bootstrap distribution of $\wh{x}_0$ is also shown in Figure~\ref{fig:nasturtium-post-boot} for comparison. The mean of the posterior  density is 2.3434 and the mode is 2.3124 with a corresponding 95\% HPD interval of (1.7566, 3.0011). For comparison, we also provide the inversion, Wald, and $BC_a$ intervals in Table~\ref{tab:results}. If our prior information accurately reflects the truth, then the HPD interval is preferred. Otherwise, the inversion or bootstrap interval are both reasonable. The bootstrap distribution and posterior density in Figure~\ref{fig:nasturtium-post-boot} are clearly skewed to the right; thus, a symmetric interval, such as the Wald interval, may not be appropriate here.
+The errors are assumed to be normally distributed with mean zero and constant variance $\sigma_\epsilon^2$. Normality was checked using a normal Q-Q plot of the residuals and the constant variance assumption appears reasonable from the scatterplot. In the second stage of the experiment, the observed weights corresponding to three new soil samples all sharing the same concentration $x_0$ were observed to be 309, 296, and 419 mg. An estimate of the unknown concentration is obtained by inverting the fitted calibration curve and found to be 2.2639; this is shown in Figure~\ref{fig:nasturtium-scatter}. We follow Poon in assuming, \textit{a priori}, that $x_0$ is independent of $(\beta_1, \beta_2, \beta_3, \sigma_\epsilon^2)$. Improper uniform priors were given to the parameters $(\beta_1, \beta_2, \beta_3, \sigma_\epsilon^2)$ and the prior for $x_0$ was chosen to be uniform over the experimental range: $x_0 \sim \mc{U}(0, 4)$. The posterior for $x_0$ is shown in Figure~\ref{fig:nasturtium-post-boot} and is nearly identical to the approximation obtained by \citet[fig. 9]{racine-poon_bayesian_1988}. A histogram of the bootstrap distribution of $\wh{x}_0$ is also shown in Figure~\ref{fig:nasturtium-post-boot} for comparison. The mean of the posterior  density is 2.3434 and the mode is 2.3124 with a corresponding 95\% HPD interval of (1.7566, 3.0011). For comparison, we also provide the inversion, Wald, and $BC_a$ intervals in Table~\ref{tab:results}. If our prior information accurately reflects the truth, then the HPD interval is preferred. Otherwise, the inversion or bootstrap interval are both reasonable. The bootstrap distribution and posterior density in Figure~\ref{fig:nasturtium-post-boot} are clearly skewed to the right, thus, a symmetric interval, such as the Wald interval, may not be appropriate here.
 %% Table of results
 \begin{table}
   \begin{center}
@@ -1433,7 +1434,7 @@ where $\mc{IG}$ stands for the inverse gamma distribution. The variance $\sigma_
 
 The (unnormalized) posterior density of $(x_0, \bm{\beta}, \bm{\alpha}, \sigma_\epsilon^2, \sigma_\alpha^2)$ is given by
 \begin{align*}
-  \pi(x_0, \bm{\beta}, \bm{\alpha}, \sigma_\epsilon^2, \sigma_\alpha^2 | \text{data}) &= \pi(x_0, \bm{\beta}, \bm{\alpha}, \sigma_\epsilon^2, \sigma_\alpha^2 | \bm{y}, \bm{y}_0) \\
+  \pi(x_0, \bm{\beta}, \bm{\alpha}, \sigma_\epsilon^2, \sigma_\alpha^2 | \mathbf{data}) &= \pi(x_0, \bm{\beta}, \bm{\alpha}, \sigma_\epsilon^2, \sigma_\alpha^2 | \bm{y}, \bm{y}_0) \\
   &\propto \pi(\bm{y}, \bm{y}_0 | x_0, \bm{\beta}, \bm{\alpha}, \sigma_\epsilon^2, \sigma_\alpha^2)\pi(x_0, \bm{\beta}, \bm{\alpha}, \sigma_\epsilon^2, \sigma_\alpha^2) \\
   &\propto \pi(\bm{y}_0 | x_0, \bm{\beta}, \bm{\alpha}, \sigma_\epsilon^2, \sigma_\alpha^2)\pi(\bm{y} | \bm{\beta}, \bm{\alpha}, \sigma_\epsilon^2, \sigma_\alpha^2)\pi(\bm{\beta}, \bm{\alpha}, \sigma_\epsilon^2, \sigma_\alpha^2)\pi(x_0) \\
   &\propto \pi(\bm{y}_0 | x_0, \bm{\beta}, \bm{\alpha}, \sigma_\epsilon^2)\pi(\bm{y} | \bm{\beta}, \bm{\alpha}, \sigma_\epsilon^2)\pi(\bm{\beta})\pi(\bm{\alpha}|\sigma_\alpha^2)\pi(\sigma_\epsilon^2)\pi(\sigma_\alpha^2)\pi(x_0),
@@ -1803,11 +1804,11 @@ is a \textit{pivotal quantity} that has an asymptotic standard normal distributi
 \end{equation*}
 where $\bm{J}_n = \bm{1}_n\bm{1}_n\trans$ is an $n \times n$ vector of all ones.
 
-In practice, $\sigma_0^2$ and $\bm{V}$ are usually unknown and need to be estimated from the data. In such cases, an approximate pivot (essentially a Wald statistic), denoted $\mc{W}$, can be obtained by replacing $\sigma_0^2$ and $\bm{V}$ in the above equation with their respective estimates $\wh{\sigma}_0^2$ and $\wh{\bm{V}}$. This suggests an approximate $100(1-\alpha)\%$ confidence interval for $x_0$ of
+In practice, $\sigma_0^2$ and $\bm{V}$ are usually unknown and need to be estimated from the data. In such cases, an approximate pivot (essentially a Wald statistic), denoted $\mc{Q}$, can be obtained by replacing $\sigma_0^2$ and $\bm{V}$ in the above equation with their respective estimates $\wh{\sigma}_0^2$ and $\wh{\bm{V}}$. This suggests an approximate $100(1-\alpha)\%$ confidence interval for $x_0$ of
 \begin{equation}
 \label{eqn:cal-lmm-inversion}
-  %\mc{J}_\mathrm{cal}(x) = \left\{ x: \mc{W}^2 \le z_{1-\alpha/2}^2 \right\},
-  \mc{J}_\mathrm{cal}(x) = \left\{ x: z_{\alpha/2} < \mc{W} \le z_{1-\alpha/2} \right\},
+  %\mc{J}_\mathrm{cal}(x) = \left\{ x: \mc{Q}^2 \le z_{1-\alpha/2}^2 \right\},
+  \mc{J}_\mathrm{cal}(x) = \left\{ x: z_{\alpha/2} < \mc{Q} \le z_{1-\alpha/2} \right\},
 \end{equation}
 where $z_{\alpha/2} = z_{1-\alpha/2}$ denote the $\alpha/2$ and $1 - \alpha/2$ quantiles of a standard normal distribution, respectively. Similar to the approximate predictive pivot (Equation~\eqref{eqn:approximate-predictive-pivot}), it is unlikely that Equation~\eqref{eqn:cal-lmm-inversion} will yield closed-form solutions, thus, the solution must be obtained numerically. For the simulated data example, a 95\% inversion interval based on Equation~\eqref{eqn:cal-lmm-inversion}, corresponding to $y_0 = 0.75$, is given by $(0.5859, 0.9779)$, which is very similar to the Wald-based intervals obtained earlier.
 
@@ -1868,13 +1869,13 @@ We applied Algorithm~\ref{alg:parboot_cal} to the simulated data from Figure~\re
 \subsection{Parametric bootstrap adjusted inversion interval}
 Although we favor the bootstrap confidence intervals obtained directly from the $R$ bootstrap replicates of $\wh{x}_0$, researchers are likely more familiar with the inversion and Wald-based intervals discussed in the previous two sections. These intervals, however, use the quantiles from a standard normal distribution, hence, rely on normal approximations. The parametric bootstrap can be used to improve upon these intervals by replacing the standard normal quantiles with more accurate ones. For instance, for the inversion interval, at each run in Algorithm~\ref{alg:parboot_cal} we compute
 \begin{equation*}
-  \mc{W}^\boot = \frac{y_0^\boot - \mu\left(\wh{x}_0; \wh{\bm{\beta}}^\boot\right)}{\sqrt{\wh{\sigma}_0^{2\boot} + \X_0\trans\left(\X\trans\wh{\bm{V}}^{*-1}\X\trans\right)^{-1}\X_0}}.
+  \mc{Q}^\boot = \frac{y_0^\boot - \mu\left(\wh{x}_0; \wh{\bm{\beta}}^\boot\right)}{\sqrt{\wh{\sigma}_0^{2\boot} + \X_0\trans\left(\X\trans\wh{\bm{V}}^{*-1}\X\trans\right)^{-1}\X_0}}.
 \end{equation*}
-As a result, we obtain the $R$ bootstrap values $\mc{W}_r^\boot$. Let $\gamma_{\alpha/2}^\boot$ and $\gamma_{1-\alpha/2}^\boot$ denote the sample $\alpha/2$ and $1-\alpha/2$ quantiles of $\mc{W}_r^\boot$, respectively. A bootstrap adjusted inversion interval is then given by
+As a result, we obtain the $R$ bootstrap values $\mc{Q}_r^\boot$. Let $\gamma_{\alpha/2}^\boot$ and $\gamma_{1-\alpha/2}^\boot$ denote the sample $\alpha/2$ and $1-\alpha/2$ quantiles of $\mc{Q}_r^\boot$, respectively. A bootstrap adjusted inversion interval is then given by
 \begin{equation}
 \label{eqn:cal-lmm-inversion-boot}
-  %\mc{J}_\mathrm{cal}(x) = \left\{ x: \mc{W}^2 \le z_{1-\alpha/2}^2 \right\},
-  \mc{J}_\mathrm{cal}^\boot(x) = \left\{ x: \gamma_{\alpha/2}^\boot \le \mc{W} \le \gamma_{1-\alpha/2}^\boot \right\}.
+  %\mc{J}_\mathrm{cal}(x) = \left\{ x: \mc{Q}^2 \le z_{1-\alpha/2}^2 \right\},
+  \mc{J}_\mathrm{cal}^\boot(x) = \left\{ x: \gamma_{\alpha/2}^\boot \le \mc{Q} \le \gamma_{1-\alpha/2}^\boot \right\}.
 \end{equation}
 We illustrate this on the bladder volume example in Section~\ref{sec:bladder-example}. A similar adjustment can also be made for the Wald-based interval as well; this is very similar to the studentized bootstrap procedure outlined in steps (6)-(7) of Algorithm~\ref{alg:boot_cal}.
 
@@ -1978,7 +1979,7 @@ The resulting standard error is $19.63$ which yields an approximate (Wald-based)
 
 
 
-Obtaining the inversion interval (Equation~\eqref{eqn:cal-lmm-inversion}) is less straightforward; we have to write our own prediction function in \code{R} that will also return the standard errors of the fitted values. Example~\ref{bladder-inversion} shows the minimal \code{R} code necessary to obtain $\mc{J}_\mathrm{cal}(x)$ for the bladder volume example. The first line simply extracts the point estimate, $\wh{\texttt{volume}}_0$, obtained in Example~\ref{bladder-wald}. The next few lines of code define a new prediction function, \code{predFun}, that simply calls the built-in prediction function, but additionally returns the standard errors of the fitted values. The last block of code finds the roots to the equation $\mc{W}^2 - z_{1-\alpha/2}^2 = 0$ where $\mc{W}$ is the approximate pivot described in Section~\ref{sec:calibration-lmm-inversion}. The resulting interval, $(58.24, 137.05)$, is only slightly larger than the interval based on the delta method. Notice it is also not symmetric about the point estimate $\wh{\texttt{volume}}_0 = 93.41 \text{ ml}$ which, given the nonlinear trend and increasing variation in the data, is more realistic. 
+Obtaining the inversion interval (Equation~\eqref{eqn:cal-lmm-inversion}) is less straightforward; we have to write our own prediction function in \code{R} that will also return the standard errors of the fitted values. Example~\ref{bladder-inversion} shows the minimal \code{R} code necessary to obtain $\mc{J}_\mathrm{cal}(x)$ for the bladder volume example. The first line simply extracts the point estimate, $\wh{\texttt{volume}}_0$, obtained in Example~\ref{bladder-wald}. The next few lines of code define a new prediction function, \code{predFun}, that simply calls the built-in prediction function, but additionally returns the standard errors of the fitted values. The last block of code finds the roots to the equation $\mc{Q}^2 - z_{1-\alpha/2}^2 = 0$ where $\mc{Q}$ is the approximate pivot described in Section~\ref{sec:calibration-lmm-inversion}. The resulting interval, $(58.24, 137.05)$, is only slightly larger than the interval based on the delta method. Notice it is also not symmetric about the point estimate $\wh{\texttt{volume}}_0 = 93.41 \text{ ml}$ which, given the nonlinear trend and increasing variation in the data, is more realistic. 
 
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
@@ -2010,12 +2011,12 @@ Obtaining the inversion interval (Equation~\eqref{eqn:cal-lmm-inversion}) is les
 
 
 In addition, we can also obtain the bootstrap adjusted inversion interval (Equation~\eqref{eqn:cal-lmm-inversion-boot}) described at the end of Section~\ref{sec:calibration-lmm-parboot}.
-Figure~\ref{fig:bladder-parboot-hist1} shows a histogram of the $R = 9,999$ bootstrap replicates of $W$. As can be seen, the estimated sampling distribution of $W$ is reasonably normal. The necessary quantiles to compute $\mc{J}_\mathrm{cal}^\boot(x)$ are $w_{0.025} = -2$ and $w_{0.975} = 1.98$ (compare these to the corresponding quantiles from a standard normal distribution; i.e., $\pm 1.96$)). Making the necessary adjustments to the code in Example~\ref{bladder-inversion} yields $\mc{J}_\mathrm{cal}^\boot(x) = (57.94, 138.16)$, which is only slightly wider than the unadjusted inversion interval based on the normal approximation. In short, the normal approximation works quite well for these data.
+Figure~\ref{fig:bladder-parboot-hist1} shows a histogram of the $R = 9,999$ bootstrap replicates of $W$. As can be seen, the estimated sampling distribution of $W$ is reasonably normal. The necessary quantiles to compute $\mc{J}_\mathrm{cal}^\boot(x)$ are $q_{0.025}^\boot = -2$ and $q_{0.975}^\boot = 1.98$ (compare these to the corresponding quantiles from a standard normal distribution; i.e., $\pm 1.96$)). Making the necessary adjustments to the code in Example~\ref{bladder-inversion} yields $\mc{J}_\mathrm{cal}^\boot(x) = (57.94, 138.16)$, which is only slightly wider than the unadjusted inversion interval based on the normal approximation. In short, the normal approximation works quite well for these data.
 
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{figure}[H]
 
-\includegraphics[width=\maxwidth]{figure/bladder-parboot-hist1} \caption[Bootstrap distribution of $W$ for the bladder volume example]{Bootstrap distribution of $W$ for the bladder volume example. A standard normal distribution (solid black curve) is shown for comparison.\label{fig:bladder-parboot-hist1}}
+\includegraphics[width=\maxwidth]{figure/bladder-parboot-hist1} \caption[Bootstrap distribution of $\mc{Q}$ for the bladder volume example]{Bootstrap distribution of $W$ for the bladder volume example. A standard normal distribution (solid black curve) is shown for comparison.\label{fig:bladder-parboot-hist1}}
 \end{figure}
 
 
@@ -2027,69 +2028,12 @@ Finally, we compute the bootstrap distribution of $\wh{\texttt{volume}}_0$ direc
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{figure}[H]
 
-\includegraphics[width=\maxwidth]{figure/bladder-parboot-hist2} \caption[Bootstrap distribution of $\wh{\texttt{volume}}_0$ obtained using Algorithm~\ref{alg:parboot_cal}]{\textit{Left}: Bootstrap distribution of $\wh{\texttt{volume}}_0$ obtained using Algorithm~\ref{alg:parboot_cal}. The solid black line indicates the original point estimate and the dotted red lines indicate the positions of the sample 2.5 and 97.5 quantiles of the bootstrap distribution. \textit{Right}: Normal Q-Q plot of the bootstrap replicates of $\mc{W}$.\label{fig:bladder-parboot-hist2}}
+\includegraphics[width=\maxwidth]{figure/bladder-parboot-hist2} \caption[Bootstrap distribution of $\wh{\texttt{volume}}_0$ obtained using Algorithm~\ref{alg:parboot_cal}]{\textit{Left}: Bootstrap distribution of $\wh{\texttt{volume}}_0$ obtained using Algorithm~\ref{alg:parboot_cal}. The solid black line indicates the original point estimate and the dotted red lines indicate the positions of the sample 2.5 and 97.5 quantiles of the bootstrap distribution. \textit{Right}: Normal Q-Q plot of the bootstrap replicates of $\wh{\texttt{volume}}_0$.\label{fig:bladder-parboot-hist2}}
 \end{figure}
 
 
 \end{knitrout}
 
-
-% \begin{table}[H]
-% \label{tab:bladder-20-intervals}
-% \scalebox{0.8}{
-%   \begin{tabular}{lcccc}
-%     \toprule
-%     Interval          & Lower 2.5\% & Upper 97.5\% & Length & SE \\
-%     \midrule
-%     Wald              & ? & ? & ? & ? \\
-%     ML interval       & ? & ? & ? & ? \\
-%     Inversion         & ? & ? & ? & ? \\
-%     Inversion (PB)    & ? & ? & ? & ? \\
-%     Normal (PB)       & ? & ? & ? & ? \\
-%     Percentile (PB)   & ? & ? & ? & ? \\
-%     \bottomrule
-%   \end{tabular}
-% }
-% \caption{Approximate 95\% calibration intervals for the bladder volume data with $\texttt{HD}_0 = 20$ $\mathrm{mm}^2$. The intervals based on the parametric bootstrap are labeled (PB)}
-% \end{table}
-% 
-% \begin{table}[H]
-% \label{tab:bladder-70-intervals}
-% \scalebox{0.8}{
-%   \begin{tabular}{lcccc}
-%     \toprule
-%     Interval          & Lower 2.5\% & Upper 97.5\% & Length & SE \\
-%     \midrule
-%     Wald              & ? & ? & ? & ? \\
-%     ML interval       & ? & ? & ? & ? \\
-%     Inversion         & ? & ? & ? & ? \\
-%     Inversion (PB)    & ? & ? & ? & ? \\
-%     Normal (PB)       & ? & ? & ? & ? \\
-%     Percentile (PB)   & ? & ? & ? & ? \\
-%     \bottomrule
-%   \end{tabular}
-% }
-% \caption{Approximate 95\% calibration intervals for the bladder volume data with $\texttt{HD}_0 = 70$ $\mathrm{mm}^2$. The intervals based on the parametric bootstrap are labeled (PB)}
-% \end{table}
-% 
-% \begin{table}[H]
-% \label{tab:bladder-90-intervals}
-% \scalebox{0.8}{
-%   \begin{tabular}{lcccc}
-%     \toprule
-%     Interval          & Lower 2.5\% & Upper 97.5\% & Length & SE \\
-%     \midrule
-%     Wald              & ? & ? & ? & ? \\
-%     ML interval       & ? & ? & ? & ? \\
-%     Inversion         & ? & ? & ? & ? \\
-%     Inversion (PB)    & ? & ? & ? & ? \\
-%     Normal (PB)       & ? & ? & ? & ? \\
-%     Percentile (PB)   & ? & ? & ? & ? \\
-%     \bottomrule
-%   \end{tabular}
-% }
-% \caption{Approximate 95\% calibration intervals for the bladder volume data with $\texttt{HD}_0 = 90$ $\mathrm{mm}^2$. The intervals based on the parametric bootstrap are labeled (PB)}
-% \end{table}
 
 \section{Discussion}
 We have described a number of techniques for controlled calibration in a (linear) mixed model setting. The Wald-based interval is the simplest, but relies on the asymptotic normality of $\wh{x}_0$ along with a Taylor-series approximation of its variance. Perhaps the biggest drawback to using a Wald-based calibration interval is that it is always symmetric about $\wh{x}_0$. While this is appealing to many researchers, it is not very realistic in standard situations where, say, the data exhibit nonlinear behavior (possibly due to horizontal asymptotes) and nonconstant variance. The asymptotic normality of $\wh{x}_0$ may also be questioned when $\wh{x}_0$ is not the \ac{ML} estimate (as in the bladder volume example). This is akin to using the Wald-based method for nonlinear calibration problems (the software JMP does this). Nonetheless, the estimated sampling distribution of $\wh{x}_0$ displayed in Figures~\ref{fig:simdata-parboot-hist} and \ref{fig:bladder-parboot-hist2} using the parametric bootstrap are both reasonably normal. Thus, the Wald-based approach may still produce reliable inference when the distribution of $\wh{x}_0$ can be considered symmetric. Although more difficult to obtain, the inversion and parametric bootstrap  intervals are presumably superior to the Wald-based interval.
