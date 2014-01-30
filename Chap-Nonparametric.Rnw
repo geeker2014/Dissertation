@@ -94,7 +94,7 @@ where $\mc{F}_{1, df}^{1-\alpha} = \left(t_{df}^{1 - \alpha/2}\right)^2$. As bef
 
 We designed a small Monte Carlo study to investigate the coverage probability of this technique. The results of this study are presented in Tables~\ref{tab:pspline-monte-carlo-1}-\ref{tab:pspline-monte-carlo-2}. The true calibration function is the sine wave $\mu(x) = \sin(\pi x - \pi/2)/2 + 1/2$ plotted in Figure~\ref{fig:sine-wave}. For data following such a pattern it would be tempting to fit a nonlinear model, perhaps modeling $\mu(x)$ as a \textit{logistic} function. Inference based on the resulting fit would then be inaccurate since, for example, the true calibration curve does not have any asymptotes. For situations like this, it would be useful to have a semiparametric alternative for which to compare inference.
 
-<<sine-wave, echo=FALSE, fig.width=5, fig.height=3, par=TRUE, fig.pos='H', fig.scap='Scaled sine wave example', fig.cap='Scaled sine wave function.'>>=
+<<sine-wave, echo=FALSE, fig.width=5, fig.height=3, par=TRUE, fig.pos='H', fig.scap='Scaled sine wave function', fig.cap='Scaled sine wave function.'>>=
 x0 <- 0.75
 f <- function(x) sin(pi*x-pi/2)/2+1/2
 curve(f, lwd=2, ylab=expression(mu(x)), xlab=expression(x))
@@ -285,7 +285,7 @@ where $K$ is the number of knots or random effects (see Section~\ref{sec:conditi
 \subsection{Enzyme-linked immunosorbent assay (ELISA) example}
 \citet{ori_constructing_1995} derived a $95\%$ calibration interval for the unknown concentration in a radioimmunoassay problem using the nonparametric bootstrap. We demonstrate our method on the same dataset and compare the results. The data, plotted in Figure~\ref{fig:elisa-scatter}, consists of 23 distinct concentrations with four (independent) replicates of the response at each concentration. The results from analyzing these data are summarized in Table~\ref{tab:elisa} at the end of this section.
 
-<<elisa-scatter, echo = FALSE, opts.label = 'fig.7by4', par = TRUE, fig.pos = 'H', fig.scap = 'ELISA data', fig.cap = 'ELISA data.', message = FALSE>>=
+<<elisa-scatter, echo = FALSE, opts.label = 'fig.7by4', par = TRUE, fig.pos = 'H', fig.scap = 'Scatterplot of the ELISA data', fig.cap = 'Scatterplot of the ELISA data.', message = FALSE>>=
 plot(elisa, xlab = "Concentration", ylab = "Response")
 @
 
