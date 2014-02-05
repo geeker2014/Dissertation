@@ -14,6 +14,7 @@ library(lme4)
 library(nlme)
 library(boot)
 source("/home/w108bmg/Desktop/Dissertation/R code/bootMer2.R")
+source("/home/w108bmg/Desktop/Dissertation/R code/bootMer2_parallel.R")
 
 ## Simulating data -------------------------------------------------------------
 simRCD <- function(n = 10, m = 20, fixed = c(0, 1), vars = c(0, 0, 0.1)) {
@@ -25,14 +26,6 @@ simRCD <- function(n = 10, m = 20, fixed = c(0, 1), vars = c(0, 0, 0.1)) {
              sd = sqrt(vars[3]))
   data.frame(x = x, y = y, subject = factor(subject))
 }
-set.seed(1234)
-
-simdata <- simRCD(m = 30, n = 20, fixed = c(0, 2), vars = c(0.001, 0.05, 0.001))
-xyplot(y ~ x, groups = subject, data = simdata, type = "b")
-
-## Fit models
-mod.lme4 <- lmer(y ~ x + (0+1|subject) + (0+x|subject), data = simdata)
-mod.nlme <- lme(y ~ x, random = list(subject = pdDiag(~x)), data = simdata)
 
 ## True population parameters
 beta0 <- 0                       # fixed intercept
@@ -41,16 +34,23 @@ var0 <- 0.001                    # variance of random intercepts
 var1 <- 0.05                     # variance of random slopes
 var.error <- 0.001               # error variance
 y0.true <- 1.5                   # observed response
-x0.true <- (y0 - beta0) / beta1  # true unknown
+x0.true <- (y0.true - beta0) / beta1  # true unknown
 var.y0.true <- var0 + var1*x0.true^2 + var.error
 
 ## Simulate data frames
-simdata <- simRCD(m = 30, n = 20, fixed = c(beta0, beta1), 
-                  vars = c(var0, var1, var.error))
 nsim <- 100
 set.seed(5746)
 dfs <- rlply(nsim, simRCD(m = 30, n = 20, fixed = c(beta0, beta1), 
                           vars = c(var0, var1, var.error)))
+
+## Fit models to sample data
+set.seed(8306)
+simdata <- simRCD(m = 30, n = 20, fixed = c(beta0, beta1), 
+                  vars = c(var0, var1, var.error))
+xyplot(y ~ x, groups = subject, data = simdata, type = "b")
+plot(intervals(lmList(y ~ I(x-mean(x)) | subject, data = simdata)))
+mod.lme4 <- lmer(y ~ x + (0+1|subject) + (0+x|subject), data = simdata)
+mod.nlme <- lme(y ~ x, random = list(subject = pdDiag(~x)), data = simdata)
 
 ## Inverse estimate function
 x0Fun <- function(object, y0 = y0.true) {
@@ -68,9 +68,11 @@ list2Matrix <- function(object) {
   matrix(unlist(object), nrow = m, ncol = n, byrow = TRUE)
 }
 
-## Function to check coverage
-checkCoverage <- function(x, x0 = x0.true) {
-  if (x[1] <= x0 && x0 <= x[2]) 1 else 0
+## Function to summarize confidence interval
+.summarize <- function(x, x0 = x0.true) {
+  .coverage <- if (x[1] <= x0 && x0 <= x[2]) 1 else 0
+  .length <- x[2] - x[1]
+  c(.coverage, .length)
 }
   
 ## Simulate coverage probability and length for the Wald-based method ----------
@@ -102,12 +104,12 @@ waldCI <- function(.data, y0 = y0.true) {
 
 ## Apply to each data frame
 wald.cis <- list2Matrix(llply(dfs, waldCI, .progress = "text"))
-mean(apply(wald.cis, 1, checkCoverage))
+apply(apply(wald.cis, 1, .summarize), 1, mean)
 
 ## Simulate coverage probability and length for the inversion method -----------
 
 ## Function to calculate the inversion interval
-invCI <- function(.data) {
+invCI <- function(.data, y0 = y0.true) {
 
   ## FIXME: Should this be calculated based on the original model?
   Y0 <- rnorm(1, mean = y0, sd = sqrt(var.y0.true))
@@ -144,11 +146,11 @@ invCI <- function(.data) {
 
 ## Apply to each data frame
 inv.cis <- list2Matrix(llply(dfs, invCI, .progress = "text"))
-mean(apply(inv.cis, 1, checkCoverage))
+apply(apply(inv.cis, 1, .summarize), 1, mean)
 
 ## Simulate coverage probability and length for the PB approach ----------------
 
-pbootCI <- function(.data, R = 999) {
+pbootCI <- function(.data, y0 = y0.true, R = 999, .parallel = FALSE) {
   
   ## FIXME: Should this be calculated based on the original model?
   Y0 <- rnorm(1, mean = y0, sd = sqrt(var.y0.true))
@@ -171,11 +173,21 @@ pbootCI <- function(.data, R = 999) {
   }
   
   ## Calculate quantiles of bootstrap sample
-  x0.pb <- bootMer2(mod, FUN = bootFun, FUN0 = bootFun0, nsim = R)
+  x0.pb <- if (.parallel) {
+    bootMer2_parallel(mod, FUN = bootFun, FUN0 = bootFun0, nsim = R,
+             parallel = "multicore", ncpus = 4)
+  } else {
+    bootMer2(mod, FUN = bootFun, FUN0 = bootFun0, nsim = R)
+  }
   as.numeric(quantile(x0.pb$t, c(0.025, 0.975)))
   
 }
-pbootCI(simdata)
+
+## Test parallel version
+system.time(res1 <- pbootCI(simdata))
+system.time(res2 <- pbootCI(simdata, .parallel = TRUE))
+rbind(res1, res2)
+
 ## Apply to each data frame
 pboot.cis <- list2Matrix(llply(dfs, pbootCI, .progress = "text"))
-mean(apply(pboot.cis, 1, checkCoverage))
+apply(apply(pboot.cis, 1, .summarize), 1, mean)
