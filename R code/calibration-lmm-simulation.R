@@ -161,7 +161,7 @@ pbootCI <- function(.data, R = 999) {
   
   ## Function to calculate bootstrap estimate
   bootFun <- function(.) {
-    y0.boot <- rnorm(1, mean = 70, sd = sqrt(var.y0))
+    y0.boot <- rnorm(1, mean = Y0, sd = sqrt(var.y0))
     x0Fun(., y0 = y0.boot)
   }
   
@@ -172,9 +172,7 @@ pbootCI <- function(.data, R = 999) {
   
   ## Calculate quantiles of bootstrap sample
   x0.pb <- bootMer2(mod, FUN = bootFun, FUN0 = bootFun0, nsim = R)
-#   as.numeric(quantile(x0.pb$t, c(0.025, 0.975)))
-  x0.pb
-  boot.ci(x0.pb, type = "perc")
+  as.numeric(quantile(x0.pb$t, c(0.025, 0.975)))
   
 }
 pbootCI(simdata)
