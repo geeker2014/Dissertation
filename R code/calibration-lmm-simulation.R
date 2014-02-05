@@ -150,7 +150,7 @@ apply(apply(inv.cis, 1, .summarize), 1, mean)
 
 ## Simulate coverage probability and length for the PB approach ----------------
 
-pbootCI <- function(.data, y0 = y0.true, R = 999, .parallel = FALSE) {
+pbootCI <- function(.data, y0 = y0.true, R = 999, .parallel = TRUE) {
   
   ## FIXME: Should this be calculated based on the original model?
   Y0 <- rnorm(1, mean = y0, sd = sqrt(var.y0.true))
@@ -191,3 +191,5 @@ rbind(res1, res2)
 ## Apply to each data frame
 pboot.cis <- list2Matrix(llply(dfs, pbootCI, .progress = "text"))
 apply(apply(pboot.cis, 1, .summarize), 1, mean)
+## One particular occasion produced:
+## [1] 0.9500000 0.3340199
