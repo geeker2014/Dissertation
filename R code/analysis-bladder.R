@@ -16,7 +16,7 @@ library(sandwich)
 # library(rjags)
 
 ## Bladder data ----------------------------------------------------------------
-load("/home/w108bmg/Desktop/Dissertation-knitr/Data/bladder.RData")
+load("/home/w108bmg/Desktop/Dissertation/Data/bladder.RData")
 head(bladder)
 
 ## Scatterplot of original data
@@ -66,7 +66,6 @@ round(vcov(bladder.lm2), 5)
 round(sandwich(bladder.lm2), 5)
 round(vcov(bladder.lme2), 5)
 covb <- vcov(bladder.lme2)
-
 
 ## Point estimate --------------------------------------------------------------
 y0 <- 70

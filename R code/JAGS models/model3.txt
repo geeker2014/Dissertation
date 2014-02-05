@@ -1,0 +1,49 @@
+
+model {
+
+## Likelihood
+for (i in 1:length(y)) {
+y[i] ~ dnorm(inprod(beta[], X[i,]) + inprod(alpha[], Z[i,]), tau.error) 
+}
+
+## Priors for fixed effects
+for (j in 1:degree+1) {
+beta[j] ~ dnorm(0, 1.0E-6)
+}
+
+## Priors for random effects
+for (k in 1:num.knots) {
+alpha[k] ~ dnorm(0, tau.alpha)
+}
+
+## Calibration
+for (j in 1:degree+1) {
+X0[j] <- pow(x0, j-1)
+}
+for (k in 1:num.knots) {
+u0[k] <- (x0-knots[k])*step(x0-knots[k])
+Z0[k] <- pow(u0[k], degree)
+}
+y0 ~ dnorm(inprod(beta[], X0[]) + inprod(alpha[], Z0[]), tau.error) 
+x0 ~ dunif(0, 50) 
+#x0 ~ dnorm(0, 1.0E-6) 
+#x0 ~ dgamma(1.0E-3, 1.0E-3)
+
+## Priors for precision parameters
+tau.error ~ dgamma(1.0E-3, 1.0E-3)
+tau.alpha ~ dgamma(1.0E-3, 1.0E-3)
+
+## Other calculations
+sigma.error <- 1/sqrt(tau.error)
+sigma.alpha <- 1/sqrt(tau.alpha)
+lambda <- pow(sigma.alpha, 2)/pow(sigma.error, 2)
+
+## Predict new observations
+for (i in 1:250) {
+epsilon.star[i] ~ dnorm(0, tau.error)
+y.star[i] <- mu.star[i] + epsilon.star[i]
+mu.star[i] <- inprod(beta[], newX[i,]) + inprod(alpha[], newZ[i,])
+}
+
+}
+

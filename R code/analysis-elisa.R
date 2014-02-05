@@ -2,19 +2,26 @@
 library(investr)
 library(rjags)
 library(coda)
+library(RColorBrewer)
+set1 <- brewer.pal(9, "Set1")
+dark2 <- brewer.pal(8, "Dark2")
 
 ## Import ELISA data frame -----------------------------------------------------
-elisa <- read.csv("/home/w108bmg/Desktop/Dissertation-knitr/Data/elisa.csv", header = T)
+elisa <- read.csv("/home/w108bmg/Desktop/Dissertation/Data/elisa.csv", header = T)
+
+## Source pspline code
+source("/home/w108bmg/Desktop/Dissertation/R code/pspline.R")
 
 ## Fit models ------------------------------------------------------------------
 mod1 <- nls(resp ~ b1 + (b2 - b1)/(1 + exp(b4*(log(conc) - b3))), 
             start = list(b1 = 25, b2 = 1, b3 = 1, b4 = 1), data = elisa)
 mod2 <- with(elisa, pspline(conc, resp, degree = 2))
-
+mod3 <- with(elisa, pspline(conc, resp, degree = 3))
 
 ## Calibration for the point y0 = 20
 cal1 <- invest(mod1, y0 = 20)
 cal2 <- invest(mod2, y0 = 20)
+cal3 <- invest(mod3, y0 = 20)
 
 ## Plot fits with 95% prediction bands
 
@@ -66,8 +73,8 @@ for (i in 1:250) {
 
 }
 "
-model.file <- "/home/w108bmg/Desktop/Dissertation-knitr/R code/JAGS models/model1.txt"
-writeLines(model1, con = model.file)
+model1.file <- "/home/w108bmg/Desktop/Dissertation/R code/JAGS models/model1.txt"
+writeLines(model1, con = model1.file)
 
 ## Inputs for JAGS
 data.list <- list(y = elisa$resp, x = elisa$conc, y0 = 20, 
@@ -113,7 +120,7 @@ save(x0.coda, x0.post, mu.coda, mu.post, pred.coda, pred.post,
      beta.coda, beta.post, 
      file = "/home/w108bmg/Desktop/Dissertation-knitr/Data/elisa-jags-nls.RData")
 
-## Bayesian P-spline -----------------------------------------------------------
+## Bayesian Quadratic P-spline -------------------------------------------------
 
 ## Model file for JAGS 
 model2 <- "
@@ -144,10 +151,12 @@ model {
   }
   y0 ~ dnorm(inprod(beta[], X0[]) + inprod(alpha[], Z0[]), tau.error) 
   x0 ~ dunif(0, 50) 
+  #x0 ~ dnorm(0, 1.0E-6) 
+  #x0 ~ dgamma(1.0E-3, 1.0E-3)
    
   ## Priors for precision parameters
-  tau.error ~ dgamma(1.0E-6, 1.0E-6)
-  tau.alpha ~ dgamma(1.0E-6, 1.0E-6)
+  tau.error ~ dgamma(1.0E-3, 1.0E-3)
+  tau.alpha ~ dgamma(1.0E-3, 1.0E-3)
   
   ## Other calculations
   sigma.error <- 1/sqrt(tau.error)
@@ -163,7 +172,8 @@ model {
   
 }
 "
-writeLines(model2, con = "/home/w108bmg/Desktop/elisa-jags/model.txt")
+model2.file <- "/home/w108bmg/Desktop/Dissertation/R code/JAGS models/model2.txt"
+writeLines(model2, model2.file)
 
 ## Calculate design matrices
 knots <- mod2$knots
@@ -187,47 +197,62 @@ data.list <- list(
   num.knots = 5, 
   degree = 2 # degree of polynomial
 )
-initsFun <- function() { 
-  list(beta = rep(0, 3), alpha = rep(0, 5), tau.error = 0.1, tau.alpha = 0.01,
-       x0 = 10) 
-}
+# initsFun <- function() { 
+#   list(beta = rep(0, 3), alpha = rep(0, 5), tau.error = 0.1, tau.alpha = 0.01,
+#        x0 = 10) 
+# }
+# initsFun <- function() { 
+#   list(beta = rnorm(3, mean = mod2$beta.hat), 
+#        alpha = rnorm(5, sd = mod2$var.components["u"]), 
+#        tau.error = 0.1, tau.alpha = 0.01,
+#        x0 = runif(1, min = 0, max = 20)) 
+# }
 
-adapt.steps <- 1000    # number of steps to "tune" the samplers
-burnin.steps <- 10000  # number of steps to "burn-in" the samplers
-n.chains <- 1          # number of chains to run
-n.saved.steps <- 50000 # total number of steps in chains to save
-thin.steps <- 1        # number of steps to "thin" (1 = keep every step)
+adapt.steps <- 10000   # number of steps to "tune" the samplers
+burnin.steps <- 20000  # number of steps to "burn-in" the samplers
+n.chains <- 3          # number of chains to run
+n.saved.steps <- 30000 # total number of steps in chains to save
+thin.steps <- 5        # number of steps to "thin" (1 = keep every step)
 n.per.chain <- ceiling((n.saved.steps*thin.steps) / n.chains) # steps per chain
 
 # Run JAGS model
-sim <- jags.model("/home/w108bmg/Desktop/elisa-jags/model.txt", 
-                  data = data.list, inits = initsFun, n.chains = n.chains , 
-                  n.adapt = adapt.steps)
-update(sim, n.iter = 10000) # burn-in
+sim <- jags.model(model2.file, data = data.list, #inits = initsFun, 
+                  n.chains = n.chains, n.adapt = adapt.steps)
+update(sim, n.iter = burnin.steps) # burn-in
 
 ## Generate posterior samples from density of x0
-x0.coda <- coda.samples(sim, variable.names = "x0", n.iter = 50000)
-x0.post <- as.numeric(as.matrix(x0.coda))
+x0.psp2.coda <- coda.samples(sim, variable.names = "x0", n.iter = n.per.chain, 
+                            thin = thin.steps)
+x0.psp2.post <- as.numeric(as.matrix(x0.psp2.coda))
+x0.psp2.dens <- density(x0.psp2.post)
+x0.psp2.mode <- x0.psp2.post[which.max(x0.psp2.dens$y)]
+
+par(mfrow = c(1, 2))
+traceplot(x0.psp2.coda, col = set1)
+abline()
+cumuplot(x0.psp2.coda, auto.layout = FALSE)
+autocorr.plot(x0.psp2.coda, auto.layout = FALSE)
+heidel.diag(x0.psp2.coda)
 
 ## Generate posterior samples from density of mu.star
-mu.coda <- coda.samples(sim, variable.names = "mu.star", n.iter = 50000)
-mu.post <- as.matrix(mu.coda)
+mu.psp2.coda <- coda.samples(sim, variable.names = "mu.star", n.iter = n.saved.steps)
+mu.psp2.post <- as.matrix(mu.psp2.coda)
 
 ## Generate posterior samples from density of y.star
-pred.coda <- coda.samples(sim, variable.names = "y.star", n.iter = 50000)
-pred.post <- as.matrix(pred.coda)
+pred.psp2.coda <- coda.samples(sim, variable.names = "y.star", n.iter = n.saved.steps)
+pred.psp2.post <- as.matrix(pred.psp2.coda)
 
 ## Generate posterior samples from density of beta (fixed effects)
-beta.coda <- coda.samples(sim, variable.names = "beta", n.iter = 50000)
-beta.post <- as.matrix(beta.coda)
+beta.psp2.coda <- coda.samples(sim, variable.names = "beta", n.iter = n.saved.steps)
+beta.psp2.post <- as.matrix(beta.psp2.coda)
 
 ## Generate posterior samples from density of alpha (random effects)
-alpha.coda <- coda.samples(sim, variable.names = "alpha", n.iter = 50000)
-alpha.post <- as.matrix(alpha.coda)
+alpha.psp2.coda <- coda.samples(sim, variable.names = "alpha", n.iter = n.saved.steps)
+alpha.psp2.post <- as.matrix(alpha.psp2.coda)
 
 ## Generate posterior samples from density of lambda (smoothing parameter)
-lambda.coda <- coda.samples(sim, variable.names = "lambda", n.iter = 50000)
-lambda.post <- as.numeric(as.matrix(lambda.coda))
+lambda.psp2.coda <- coda.samples(sim, variable.names = "lambda", n.iter = n.saved.steps)
+lambda.psp2.post <- as.numeric(as.matrix(lambda.psp2.coda))
 
 ## Write posterior samples to external file
 save(x0.coda, x0.post, mu.coda, mu.post, pred.coda, pred.post, 
@@ -264,9 +289,109 @@ abline(h = 20, col = "purple", lwd = 2)
 segments(cal2[2], 20, cal2[2], -5, col = "purple", lwd = 2)
 segments(cal2[3], 20, cal2[3], -5, col = "purple", lwd = 2)
 
+## Bayesian Cubic P-spline -----------------------------------------------------
 
-# plotFit(mod1, interval = "prediction", shade = T, col.pred = "skyblue",
-#         main = "Four-parameter logistic model")
+## Model file for JAGS 
+model3 <- "
+model {
+
+## Likelihood
+for (i in 1:length(y)) {
+y[i] ~ dnorm(inprod(beta[], X[i,]) + inprod(alpha[], Z[i,]), tau.error) 
+}
+
+## Priors for fixed effects
+for (j in 1:degree+1) {
+beta[j] ~ dnorm(0, 1.0E-6)
+}
+
+## Priors for random effects
+for (k in 1:num.knots) {
+alpha[k] ~ dnorm(0, tau.alpha)
+}
+
+## Calibration
+for (j in 1:degree+1) {
+X0[j] <- pow(x0, j-1)
+}
+for (k in 1:num.knots) {
+u0[k] <- (x0-knots[k])*step(x0-knots[k])
+Z0[k] <- pow(u0[k], degree)
+}
+y0 ~ dnorm(inprod(beta[], X0[]) + inprod(alpha[], Z0[]), tau.error) 
+x0 ~ dunif(0, 50) 
+#x0 ~ dnorm(0, 1.0E-6) 
+#x0 ~ dgamma(1.0E-3, 1.0E-3)
+
+## Priors for precision parameters
+tau.error ~ dgamma(1.0E-3, 1.0E-3)
+tau.alpha ~ dgamma(1.0E-3, 1.0E-3)
+
+## Other calculations
+sigma.error <- 1/sqrt(tau.error)
+sigma.alpha <- 1/sqrt(tau.alpha)
+lambda <- pow(sigma.alpha, 2)/pow(sigma.error, 2)
+
+## Predict new observations
+for (i in 1:250) {
+epsilon.star[i] ~ dnorm(0, tau.error)
+y.star[i] <- mu.star[i] + epsilon.star[i]
+mu.star[i] <- inprod(beta[], newX[i,]) + inprod(alpha[], newZ[i,])
+}
+
+}
+"
+model3.file <- "/home/w108bmg/Desktop/Dissertation/R code/JAGS models/model3.txt"
+writeLines(model3, model3.file)
+
+## Calculate design matrices
+knots <- mod3$knots
+X <- cbind(1, poly(elisa$conc, degree = 3, raw = TRUE))
+Z <- outer(elisa$conc, knots, "-")
+Z <- (Z * (Z > 0)) ^ 3
+newx <- seq(from = 0, to = 50, length = 250)
+newX <- cbind(1, poly(newx, degree = 3, raw = TRUE))
+newZ <- outer(newx, knots, "-")
+newZ <- (newZ * (newZ > 0)) ^ 3
+
+## Inputs for JAGS
+data.list <- list(
+  y = elisa$resp,
+  y0 = 20,
+  X = X,
+  Z = Z,
+  newX = newX,
+  newZ = newZ,
+  knots = mod3$knots,
+  num.knots = length(mod3$knots), 
+  degree = 3 # degree of polynomial
+)
+
+adapt.steps <- 10000   # number of steps to "tune" the samplers
+burnin.steps <- 20000  # number of steps to "burn-in" the samplers
+n.chains <- 3          # number of chains to run
+n.saved.steps <- 30000 # total number of steps in chains to save
+thin.steps <- 5        # number of steps to "thin" (1 = keep every step)
+n.per.chain <- ceiling((n.saved.steps*thin.steps) / n.chains) # steps per chain
+
+# Run JAGS model
+sim <- jags.model(model3.file, data = data.list, #inits = initsFun, 
+                  n.chains = n.chains, n.adapt = adapt.steps)
+update(sim, n.iter = burnin.steps) # burn-in
+
+## Generate posterior samples from density of x0
+x0.psp3.coda <- coda.samples(sim, variable.names = "x0", n.iter = n.per.chain, 
+                             thin = thin.steps)
+x0.psp3.post <- as.numeric(as.matrix(x0.psp3.coda))
+x0.psp3.dens <- density(x0.psp3.post)
+x0.psp3.mode <- x0.psp3.post[which.max(x0.psp3.dens$y)]
+
+par(mfrow = c(1, 2))
+traceplot(x0.psp3.coda, col = set1)
+abline()
+cumuplot(x0.psp3.coda, auto.layout = FALSE)
+autocorr.plot(x0.psp3.coda, auto.layout = FALSE)
+heidel.diag(x0.psp3.coda)
 
 ## Bootstrap cubic smoothing spline --------------------------------------------
 elisa.smooth <- with(elisa, smooth.spline(conc, resp))
