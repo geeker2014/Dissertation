@@ -24,16 +24,15 @@ source("/home/w108bmg/Desktop/Dissertation/R code/bootMer2_parallel.R")
 
 ## Parameters
 params <- list(
-  nsim = 100,                    # simulation size
-  m = 30,                        # number of subjects
-  n = 20,                        # sample size per subject
-  beta = c(0, 2),                # fixed effecs
-  theta = c(0.001, 0.05, 0.001), # variance components
-  y0 = 1.5                       # true observed response
+  nsim = 100,                       # simulation size
+  m = 30,                           # number of subjects
+  n = 20,                           # sample size per subject
+  beta = c(0, 1, -0.5),             # fixed effecs
+  theta = c(0.0001, 0.0075, 0.001), # variance components
+  y0 = 0.4                          # true observed response
 )
-params$x0 <- (params$y0 - params$beta[1]) / params$beta[2]
-params$var.y0 <- params$theta[1] + params$theta[2]*params$x0^2 + 
-  params$theta[3]
+params$x0 <- (-params$beta[2] + sqrt(params$beta[2]^2 - 4*params$beta[3]*(params$beta[1]-params$y0))) / (2*params$beta[3])
+params$var.y0 <- params$theta[1] + params$theta[2]*params$x0^2 + params$theta[3]
 
 ## Function to simulate data from a random intercept and slope model
 simData <- function(n = params$n, m = params$m, beta = params$beta, 
@@ -42,7 +41,8 @@ simData <- function(n = params$n, m = params$m, beta = params$beta,
   x <- rep(seq(from = 0, to = 1, length = n), times = m) 
   B0 <- rnorm(m, mean = 0, sd = sqrt(theta[1]))
   B1 <- rnorm(m, mean = 0, sd = sqrt(theta[2]))
-  y <- rnorm(m*n, mean = beta[1]+B0[subject] + (beta[2]+B1[subject])*x, 
+  y <- rnorm(m*n, mean = beta[1]+B0[subject] + (beta[2]+B1[subject])*x + 
+               beta[3]*x^2, 
              sd = sqrt(theta[3]))
   data.frame(x = x, y = y, subject = factor(subject))
 }
@@ -50,7 +50,7 @@ simData <- function(n = params$n, m = params$m, beta = params$beta,
 ## Inverse estimate function
 x0Fun <- function(object, y0 = params$y0) {
   beta <- as.numeric(fixef(object))
-  (y0 - beta[1]) / beta[2]
+  (-params$beta[2] + sqrt(params$beta[2]^2 - 4*params$beta[3]*(params$beta[1]-y0))) / (2*params$beta[3])]
 }
 
 ## Function for coverting C.I. list into a two-column matrix
@@ -71,17 +71,17 @@ waldCI <- function(.data) {
   ## FIXME: Should this be calculated based on the original model?
   Y0 <- rnorm(1, mean = params$y0, sd = sqrt(params$var.y0))
   ## Fit model using lme4 package and estimate x0 and Var(Y0)
-  mod <- lmer(y ~ x + (0+1|subject) + (0+x|subject), data = .data)
+  mod <- lmer(y ~ x + I(x^2) + (0+1|subject) + (0+x|subject), data = .data)
   x0.est <- x0Fun(mod, y0 = Y0)
   var.y0 <- VarCorr(mod)[[1]][1] + x0.est^2*VarCorr(mod)[[2]][1] + 
     sigma(mod)^2
   ## Delta method
   beta <- as.numeric(fixef(mod))
-  covmat <- diag(3)
-  covmat[1:2, 1:2] <- as.matrix(vcov(mod))
-  covmat[3, 3] <- var.y0
-  params <- c(beta0 = beta[1], beta1 = beta[2], y0 = Y0)
-  gstring <- "(y0 - beta0) / beta1"
+  covmat <- diag(4)
+  covmat[1:3, 1:3] <- as.matrix(vcov(mod))
+  covmat[4, 4] <- var.y0
+  params <- c(beta0 = beta[1], beta1 = beta[2], beta2 = beta[3], y0 = Y0)
+  gstring <- "(-beta1 + sqrt(beta1^2 - 4*beta2*(beta0-Y0))) / (2*beta2)"
   dm <- car:::deltaMethod(params, g = gstring, vcov. = covmat)
   rownames(dm) <- ""
   dm$Estimate + qnorm(c(0.025, 0.975))*dm$SE
