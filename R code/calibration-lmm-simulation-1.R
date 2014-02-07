@@ -24,7 +24,7 @@ source("/home/w108bmg/Desktop/Dissertation/R code/bootMer2_parallel.R")
 
 ## Parameters
 params <- list(
-  nsim = 10,                    # simulation size
+  nsim = 1000,                   # simulation size
   m = 30,                        # number of subjects
   n = 20,                        # sample size per subject
   beta = c(0, 2),                # fixed effecs
@@ -68,12 +68,13 @@ list2Matrix <- function(object) {
 
 .summarizeBoot <- function(x) {
   .fun <- function(z) {
-    c(.summarize(z[1, ]), .summarize(z[2, ]))
+    c(.summarize(z[1, ]), .summarize(z[2, ]), .summarize(z[3, ]))
   }
   (d <- ldply(x, .fun))
   PB <- apply(d[, 1:2], 2, mean)
-  PB.inv <- apply(d[, 3:4], 2, mean)
-  res <- rbind(PB, PB.inv)
+  PB.inv1 <- apply(d[, 3:4], 2, mean)
+  PB.inv2 <- apply(d[, 5:6], 2, mean)
+  res <- rbind(PB, PB.inv1, PB.inv2)
   colnames(res) <- c("Coverage", "Length")
   res
 }
@@ -159,10 +160,17 @@ pbootCI <- function(.data, R = 999, .parallel = TRUE) {
     y0.boot <- rnorm(1, mean = Y0, sd = sqrt(var.y0))
     x0.boot <- x0Fun(., y0 = y0.boot)
     mu0.boot <-  as.numeric(crossprod(beta.boot, c(1, x0.est)))
-    var.y0 <- VarCorr(.)[[1]][1] + VarCorr(.)[[2]][1]*x0.est^2 + sigma(.)^2
-    var.mu0 <- t(c(1, x0.est)) %*% covb %*% c(1, x0.est)
-    Q.boot <- (y0.boot - mu0.boot)/sqrt(var.y0+var.mu0)
-    c(x0.boot, Q.boot)
+    
+    ## FIXME: Should these variances be calculated at x0.est or x0.boot?
+    var1.y0 <- VarCorr(.)[[1]][1] + VarCorr(.)[[2]][1]*x0.boot^2 + sigma(.)^2
+    var1.mu0 <- t(c(1, x0.boot)) %*% covb %*% c(1, x0.boot)
+    var2.y0 <- VarCorr(.)[[1]][1] + VarCorr(.)[[2]][1]*x0.est^2 + sigma(.)^2
+    var2.mu0 <- t(c(1, x0.est)) %*% covb %*% c(1, x0.est)
+    
+    Q1.boot <- (y0.boot - mu0.boot)/sqrt(var1.y0+var1.mu0)
+    Q2.boot <- (y0.boot - mu0.boot)/sqrt(var2.y0+var2.mu0)
+    
+    c(x0.boot, Q1.boot, Q2.boot)
     
   } 
   
@@ -177,10 +185,17 @@ pbootCI <- function(.data, R = 999, .parallel = TRUE) {
     y0.boot <- Y0
     x0.boot <- x0Fun(., y0 = y0.boot)
     mu0.boot <-  as.numeric(crossprod(beta.boot, c(1, x0.est)))
-    var.y0 <- VarCorr(.)[[1]][1] + VarCorr(.)[[2]][1]*x0.est^2 + sigma(.)^2
-    var.mu0 <- t(c(1, x0.est)) %*% covb %*% c(1, x0.est)
-    Q.boot <- (y0.boot - mu0.boot)/sqrt(var.y0+var.mu0)
-    c(x0.boot, Q.boot)
+
+    ## FIXME: Should these variances be calculated at x0.est or x0.boot?
+    var1.y0 <- VarCorr(.)[[1]][1] + VarCorr(.)[[2]][1]*x0.boot^2 + sigma(.)^2
+    var1.mu0 <- t(c(1, x0.boot)) %*% covb %*% c(1, x0.boot)
+    var2.y0 <- VarCorr(.)[[1]][1] + VarCorr(.)[[2]][1]*x0.est^2 + sigma(.)^2
+    var2.mu0 <- t(c(1, x0.est)) %*% covb %*% c(1, x0.est)
+    
+    Q1.boot <- (y0.boot - mu0.boot)/sqrt(var1.y0+var1.mu0)
+    Q2.boot <- (y0.boot - mu0.boot)/sqrt(var2.y0+var2.mu0)
+    
+    c(x0.boot, Q1.boot, Q2.boot)
     
   }
   
@@ -193,9 +208,11 @@ pbootCI <- function(.data, R = 999, .parallel = TRUE) {
   }
 #   as.numeric(quantile(x0.pb$t, c(0.025, 0.975)))
 #   x0.pb
-  quants <- as.numeric(quantile(x0.pb$t[, 2], c(0.025, 0.975)))
+  quants1 <- as.numeric(quantile(x0.pb$t[, 2], c(0.025, 0.975)))
+  quants2 <- as.numeric(quantile(x0.pb$t[, 3], c(0.025, 0.975)))
   rbind(as.numeric(quantile(x0.pb$t[, 1], c(0.025, 0.975))),
-        invCI(.data, q1 = quants[1], q2 = quants[2], Y0 = Y0))
+        invCI(.data, q1 = quants1[1], q2 = quants1[2], Y0 = Y0),
+        invCI(.data, q1 = quants2[1], q2 = quants2[2], Y0 = Y0))
   
 }
 # 
@@ -237,7 +254,7 @@ apply(apply(inv.cis, 1, .summarize), 1, mean)
 
 ## Simulation for the PB percentile interval -----------------------------------
 pboot.cis <- llply(dfs, pbootCI, .progress = "text")
-apply(apply(pboot.cis, 1, .summarize), 1, mean)
+.summarizeBoot(pboot.cis)
 ## Two particular occasions produced:
 ## [1] 0.9500000 0.3340199
 ## [1] 0.9200000 0.3395194
