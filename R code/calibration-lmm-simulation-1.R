@@ -24,7 +24,7 @@ source("/home/w108bmg/Desktop/Dissertation/R code/bootMer2_parallel.R")
 
 ## Parameters
 params <- list(
-  nsim = 1000,                    # simulation size
+  nsim = 10,                    # simulation size
   m = 30,                        # number of subjects
   n = 20,                        # sample size per subject
   beta = c(0, 2),                # fixed effecs
@@ -67,7 +67,15 @@ list2Matrix <- function(object) {
 }
 
 .summarizeBoot <- function(x) {
-  
+  .fun <- function(z) {
+    c(.summarize(z[1, ]), .summarize(z[2, ]))
+  }
+  (d <- ldply(x, .fun))
+  PB <- apply(d[, 1:2], 2, mean)
+  PB.inv <- apply(d[, 3:4], 2, mean)
+  res <- rbind(PB, PB.inv)
+  colnames(res) <- c("Coverage", "Length")
+  res
 }
 
 ## Function to calculate the Wald-based C.I.
@@ -92,9 +100,9 @@ waldCI <- function(.data) {
 }
 
 ## Function to calculate the inversion interval
-invCI <- function(.data, q1 = qnorm(0.025), q2 = qnorm(0.975)) {
+invCI <- function(.data, q1 = qnorm(0.025), q2 = qnorm(0.975), Y0) {
   ## FIXME: Should this be calculated based on the original model?
-  Y0 <- rnorm(1, mean = params$y0, sd = sqrt(params$var.y0))
+  if (missing(Y0)) Y0 <- rnorm(1, mean = params$y0, sd = sqrt(params$var.y0))
   ## Fit model using nlme package and estimate x0 and Var(Y0)
   mod <- lme(y ~ x, random = list(subject = pdDiag(~x)), data = .data)
   x0.est <- x0Fun(mod, y0 = Y0)
@@ -129,72 +137,67 @@ invCI <- function(.data, q1 = qnorm(0.025), q2 = qnorm(0.975)) {
   c(lower, upper)
 }
 
-# pbootCI <- function(.data, R = 999, .parallel = TRUE) {
-#   
-#   ## FIXME: Should this be calculated based on the original model?
-#   Y0 <- rnorm(1, mean = params$y0, sd = sqrt(params$var.y0))
-#   
-#   ## Fit model using lme4 package and estimate x0 and Var(Y0)
-#   mod <- lmer(y ~ x + (0+1|subject) + (0+x|subject), data = .data)
-#   x0.est <- x0Fun(mod, y0 = Y0)
-#   var.y0 <- VarCorr(mod)[[1]][1] + VarCorr(mod)[[2]][1]*x0.est^2 + 
-#     sigma(mod)^2
-#   
-#   ## Function to calculate bootstrap estimate
-#   bootFun <- function(.) {
-#     
-#     ## Extract model components
-#     v1.boot <- VarCorr(.)[[1]][1]     # intercept
-#     v2.boot <- VarCorr(.)[[2]][1]     # linear
-#     v3.boot <- sigma(.)^2             # residual
-#     covb <- as.matrix(vcov(.))        # (X' V^-1 X)^-1
-#     beta.boot <- as.numeric(fixef(.)) 
-#     
-#     ## Calculate estimates
-#     y0.boot <- rnorm(1, mean = Y0, sd = sqrt(var.y0))
-#     x0.boot <- x0Fun(., y0 = y0.boot)
-#     mu0.boot <-  as.numeric(crossprod(beta.boot, c(1, x0.est)))
-#     var.y0 <- v1.boot + v2.boot*x0.est^2* + v3.boot
-#     var.mu0 <- t(c(1, x0.est)) %*% covb %*% c(1, x0.est)
-#     Q.boot <- (y0.boot - mu0.boot)/sqrt(var.y0+var.mu0)
-#     c(x0.boot, Q.boot)
-#     
-#   } 
-#   
-#   ## Function to return original estimate
-#   bootFun0 <- function(.) {
-#     
-#     ## Extract model components
-#     v1.boot <- VarCorr(.)[[1]][1]     # intercept
-#     v2.boot <- VarCorr(.)[[2]][1]     # linear
-#     v3.boot <- sigma(.)^2             # residual
-#     covb <- as.matrix(vcov(.))        # (X' V^-1 X)^-1
-#     beta.boot <- as.numeric(fixef(.)) 
-#     
-#     ## Calculate estimates
-#     y0.boot <- Y0
-#     x0.boot <- x0Fun(., y0 = y0.boot)
-#     mu0.boot <-  as.numeric(crossprod(beta.boot, c(1, x0.est)))
-#     var.y0 <- v1.boot + v2.boot*x0.est^2 + v3.boot
-#     var.mu0 <- t(c(1, x0.est)) %*% covb %*% c(1, x0.est)
-#     Q.boot <- (y0.boot - mu0.boot)/sqrt(var.y0+var.mu0)
-#     c(x0.boot, Q.boot)
-#     
-#   }
-#   
-#   ## Calculate quantiles of bootstrap sample
-#   x0.pb <- if (.parallel) {
-#     bootMer2_parallel(mod, FUN = bootFun, FUN0 = bootFun0, nsim = R,
-#                       parallel = "multicore", ncpus = 4)
-#   } else {
-#     bootMer2(mod, FUN = bootFun, FUN0 = bootFun0, nsim = R)
-#   }
-# #   as.numeric(quantile(x0.pb$t, c(0.025, 0.975)))
-#   q.star <- quantile(x0.pb$t[, 2], c(0.025, 0.975))
-#   rbind(as.numeric(quantile(x0.pb$t[, 1], c(0.025, 0.975))),
-#         invCI(.data, q1 = q.star[1], q2 = q.star[2]))
-#   
-# }
+pbootCI <- function(.data, R = 999, .parallel = TRUE) {
+  
+  ## FIXME: Should this be calculated based on the original model?
+  Y0 <- rnorm(1, mean = params$y0, sd = sqrt(params$var.y0))
+  
+  ## Fit model using lme4 package and estimate x0 and Var(Y0)
+  mod <- lmer(y ~ x + (0+1|subject) + (0+x|subject), data = .data)
+  x0.est <- x0Fun(mod, y0 = Y0)
+  var.y0 <- VarCorr(mod)[[1]][1] + VarCorr(mod)[[2]][1]*x0.est^2 + 
+    sigma(mod)^2
+  
+  ## Function to calculate bootstrap estimate
+  bootFun <- function(.) {
+    
+    ## Extract model components
+    covb <- as.matrix(vcov(.))        # (X' V^-1 X)^-1
+    beta.boot <- as.numeric(fixef(.)) 
+    
+    ## Calculate estimates
+    y0.boot <- rnorm(1, mean = Y0, sd = sqrt(var.y0))
+    x0.boot <- x0Fun(., y0 = y0.boot)
+    mu0.boot <-  as.numeric(crossprod(beta.boot, c(1, x0.est)))
+    var.y0 <- VarCorr(.)[[1]][1] + VarCorr(.)[[2]][1]*x0.est^2 + sigma(.)^2
+    var.mu0 <- t(c(1, x0.est)) %*% covb %*% c(1, x0.est)
+    Q.boot <- (y0.boot - mu0.boot)/sqrt(var.y0+var.mu0)
+    c(x0.boot, Q.boot)
+    
+  } 
+  
+  ## Function that returns original estimate (i.e., no random y0)
+  bootFun0 <- function(.) {
+    
+    ## Extract model components
+    covb <- as.matrix(vcov(.))        # (X' V^-1 X)^-1
+    beta.boot <- as.numeric(fixef(.)) 
+    
+    ## Calculate estimates
+    y0.boot <- Y0
+    x0.boot <- x0Fun(., y0 = y0.boot)
+    mu0.boot <-  as.numeric(crossprod(beta.boot, c(1, x0.est)))
+    var.y0 <- VarCorr(.)[[1]][1] + VarCorr(.)[[2]][1]*x0.est^2 + sigma(.)^2
+    var.mu0 <- t(c(1, x0.est)) %*% covb %*% c(1, x0.est)
+    Q.boot <- (y0.boot - mu0.boot)/sqrt(var.y0+var.mu0)
+    c(x0.boot, Q.boot)
+    
+  }
+  
+  ## Calculate quantiles of bootstrap sample
+  x0.pb <- if (.parallel) {
+    bootMer2_parallel(mod, FUN = bootFun, FUN0 = bootFun0, nsim = R,
+                      parallel = "multicore", ncpus = 4)
+  } else {
+    bootMer2(mod, FUN = bootFun, FUN0 = bootFun0, nsim = R)
+  }
+#   as.numeric(quantile(x0.pb$t, c(0.025, 0.975)))
+#   x0.pb
+  quants <- as.numeric(quantile(x0.pb$t[, 2], c(0.025, 0.975)))
+  rbind(as.numeric(quantile(x0.pb$t[, 1], c(0.025, 0.975))),
+        invCI(.data, q1 = quants[1], q2 = quants[2], Y0 = Y0))
+  
+}
 # 
 # getBootCI <- function(x, .which = 1) {
 #   quantile(x$t[, .which], c(0.025, 0.975))
@@ -233,7 +236,7 @@ inv.cis <- list2Matrix(llply(dfs, invCI, .progress = "text"))
 apply(apply(inv.cis, 1, .summarize), 1, mean)
 
 ## Simulation for the PB percentile interval -----------------------------------
-pboot.cis <- list2Matrix(llply(dfs, pbootCI, .progress = "text"))
+pboot.cis <- llply(dfs, pbootCI, .progress = "text")
 apply(apply(pboot.cis, 1, .summarize), 1, mean)
 ## Two particular occasions produced:
 ## [1] 0.9500000 0.3340199

@@ -29,7 +29,7 @@ params <- list(
   n = 20,                           # sample size per subject
   beta = c(0, 3, -1),               # fixed effecs
   theta = c(0.0001, 0.05, 0.001),   # variance components
-  y0 = c(0, 0.5, 1, 1.5, 2)[5] # true observed response
+  y0 = c(0, 0.5, 1, 1.5, 2)[4] # true observed response
 )
 params$x0 <- (-params$beta[2] + sqrt(params$beta[2]^2 - 4*params$beta[3]*(params$beta[1]-params$y0))) / (2*params$beta[3])
 params$var.y0 <- params$theta[1] + params$theta[2]*params$x0^2 + params$theta[3]
