@@ -29,7 +29,7 @@ params <- list(
   n = 20,                        # sample size per subject
   beta = c(0, 2),                # fixed effecs
   theta = c(0.001, 0.05, 0.001), # variance components
-  y0 = c(0, 0.5, 1, 1.5, 2)[4]   # true observed response: 0, 0.5, 1.0, 2.0
+  y0 = c(0, 0.5, 1, 1.5, 2)[5]   # true observed response: 0, 0.5, 1.0, 2.0
 )
 params$x0 <- (params$y0 - params$beta[1]) / params$beta[2]
 params$var.y0 <- params$theta[1] + params$theta[2]*params$x0^2 + 
@@ -133,7 +133,7 @@ invCI <- function(.data, q1 = qnorm(0.025), q2 = qnorm(0.975), Y0) {
   ## Find roots of inverse function
   lower <- uniroot(invFun1, interval = c(-1, x0.est), tol = 1e-10, 
                    maxiter = 1000)$root
-  upper <- uniroot(invFun2, interval = c(x0.est, 2), tol = 1e-10, 
+  upper <- uniroot(invFun2, interval = c(x0.est, 3), tol = 1e-10, 
                    maxiter = 1000)$root
   c(lower, upper)
 }
@@ -255,6 +255,7 @@ apply(apply(inv.cis, 1, .summarize), 1, mean)
 ## Simulation for the PB percentile interval -----------------------------------
 pboot.cis <- llply(dfs, pbootCI, .progress = "text")
 .summarizeBoot(pboot.cis)
+round(.summarizeBoot(pboot.cis), 2)
 ## Two particular occasions produced:
 ## [1] 0.9500000 0.3340199
 ## [1] 0.9200000 0.3395194
