@@ -105,12 +105,14 @@ waldCI <- function(.data) {
 }
 
 ## Function to calculate the inversion interval
-invCI <- function(.data, q1 = qnorm(0.025), q2 = qnorm(0.975)) {
+invCI <- function(.data, q1 = qnorm(0.025), q2 = qnorm(0.975), Y0) {
   
   mod <- lme(y ~ x + I(x^2), random = list(subject = pdDiag(~x)), data = .data)
-  repeat {
-    Y0 <- rnorm(1, mean = params$y0, sd = sqrt(params$var.y0))
-    if (solveable(mod, y0 = Y0)) break
+  if (missing(Y0)) {
+    repeat {
+      Y0 <- rnorm(1, mean = params$y0, sd = sqrt(params$var.y0))
+      if (solveable(mod, y0 = Y0)) break
+    }
   }
   x0.est <- x0Fun(mod, y0 = Y0)
   var.y0 <- getVarCov(mod)[1, 1] + getVarCov(mod)[2, 2]*x0.est^2 + 
@@ -227,9 +229,9 @@ pbootCI <- function(.data, R = 999, .parallel = TRUE) {
            } else {
              bootMer2(mod, FUN = bootFun, FUN0 = bootFun0, nsim = R)
            }
-  quants1 <- as.numeric(quantile(x0.pb$t[, 2], c(0.025, 0.975)))
-  quants2 <- as.numeric(quantile(x0.pb$t[, 3], c(0.025, 0.975)))
-  rbind(as.numeric(quantile(x0.pb$t[, 1], c(0.025, 0.975))),
+  quants1 <- as.numeric(quantile(x0.pb$t[, 2], c(0.025, 0.975), na.rm = TRUE))
+  quants2 <- as.numeric(quantile(x0.pb$t[, 3], c(0.025, 0.975), na.rm = TRUE))
+  rbind(as.numeric(quantile(x0.pb$t[, 1], c(0.025, 0.975), na.rm = TRUE)),
         invCI(.data, q1 = quants1[1], q2 = quants1[2], Y0 = Y0),
         invCI(.data, q1 = quants2[1], q2 = quants2[2], Y0 = Y0))
   
@@ -268,14 +270,6 @@ pboot.cis <- llply(dfs, pbootCI, .progress = "text")
 save(pboot.cis, file = "/home/w108bmg/Desktop/Dissertation/Data/pboot_quad_05.RData")
 
 summarizeBoot <- function(object) {
-  getCIs1 <- function(z) {
-    q1 <- quantile(z$t[, 2], c(0.025, 0.975))
-    q2 <- quantile(z$t[, 3], c(0.025, 0.975))
-    ci.1 <- quantile(z$t[, 1], c(0.025, 0.975))
-    ci.2 <- llply(dfs, invCI, .progress = "text")
-    ci.1
-  }
-  cis.1 <- list2Matrix(llply(object, quantile, c(0.025, 0.975)))
-  apply(apply(cis.1, 1, .summarize), 1, mean)
+
 }
 
