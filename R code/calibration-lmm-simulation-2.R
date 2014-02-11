@@ -17,6 +17,7 @@ library(plyr)    # for working with the data
 library(lme4)    # for fitting mixed models and bootstrap inference
 library(nlme)    # for fitting mixed models
 library(boot)    # for calculating bootstrap confidence intervals
+library(rootSolve)
 source("/home/w108bmg/Desktop/Dissertation/R code/bootMer2.R")
 source("/home/w108bmg/Desktop/Dissertation/R code/bootMer2_parallel.R")
 
@@ -29,7 +30,7 @@ params <- list(
   n = 20,                           # sample size per subject
   beta = c(0, 3, -1),               # fixed effecs
   theta = c(0.0001, 0.05, 0.001),   # variance components
-  y0 = c(0, 0.5, 1, 1.5, 2)[2] # true observed response
+  y0 = c(0, 0.5, 1, 1.5, 2)[5] # true observed response
 )
 params$x0 <- (-params$beta[2] + sqrt(params$beta[2]^2 - 4*params$beta[3]*(params$beta[1]-params$y0))) / (2*params$beta[3])
 params$var.y0 <- params$theta[1] + params$theta[2]*params$x0^2 + params$theta[3]
@@ -104,7 +105,7 @@ waldCI <- function(.data) {
 }
 
 ## Function to calculate the inversion interval
-invCI <- function(.data) {
+invCI <- function(.data, q1 = qnorm(0.025), q2 = qnorm(0.975)) {
   
   mod <- lme(y ~ x + I(x^2), random = list(subject = pdDiag(~x)), data = .data)
   repeat {
@@ -114,6 +115,7 @@ invCI <- function(.data) {
   x0.est <- x0Fun(mod, y0 = Y0)
   var.y0 <- getVarCov(mod)[1, 1] + getVarCov(mod)[2, 2]*x0.est^2 + 
     summary(mod)$sigma^2
+  
   ## Prediction function that also returns standard error
   predFun <- function(x) {
     z <- list("x" = x)
@@ -122,20 +124,38 @@ invCI <- function(.data) {
                           t(cbind(1, unlist(z), unlist(z)^2))))
     list(fit = fit, se.fit = se.fit)
   }
-  ## Inverse function for calculating confidence limits
-  invFun.bounds <- function(x) { 
-    z <- list("x" = x)
-    pred <- predFun(x)
-    (Y0 - pred$fit)^2/(var.y0 + pred$se.fit^2) - qnorm(0.975)^2
-  }
-  ## Find roots of inverse function
+  
+#   ## Inverse function for calculating confidence limits
+#   invFun.bounds <- function(x) { 
+#     z <- list("x" = x)
+#     pred <- predFun(x)
+#     (Y0 - pred$fit)^2/(var.y0 + pred$se.fit^2) - qnorm(0.975)^2
+#   }
+#   ## Find roots of inverse function
 #   c(uniroot(invFun.bounds, interval = c(-1, x0.est), tol = 1e-10, 
 #             maxiter = 1000)$root, 
 #     uniroot(invFun.bounds, interval = c(x0.est, 2), tol = 1e-10, 
 #             maxiter = 1000)$root)
-  uniroot.all(invFun.bounds, interval = c(-1, 3), tol = 1e-10,
-              maxiter = 1000)[1:2]
   
+  ## Find roots of predictive pivot
+  invFun1 <- function(x) { 
+    z <- list(x)
+    names(z) <- "volume"
+    pred <- predFun(x)
+    (Y0 - pred$fit)/sqrt((var.y0 + pred$se.fit^2)) - q2
+  }
+  invFun2 <- function(x) { 
+    z <- list(x)
+    names(z) <- "volume"
+    pred <- predFun(x)
+    (Y0 - pred$fit)/sqrt((var.y0 + pred$se.fit^2)) - q1
+  }
+  roots <- c(uniroot.all(invFun1, interval = c(-1, 4), tol = 1e-10, 
+                         maxiter = 1000),
+             uniroot.all(invFun2, interval = c(-1, 4), tol = 1e-10, 
+                         maxiter = 1000))
+  sort(roots)[1:2]
+
 }
 
 pbootCI <- function(.data, R = 999, .parallel = TRUE) {
@@ -201,12 +221,17 @@ pbootCI <- function(.data, R = 999, .parallel = TRUE) {
   }
   
   ## Return bootstrap samples
-  if (.parallel) {
-    bootMer2_parallel(mod, FUN = bootFun, FUN0 = bootFun0, nsim = R,
-                      parallel = "multicore", ncpus = 4)
-  } else {
-    bootMer2(mod, FUN = bootFun, FUN0 = bootFun0, nsim = R)
-  }
+  x0.pb <- if (.parallel) {
+             bootMer2_parallel(mod, FUN = bootFun, FUN0 = bootFun0, nsim = R,
+                               parallel = "multicore", ncpus = 4)
+           } else {
+             bootMer2(mod, FUN = bootFun, FUN0 = bootFun0, nsim = R)
+           }
+  quants1 <- as.numeric(quantile(x0.pb$t[, 2], c(0.025, 0.975)))
+  quants2 <- as.numeric(quantile(x0.pb$t[, 3], c(0.025, 0.975)))
+  rbind(as.numeric(quantile(x0.pb$t[, 1], c(0.025, 0.975))),
+        invCI(.data, q1 = quants1[1], q2 = quants1[2], Y0 = Y0),
+        invCI(.data, q1 = quants2[1], q2 = quants2[2], Y0 = Y0))
   
 }
 
@@ -240,5 +265,17 @@ apply(apply(inv.cis, 1, .summarize), 1, mean)
 
 ## Simulation for the PB percentile interval -----------------------------------
 pboot.cis <- llply(dfs, pbootCI, .progress = "text")
+save(pboot.cis, file = "/home/w108bmg/Desktop/Dissertation/Data/pboot_quad_05.RData")
 
+summarizeBoot <- function(object) {
+  getCIs1 <- function(z) {
+    q1 <- quantile(z$t[, 2], c(0.025, 0.975))
+    q2 <- quantile(z$t[, 3], c(0.025, 0.975))
+    ci.1 <- quantile(z$t[, 1], c(0.025, 0.975))
+    ci.2 <- llply(dfs, invCI, .progress = "text")
+    ci.1
+  }
+  cis.1 <- list2Matrix(llply(object, quantile, c(0.025, 0.975)))
+  apply(apply(cis.1, 1, .summarize), 1, mean)
+}
 
