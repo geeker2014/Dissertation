@@ -229,11 +229,12 @@ pbootCI <- function(.data, R = 999, .parallel = TRUE) {
            } else {
              bootMer2(mod, FUN = bootFun, FUN0 = bootFun0, nsim = R)
            }
-  quants1 <- as.numeric(quantile(x0.pb$t[, 2], c(0.025, 0.975), na.rm = TRUE))
-  quants2 <- as.numeric(quantile(x0.pb$t[, 3], c(0.025, 0.975), na.rm = TRUE))
-  rbind(as.numeric(quantile(x0.pb$t[, 1], c(0.025, 0.975), na.rm = TRUE)),
-        invCI(.data, q1 = quants1[1], q2 = quants1[2], Y0 = Y0),
-        invCI(.data, q1 = quants2[1], q2 = quants2[2], Y0 = Y0))
+#   quants1 <- as.numeric(quantile(x0.pb$t[, 2], c(0.025, 0.975), na.rm = TRUE))
+#   quants2 <- as.numeric(quantile(x0.pb$t[, 3], c(0.025, 0.975), na.rm = TRUE))
+#   rbind(as.numeric(quantile(x0.pb$t[, 1], c(0.025, 0.975), na.rm = TRUE)),
+#         invCI(.data, q1 = quants1[1], q2 = quants1[2], Y0 = Y0),
+#         invCI(.data, q1 = quants2[1], q2 = quants2[2], Y0 = Y0))
+  x0.pb
   
 }
 
@@ -267,9 +268,36 @@ apply(apply(inv.cis, 1, .summarize), 1, mean)
 
 ## Simulation for the PB percentile interval -----------------------------------
 pboot.cis <- llply(dfs, pbootCI, .progress = "text")
-save(pboot.cis, file = "/home/w108bmg/Desktop/Dissertation/Data/pboot_quad_05.RData")
+save(pboot.cis, file = "/home/w108bmg/Desktop/Dissertation/Data/pboot_quad_20.RData")
 
-summarizeBoot <- function(object) {
-
+summarizeBoot <- function(z) {
+  fun.1 <- function(x) x[1, ]
+  fun.2 <- function(x) x[2, ]
+  fun.3 <- function(x) x[3, ]
+  cis.1 <- apply(apply(ldply(z, fun.1), 1, .summarize), 1, mean)
+  cis.2 <- apply(apply(ldply(z, fun.2), 1, .summarize), 1, mean)
+  cis.3 <- apply(apply(ldply(z, fun.3), 1, .summarize), 1, mean)
+  names(cis.1) <- names(cis.2) <- names(cis.3) <- c("Coverage", "Length")
+  rbind(PB = cis.1, PB.inv1 = cis.2, PB.inv2 = cis.3)
 }
 
+
+anyMissing <- function(.) {
+  any(is.na(.))
+}
+
+is.missing <- sapply(pboot.cis, anyMissing)
+not.missing <- !is.missing
+pboot.cis.not.missing <- (pboot.cis[!.missing])
+summarizeBoot(pboot.cis.not.missing)
+
+num.not.missing <- length(pboot.cis.not.missing)
+i <- num.not.missing + 1
+while (i <= 1000) {
+  cis <- pbootCI(simData())
+  if (!any(is.na(cis))) {
+    pboot.cis.not.missing <- append(pboot.cis.not.missing, list(cis))
+    i <- i + 1
+  }
+}
+summarizeBoot(pboot.cis.not.missing)

@@ -25,11 +25,11 @@ source("/home/w108bmg/Desktop/Dissertation/R code/bootMer2_parallel.R")
 ## Parameters
 params <- list(
   nsim = 1000,                   # simulation size
-  m = 30,                        # number of subjects
-  n = 20,                        # sample size per subject
+  m = 25,                        # number of subjects
+  n = 10,                        # sample size per subject
   beta = c(0, 2),                # fixed effecs
   theta = c(0.001, 0.05, 0.001), # variance components
-  y0 = c(0, 0.5, 1, 1.5, 2)[5]   # true observed response: 0, 0.5, 1.0, 2.0
+  y0 = c(0, 0.5, 1, 1.5, 2)[4]   # true observed response: 0, 0.5, 1.0, 2.0
 )
 params$x0 <- (params$y0 - params$beta[1]) / params$beta[2]
 params$var.y0 <- params$theta[1] + params$theta[2]*params$x0^2 + 
@@ -238,7 +238,7 @@ xyplot(y ~ x, groups = subject, data = simdata, type = "b",
          panel.xyplot(x, y, ...) 
          panel.abline(h = params$y0, v = params$x0)
 })
-plot(intervals(lmList(y ~ I(x-mean(x)) | subject, data = simdata)))
+# plot(intervals(lmList(y ~ I(x-mean(x)) | subject, data = simdata)))
 mod.lme4 <- lmer(y ~ x + (0+1|subject) + (0+x|subject), data = simdata)
 mod.nlme <- lme(y ~ x, random = list(subject = pdDiag(~x)), data = simdata)
 x0Fun(mod.lme4)

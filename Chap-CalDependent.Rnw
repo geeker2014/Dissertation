@@ -397,7 +397,99 @@ Using Equation~\eqref{eqn:simdata-x0-df}, a 95\% distribution-free calibration i
 
 \section{Simulation study}
 \label{sec:simulation-study}
-We performed a limited simulation study to compare the confidence interval procedures discussed in Sections~\ref{sec:calibration-lmm-wald}-\ref{sec:calibration-lmm-parboot}. Due to limited computational resources and the computing time needed for bootstrap resampling and fitting mixed-effects models, the Monte Carlo sample size chosen to be $N = 1,000$. We used a confidence level of $95\%$, and therefore the standard deviation of the coverage probability estimates is approximately $\sqrt{0.95\left(1-0.95\right)/1000} = 0.007$; thus, we only report two decimal places of precision in Tables~?-?.
+To illustrate the practical performance of the confidence interval procedures discussed in Sections~\ref{sec:calibration-lmm-wald}-\ref{sec:calibration-lmm-parboot}, we ran a small simulation study in which $\left(x_{ij}, \mathcal{Y}_{ij}\right)$, $i = 1, 2, \dotsc, 30$, $j = 1, 2, \dotsc, 20$, were generated from both
+\begin{align*}
+  \mathcal{Y}_{ij} &= \left(\alpha_{0j} + \beta_0\right) + \left(\alpha_{1j} + \beta_1\right)x_{ij} + \epsilon_{ij}, \\
+  \mathcal{Y}_{ij} &= \left(\alpha_{0j} + \beta_0\right) + \left(\alpha_{1j} + \beta_1\right)x_{ij} + \beta_2 x_{ij}^2 + \epsilon_{ij}.
+\end{align*}
+In the first model, $\left(\beta_0, \beta_1\right) = \left(0, 2\right)$, $\alpha_{0j} \stackrel{iid}{\sim} \mathcal{N}\left(0, 0.001\right)$, $\alpha_{1j} \stackrel{iid}{\sim} \mathcal{N}\left(0, 0.05\right)$, and $\epsilon_{ij} \stackrel{iid}{\sim} \mathcal{N}\left(0, 0.001\right)$. Similarly, in the second model, $\left(\beta_0, \beta_1, \beta_2\right) = \left(0, 3, -1\right)$, $\alpha_{0j} \stackrel{iid}{\sim} \mathcal{N}\left(0, 0.0001\right)$, $\alpha_{1j} \stackrel{iid}{\sim} \mathcal{N}\left(0, 0.05\right)$, and $\epsilon_{ij} \stackrel{iid}{\sim} \mathcal{N}\left(0, 0.001\right)$. In both models, the random variables $\big\{\alpha_{0j}\big\}$, $\big\{\alpha_{1j}\big\}$, and $\big\{\epsilon_{ij}\big\}$ are mutually independent. We computed $95\%$ calibration intervals using each method based on five different unknowns, $\mathcal{Y}_0 = \big\{0, 0.5, 1, 1.5, 2\big\}$. An example data set from each model is displayed in Figure~\ref{fig:simdata-scatterplots}.
+
+Due to the large computational time involved in bootstrapping and fitting mixed models, the Monte Carlo sample size was limited to $N = 1,000$ and the bootstrap sample size was set to $R = 999$. Furthermore, because we used a confidence level of $1-\alpha = 0.95$, the standard deviation of the coverage probability is approximately $\sqrt{0.95\left(1-0.95\right)/1000} = 0.007$; thus, we only report two decimal places of precision in Tables~\ref{tab:linear-results}-\ref{tab:quadratic-results}. 
+
+<<simdata-scatterplots, echo = FALSE, fig.width = 7, fig.height = 4, par = TRUE, fig.pos = '!ht', fig.scap = 'Scatterplots of simulated data', fig.cap = 'Scatterplots of simulated data. \\textit{Left}: \\textit{Right}:'>>=
+simData1 <- function(n = 20, m = 30, beta = c(0, 2), 
+                     theta = c(0.001, 0.05, 0.001)) {
+  subject <- rep(1:m, each = n)
+  x <- rep(seq(from = 0, to = 1, length = n), times = m) 
+  B0 <- rnorm(m, mean = 0, sd = sqrt(theta[1]))
+  B1 <- rnorm(m, mean = 0, sd = sqrt(theta[2]))
+  y <- rnorm(m*n, mean = beta[1]+B0[subject] + (beta[2]+B1[subject])*x, 
+             sd = sqrt(theta[3]))
+  data.frame(x = x, y = y, subject = factor(subject))
+}
+simData2 <- function(n = 20, m = 30, beta = c(0, 3, -1), 
+                     theta = c(0.0001, 0.05, 0.001)) {
+  subject <- rep(1:m, each = n)
+  x <- rep(seq(from = 0, to = 1, length = n), times = m) 
+  B0 <- rnorm(m, mean = 0, sd = sqrt(theta[1]))
+  B1 <- rnorm(m, mean = 0, sd = sqrt(theta[2]))
+  y <- rnorm(m*n, mean = beta[1]+B0[subject] + (beta[2]+B1[subject])*x + 
+               beta[3]*x^2, 
+             sd = sqrt(theta[3]))
+  data.frame(x = x, y = y, subject = factor(subject))
+}
+set.seed(5746)
+simdata1 <- simData1()
+simdata2 <- simData2()
+p1 <- xyplot(y ~ x, groups = subject, data = simdata1, type = "b", pch = 1,
+             alpha = 0.5, panel = function(x, y, ...) {
+         panel.xyplot(x, y, ...) 
+         panel.abline(h = c(0, 0.5, 1, 1.5, 2), col = "lightgrey")
+})
+p2 <- xyplot(y ~ x, groups = subject, data = simdata2, type = "b", pch = 1,
+             alpha = 0.5, panel = function(x, y, ...) {
+         panel.xyplot(x, y, ...) 
+         panel.abline(h = c(0, 0.5, 1, 1.5, 2), col = "lightgrey")
+})
+print(p1, pos = c(0, 0, 1/2, 1), more = TRUE) 
+print(p2, pos = c(1/2, 0, 1, 1), more = FALSE)
+@
+
+\begin{table}[!htb]
+\caption[Linear model]{Linear model. \label{tab:linear-results}}
+\centering
+  \begin{tabular}{llcccccc}
+  \toprule
+            &  $\mathcal{Y}_0 =$ & 0    & 0.5  & 1    & 1.5  & 2    \\
+  \hline
+  Coverage  &  Wald              & 0.95 & 0.94 & 0.93 & 0.94 & 0.93 \\
+            &  Inversion         & 0.95 & 0.95 & 0.94 & 0.93 & 0.95 \\
+            &  PB                & 0.95 & 0.94 & 0.93 & 0.93 & 0.94 \\
+            &  PB inversion (1)  & 0.94 & 0.94 & 0.95 & 0.95 & 0.95 \\
+  					&  PB inversion (2)  & 0.96 & 0.94 & 0.94 & 0.94 & 0.96 \\
+  \hline
+  Length    &  Wald              & 0.09 & 0.14 & 0.24 & 0.35 & 0.45 \\
+            &  Inversion         & 0.09 & 0.14 & 0.24 & 0.34 & 0.45 \\
+            &  PB                & 0.09 & 0.14 & 0.24 & 0.34 & 0.45 \\
+            &  PB inversion (1)  & 0.09 & 0.15 & 0.25 & 0.38 & 0.50 \\
+						&  PB inversion (2)  & 0.09 & 0.14 & 0.24 & 0.36 & 0.47 \\
+  \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[!htb]
+\caption[Quadratic model]{Quadratic model. \label{tab:quadratic-results}}
+\centering
+  \begin{tabular}{llcccccc}
+  \toprule
+            &  $\mathcal{Y}_0 =$ & 0    & 0.5  & 1    & 1.5  & 2    \\
+  \hline
+  Coverage  &  Wald              & 0.95 & 0.96 & 0.94 & 0.94 & 0.87 \\
+            &  Inversion         & 0.96 & 0.95 & 0.94 & 0.93 & 0.93 \\
+            &  PB                & 0.00 & 0.00 & 0.00 & 0.00 & 0.92 \\
+            &  PB inversion (1)  & 0.00 & 0.00 & 0.00 & 0.00 & 0.76 \\
+						&  PB inversion (2)  & 0.00 & 0.00 & 0.00 & 0.00 & 0.92 \\
+  \hline
+  Length    &  Wald              & 0.04 & 0.08 & 0.17 & 0.35 & 1.09 \\
+            &  Inversion         & 0.04 & 0.08 & 0.16 & 0.38 & 1.36 \\
+            &  PB                & 0.00 & 0.00 & 0.00 & 0.00 & 0.63 \\
+            &  PB inversion (1)  & 0.00 & 0.00 & 0.00 & 0.00 & 1.15 \\
+						&  PB inversion (2)  & 0.00 & 0.00 & 0.00 & 0.00 & 1.37 \\
+  \bottomrule
+  \end{tabular}
+\end{table}
+
+As expected, all four procedures perform well for the first model, with coverage estimates close to $0.95$. For the second model, the methods still perform well, however, the Wald-based interval performs much worse for $\mathcal{Y}_0 = 2$, with coverage probability well below $0.95$. This should have been anticipated since we don't expect the sampling distribution of the inverse estimator, $\widehat{x}_0$, to be approximately normal (or even symmetric) in this case. Surprisingly, the inverse estimator seems to perform as well as the intervals based on the parametric bootstrap, however, the interval based on the percentile bootstrap has the advantage of providing an estimate of the entire sampling distribution of $\widehat{x}_0$, rather than just a confidene interval. Also, the Wald-based and inversion intervals do not account for the uncertainty in the estimated variance components and rely on large-sample sizes, therefore, would not be expected to perform as well on smaller data sets. A more extensive simulation study would be necessary to substantiate these claims.
 
 \section{Bladder volume example}
 \label{sec:bladder-example}
