@@ -1933,7 +1933,7 @@ In the first model, $\left(\beta_0, \beta_1\right) = \left(0, 2\right)$, $\alpha
 Due to the large computational time involved in bootstrapping and fitting mixed models, the Monte Carlo sample size was limited to $N = 1,000$ and the bootstrap sample size was set to $R = 999$. Furthermore, because we used a confidence level of $1-\alpha = 0.95$, the standard deviation of the coverage probability is approximately $\sqrt{0.95\left(1-0.95\right)/1000} = 0.007$; thus, we only report two decimal places of precision in Tables~\ref{tab:linear-results}-\ref{tab:quadratic-results}. 
 
 \begin{knitrout}
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{figure}[!tbh]
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{figure}[!ht]
 
 \includegraphics[width=\maxwidth]{figure/simdata-scatterplots} \caption[Scatterplots of simulated data]{Scatterplots of simulated data. \textit{Left}: \textit{Right}:\label{fig:simdata-scatterplots}}
 \end{figure}
@@ -1986,7 +1986,7 @@ Due to the large computational time involved in bootstrapping and fitting mixed 
   \end{tabular}
 \end{table}
 
-As expected, all four procedures perform well for the first model, with coverage probabilities close to $0.95$. For the second model, the methods still perform well, however, the Wald-based interval performs much worse for $\mathcal{Y}_0 = 2$, with coverage probability well below $0.95$. This should have been anticipated since we don't expect the sampling distribution of the inverse estimator, $\widehat{x}_0$, to be approximately normal (or even symmetric) in this case. Surprisingly, the inverse estimator seems to perform as well as the intervals based on the parametric bootstrap, however, the percentile interval has the advantage of providing an estimate of the entire sampling distribution of $\widehat{x}_0$, rather than just a confidene interval. Also, the Wald-based and inversion intervals do not account for the uncertainty in the estimated variance components and rely on large-sample sizes, therefore, would not be expected to perform as well on smaller data sets. A more extensive simulation study would be necessary to substantiate these claims.
+As expected, all four procedures perform well for the first model, with coverage estimates close to $0.95$. For the second model, the methods still perform well, however, the Wald-based interval performs much worse for $\mathcal{Y}_0 = 2$, with coverage probability well below $0.95$. This should have been anticipated since we don't expect the sampling distribution of the inverse estimator, $\widehat{x}_0$, to be approximately normal (or even symmetric) in this case. Surprisingly, the inversion interval seems to perform as well as the intervals based on the parametric bootstrap, however, the interval based on the percentile bootstrap has the advantage of providing an estimate of the entire sampling distribution of $\widehat{x}_0$, rather than just a confidene interval. Also, the Wald-based and inversion intervals do not account for the uncertainty in the estimated variance components and rely on large-sample sizes, therefore, would not be expected to perform as well on smaller data sets. A more extensive simulation study allowing for different sample size configurations would be necessary to substantiate these claims.
 
 \section{Bladder volume example}
 \label{sec:bladder-example}
