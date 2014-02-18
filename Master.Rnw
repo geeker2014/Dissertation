@@ -72,16 +72,10 @@
 \newcommand{\wh}[1]{\ensuremath{\widehat{#1}}}
 \newcommand{\wt}[1]{\ensuremath{\widetilde{#1}}}
 \newcommand{\wb}[1]{\ensuremath{\overline{#1}}}
-% \newcommand{\var}{\ensuremath{\mathbb{V}}}
-% \newcommand{\cov}{\ensuremath{\mathrm{cov}}}
-% \newcommand{\se}{\ensuremath{\mathrm{se}}}
-% \newcommand{\E}{\ensuremath{\mathbb{E}}}
-% \newcommand{\Prob}{\ensuremath{\mathbb{P}}}
+\newcommand{\tquant}[2]{\ensuremath{t_{#1,#2}}}
 
 %% Define new operators
-%\DeclareMathOperator*{\argmin}{\arg\!\min}
 \newcommand{\argmin}[1]{\underset{#1}{\operatorname{arg}\!\operatorname{min}}\;}
-% \newcommand{\argmin}[1]{\underset{#1}{\arg\!\min}\;}
 \newcommand{\E}{\operatorname{E}}
 \newcommand{\var}{\operatorname{Var}}
 \newcommand{\cov}{\operatorname{Cov}}
@@ -96,7 +90,6 @@
 \newcommand{\Prob}{\operatorname{Pr}}
 \newcommand{\RSS}{\operatorname{RSS}}
 
-%% Allow display breaks
 %\allowdisplaybreaks
 
 %% Required front matter definitions -------------------------------------------
@@ -151,17 +144,21 @@
 % \committeeSignedDates{2 Jun 2011,3 Jun 2011,4 Jun 2011}
 % \deanSignedDate{9 Jun 2011}
 
-\abstract{Calibration is an important and controversial topic in statistics. In this dissertation, we consider both semiparametric calibration and the application of calibration to grouped data, both of which may be addressed through the use of mixed-effects models. In Chapter~\ref{chap:nonparametric}, we propose a method for obtaining calibration intervals that have good coverage probability when the calibration curve has been estimated \textit{semiparametrically} and is biased. We also expand the traditional Bayesian approach to calibration by allowing for a semiparametric estimate of the calibration curve. In Chapter~\ref{chp:cal-dependent}, we extend the usual methods for statistical calibration to the case of grouped data, that is, where observations can be categorized into a finite set of homogeneous clusters. Observations belonging to the same cluster are often similar and cannot be considered as independent; hence, we must account for within-subject correlation when making inference. We start by extending the familiar Wald-based and inversion methods using the linear mixed-effects model. Then, we propose a simple parametric bootstrap algorithm that can be used to either obtain calibration intervals directly or to improve the inversion interval by relaxing the normality constraint on the approximate predictive pivot. In Appendix~\ref{app:investr}, we describe the R package \texttt{investr} we have developed for analyzing calibration data.}
-% The abstract can also be saved in a separate file, called abstract.tex for 
-% example, and included here using: "\abstract{\input{abstract}}"
+% \abstract{Calibration is an important and controversial topic in statistics. In this dissertation, we consider both semiparametric calibration and the application of calibration to grouped data, both of which may be addressed through the use of mixed-effects models. In Chapter~\ref{chap:nonparametric}, we propose a method for obtaining calibration intervals that have good coverage probability when the calibration curve has been estimated \textit{semiparametrically} and is biased. We also expand the traditional Bayesian approach to calibration by allowing for a semiparametric estimate of the calibration curve. In Chapter~\ref{chp:cal-dependent}, we extend the usual methods for statistical calibration to the case of grouped data, that is, where observations can be categorized into a finite set of homogeneous clusters. Observations belonging to the same cluster are often similar and cannot be considered as independent; hence, we must account for within-subject correlation when making inference. We start by extending the familiar Wald-based and inversion methods using the linear mixed-effects model. Then, we propose a simple parametric bootstrap algorithm that can be used to either obtain calibration intervals directly or to improve the inversion interval by relaxing the normality constraint on the approximate predictive pivot. In Appendix~\ref{app:investr}, we describe the R package \texttt{investr} we have developed for analyzing calibration data.}
+\abstract{Calibration, more generally referred to as inverse estimation, is an important and controversial topic in statistics. In this work, both semiparametric calibration and the application of calibration to grouped data is considered, both of which may be addressed through the use of the linear mixed-effects model. A method is proposed for obtaining calibration intervals that has good coverage probability when the calibration curve has been estimated semiparametrically and is biased. The traditional Bayesian approach to calibration is also expanded by allowing for a semiparametric estimate of the calibration curve. The usual methods for linear calibration are then extended to the case of grouped data, that is, where observations can be categorized into a finite set of homogeneous clusters.  Observations belonging to the same cluster are often similar and cannot be considered as independent; hence, we must account for within-subject correlation when making inference. Estimation techniques begin by extending the familiar
+Wald-based and inversion methods using the linear mixed-effects model. Then, a simple parametric bootstrap algorithm is proposed that can be used to either obtain calibration intervals directly, or to improve the inversion interval by relaxing the normality constraint on the approximate predictive pivot. Many of these methods have been incorporated into the \pkg{R} package, \code{investr}, which has been developed for analyzing calibration data.}
 
 % Required SF298 macros. See the SF298 package guide for additional fields.
 \DatesCovered{Oct 2011--Mar 2014} % First quarter of classes to Graduation
 \ContractNumber{}   % "in house" if AFIT sponsored or blank otherwise
 \ProjectNumber{}    % JON number (per advisor) or blank
-\SponsoringAgency{Air Force Office of Scientific Research} % sponsor address or '\relax' (will appear blank)
+\SponsoringAgency{Dr. David S. Stargel \\
+  Air Force Office of Scientific Research (AFOSR/RTA) \\
+  875 N. Randolph Street \\
+  Suite 325, Room 3112 \\
+  Arlington, VA 22203-1768}  % sponsor address or '\relax' (will appear blank)
 \Acronyms{AFOSR/RTA}         % sponsor unit/office symbol or blank
-\SMReportNumber{}   % blank unless sponsoring agency assigned a report number
+\SMReportNumber{}           % blank unless sponsoring agency assigned a report number
 \AddlSupplementaryNotes{}   % Add any other comments as necessary
 \ReportClassification {U}   % document classification
 \AbstractClassification {U} % abstract classification
@@ -169,7 +166,7 @@
 \AbstractLimitation {UU}    % change to 'SAR' if limited distribution
 \SubjectTerms{Calibration, Bootstrap, Linear mixed-effects model, Smoothing}
 \ResponsiblePerson {Dr. Christine M. Schubert Kabban}
-\RPTelephone {(937) 255-3636 x4549 christine.schubertkabban@afit.edu}  
+\RPTelephone {\footnotesize{(937) 255-3636 x4549 christine.schubertkabban@afit.edu}}
      % advisor's 4 digit extension and email address.  If necessary to fit into 
      % the block, the \footnotesize command can be placed before the phone
      % number to reduce the font size
@@ -234,12 +231,12 @@
   $\bm{1}_n$    \> $n \times 1$ vector of all $1$'s \\
   $\bm{J}_{n}$  \> $n \times n$ matrix of all $1$'s \\
   $I(\cdot)$    \> the indicator function \\
-  \null\\
+%   \null\\
 %   \textit{Subscripts}\\
 %   $?$ \> ???? \\
 %   \null\\
-  \textit{Superscripts}\\
-  $\boot$ \> denotes a bootstrapped estimate or sample \\
+%   \textit{Superscripts}\\
+%   $\boot$ \> denotes a bootstrapped estimate or sample \\
 \end{tabbing}
 }
 % A disadvantage of the tabbing environment is the lack of automatic

@@ -17,18 +17,17 @@ library(plyr)    # for working with the data
 library(lme4)    # for fitting mixed models and bootstrap inference
 library(nlme)    # for fitting mixed models
 library(boot)    # for calculating bootstrap confidence intervals
-source("/home/w108bmg/Desktop/Dissertation/R code/bootMer2.R")
-source("/home/w108bmg/Desktop/Dissertation/R code/bootMer2_parallel.R")
+source("/home/w108bmg/Desktop/Dissertation/R code/Parametric bootstrap functions.R")
 
 ## Simulation setup ------------------------------------------------------------
 
 ## Parameters
 params <- list(
-  nsim = 1000,                   # simulation size
+  nsim = 100,                   # simulation size
   m = 25,                        # number of subjects
   n = 10,                        # sample size per subject
   beta = c(0, 2),                # fixed effecs
-  theta = c(0.001, 0.05, 0.001), # variance components
+  theta = c(0.005, 0.075, 0.001), # variance components
   y0 = c(0, 0.5, 1, 1.5, 2)[4]   # true observed response: 0, 0.5, 1.0, 2.0
 )
 params$x0 <- (params$y0 - params$beta[1]) / params$beta[2]
@@ -47,36 +46,48 @@ simData <- function(n = params$n, m = params$m, beta = params$beta,
   data.frame(x = x, y = y, subject = factor(subject))
 }
 
-## Inverse estimate function
+## Function to calculate inverse estimate given a mixed model object
 x0Fun <- function(object, y0 = params$y0) {
   beta <- as.numeric(fixef(object))
   (y0 - beta[1]) / beta[2]
 }
 
-## Function for coverting C.I. list into a two-column matrix
-list2Matrix <- function(object) {
-  matrix(unlist(object), nrow = length(object), ncol = length(object[[1]]), 
-         byrow = TRUE)
-}
-
 ## Function to summarize confidence interval
-.summarize <- function(x) {
-  .coverage <- if (x[1] <= params$x0 && params$x0 <= x[2]) 1 else 0
-  .length <- x[2] - x[1]
-  c(.coverage, .length)
-}
-
-.summarizeBoot <- function(x) {
-  .fun <- function(z) {
-    c(.summarize(z[1, ]), .summarize(z[2, ]), .summarize(z[3, ]))
+simulationSummary <- function(x, boot = FALSE) {
+  
+  ## Function for coverting list of C.I.'s into a two-column matrix
+  list2Matrix <- function(object) {
+    matrix(unlist(object), nrow = length(object), ncol = length(object[[1]]), 
+           byrow = TRUE)
   }
-  (d <- ldply(x, .fun))
-  PB <- apply(d[, 1:2], 2, mean)
-  PB.inv1 <- apply(d[, 3:4], 2, mean)
-  PB.inv2 <- apply(d[, 5:6], 2, mean)
-  res <- rbind(PB, PB.inv1, PB.inv2)
-  colnames(res) <- c("Coverage", "Length")
-  res
+  
+  ## Function that returns coverage and length of a single C.I.
+  coverage.and.length <- function(x) {
+    .coverage <- if (x[1] <= params$x0 && params$x0 <= x[2]) 1 else 0
+    .length <- x[2] - x[1]
+    c(.coverage, .length)
+  }
+  
+  if (!boot) {
+    
+    ci.mat <- list2Matrix(x)
+    res <- apply(apply(ci.mat, 1, coverage.and.length), 1, mean)
+    names(res) <- c("Coverage", "Length")
+    res
+    
+  } else {
+    
+    d <- ldply(x, function(x) {
+      c(coverage.and.length(x[1, ]), coverage.and.length(x[2, ]))
+      })
+    boot.perc <- apply(d[, 1:2], 2, mean)
+    boot.inv <- apply(d[, 3:4], 2, mean)
+    res <- rbind(boot.perc, boot.inv)
+    colnames(res) <- c("Coverage", "Length")
+    res
+    
+  }
+  
 }
 
 ## Function to calculate the Wald-based C.I.
@@ -138,6 +149,7 @@ invCI <- function(.data, q1 = qnorm(0.025), q2 = qnorm(0.975), Y0) {
   c(lower, upper)
 }
 
+## Function to calculate bootstrap intervals
 pbootCI <- function(.data, R = 999, .parallel = TRUE) {
   
   ## FIXME: Should this be calculated based on the original model?
@@ -162,15 +174,11 @@ pbootCI <- function(.data, R = 999, .parallel = TRUE) {
     mu0.boot <-  as.numeric(crossprod(beta.boot, c(1, x0.est)))
     
     ## FIXME: Should these variances be calculated at x0.est or x0.boot?
-    var1.y0 <- VarCorr(.)[[1]][1] + VarCorr(.)[[2]][1]*x0.boot^2 + sigma(.)^2
-    var1.mu0 <- t(c(1, x0.boot)) %*% covb %*% c(1, x0.boot)
-    var2.y0 <- VarCorr(.)[[1]][1] + VarCorr(.)[[2]][1]*x0.est^2 + sigma(.)^2
-    var2.mu0 <- t(c(1, x0.est)) %*% covb %*% c(1, x0.est)
+    var.y0 <- VarCorr(.)[[1]][1] + VarCorr(.)[[2]][1]*x0.est^2 + sigma(.)^2
+    var.mu0 <- t(c(1, x0.est)) %*% covb %*% c(1, x0.est)
+    Q.boot <- (y0.boot - mu0.boot)/sqrt(var.y0+var.mu0)
     
-    Q1.boot <- (y0.boot - mu0.boot)/sqrt(var1.y0+var1.mu0)
-    Q2.boot <- (y0.boot - mu0.boot)/sqrt(var2.y0+var2.mu0)
-    
-    c(x0.boot, Q1.boot, Q2.boot)
+    c(x0.boot, Q.boot)
     
   } 
   
@@ -187,15 +195,11 @@ pbootCI <- function(.data, R = 999, .parallel = TRUE) {
     mu0.boot <-  as.numeric(crossprod(beta.boot, c(1, x0.est)))
 
     ## FIXME: Should these variances be calculated at x0.est or x0.boot?
-    var1.y0 <- VarCorr(.)[[1]][1] + VarCorr(.)[[2]][1]*x0.boot^2 + sigma(.)^2
-    var1.mu0 <- t(c(1, x0.boot)) %*% covb %*% c(1, x0.boot)
-    var2.y0 <- VarCorr(.)[[1]][1] + VarCorr(.)[[2]][1]*x0.est^2 + sigma(.)^2
-    var2.mu0 <- t(c(1, x0.est)) %*% covb %*% c(1, x0.est)
+    var.y0 <- VarCorr(.)[[1]][1] + VarCorr(.)[[2]][1]*x0.est^2 + sigma(.)^2
+    var.mu0 <- t(c(1, x0.est)) %*% covb %*% c(1, x0.est)
+    Q.boot <- (y0.boot - mu0.boot)/sqrt(var.y0+var.mu0)
     
-    Q1.boot <- (y0.boot - mu0.boot)/sqrt(var1.y0+var1.mu0)
-    Q2.boot <- (y0.boot - mu0.boot)/sqrt(var2.y0+var2.mu0)
-    
-    c(x0.boot, Q1.boot, Q2.boot)
+    c(x0.boot, Q.boot)
     
   }
   
@@ -206,23 +210,10 @@ pbootCI <- function(.data, R = 999, .parallel = TRUE) {
   } else {
     bootMer2(mod, FUN = bootFun, FUN0 = bootFun0, nsim = R)
   }
-#   as.numeric(quantile(x0.pb$t, c(0.025, 0.975)))
-#   x0.pb
-  quants1 <- as.numeric(quantile(x0.pb$t[, 2], c(0.025, 0.975)))
-  quants2 <- as.numeric(quantile(x0.pb$t[, 3], c(0.025, 0.975)))
+  q.quant <- as.numeric(quantile(x0.pb$t[, 2], c(0.025, 0.975)))
   rbind(as.numeric(quantile(x0.pb$t[, 1], c(0.025, 0.975))),
-        invCI(.data, q1 = quants1[1], q2 = quants1[2], Y0 = Y0),
-        invCI(.data, q1 = quants2[1], q2 = quants2[2], Y0 = Y0))
-  
+        invCI(.data, q1 = q.quant[1], q2 = q.quant[2], Y0 = Y0))  
 }
-# 
-# getBootCI <- function(x, .which = 1) {
-#   quantile(x$t[, .which], c(0.025, 0.975))
-# }
-# 
-# res <- llply(dfs, pbootCI, .progress = "text")
-# res2 <- llply(res, getBootCI, .which = 2)
-# apply(apply(list2Matrix(res2), 1, .summarize), 1, mean)
 
 ## Simulation ------------------------------------------------------------------
 
@@ -230,13 +221,16 @@ pbootCI <- function(.data, R = 999, .parallel = TRUE) {
 set.seed(5746)
 dfs <- rlply(params$nsim, simData)
 
-## Fit models to sample data
+## Plot and fit models to sample data
 set.seed(8306)
 simdata <- simData()
-xyplot(y ~ x, groups = subject, data = simdata, type = "b",
+p <- xyplot(y ~ x, , data = simdata, type = "n")
+xyplot(y ~ x, groups = subject, data = simdata, type = "b", alpha = 0.75,
        panel = function(x, y, ...) {
          panel.xyplot(x, y, ...) 
-         panel.abline(h = params$y0, v = params$x0)
+         panel.abline(params$beta, lwd = 3)
+         panel.segments(p$x.limits[1], params$y0, params$x0, params$y0)
+         panel.arrows(params$x0, params$y0, params$x0, p$y.limits[1]) 
 })
 # plot(intervals(lmList(y ~ I(x-mean(x)) | subject, data = simdata)))
 mod.lme4 <- lmer(y ~ x + (0+1|subject) + (0+x|subject), data = simdata)
@@ -245,31 +239,14 @@ x0Fun(mod.lme4)
 x0Fun(mod.nlme)
 
 ## Simulation for the Wald-based interval
-wald.cis <- list2Matrix(llply(dfs, waldCI, .progress = "text"))
-apply(apply(wald.cis, 1, .summarize), 1, mean)
+wald.cis <- llply(dfs, waldCI, .progress = "text")
+simulationSummary(wald.cis)
 
 ## Simulation for the inversion interval
-inv.cis <- list2Matrix(llply(dfs, invCI, .progress = "text"))
-apply(apply(inv.cis, 1, .summarize), 1, mean)
+inv.cis <- llply(dfs, invCI, .progress = "text")
+simulationSummary(inv.cis)
 
 ## Simulation for the PB percentile interval -----------------------------------
-pboot.cis <- llply(dfs, pbootCI, .progress = "text")
-.summarizeBoot(pboot.cis)
-round(.summarizeBoot(pboot.cis), 2)
-## Two particular occasions produced:
-## [1] 0.9500000 0.3340199
-## [1] 0.9200000 0.3395194
+pb.cis <- llply(dfs, pbootCI, .progress = "text")
+simulationSummary(pb.cis, boot = TRUE)
 
-## Test parallel version
-# system.time(res1 <- pbootCI(simdata))
-# system.time(res2 <- pbootCI(simdata, .parallel = TRUE))
-# rbind(res1, res2)
-
-## Save results
-cal_lmm_sim1 <- list(  
-  params = params,
-  wald.cis = wald.cis,
-  inv.cis = inv.cis,
-  pboot.cis = pboot.cis
-)
-save(cal_lmm_sim1, file = "/home/w108bmg/Desktop/Dissertation/Data/cal_lmm_sim1.RData")

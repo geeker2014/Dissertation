@@ -12,7 +12,7 @@ For the most part, random variables will be denoted by capital letters in a call
   \Big\lbrace_\text{row } x_i \Big\rbrace_{i = 1}^n &= (x_1, \dotsc, x_n)  \\
   \Big\lbrace_\text{diag } x_i \Big\rbrace_{i = 1}^n &= \diag\left\{x_1, \dotsc, x_n\right\}.
 \end{align*}
-If $\mc{X}$ is a random variable, then $\mc{X} \sim (\mu, \sigma^2)$ simply means that $\mc{X}$ has some distribution with mean $\E\left\{\mc{X}\right\} = \mu$ and variance $\var\left\{\mc{X}\right\} = \sigma^2$. Estimators and estimates will typically be denoted by the same Greek letter with a hat symbol, "$\wedge$". A mixture of these notations will also be used. For example, depending on the context, $\wh{\bm{\beta}}$ may represent a vector of estimators or their corresponding estimates.
+If $\mc{X}$ is a random variable, then $\mc{X} \sim (\mu, \sigma^2)$ simply means that $\mc{X}$ has some distribution with mean $\E\left\{\mc{X}\right\} = \mu$ and variance $\var\left\{\mc{X}\right\} = \sigma^2$. Estimators and estimates will typically be denoted by the same Greek letter with a hat symbol. For example, depending on the context, $\wh{\bm{\beta}}$ may represent a vector of estimators or their corresponding estimates.
 
 \section{Linear models}
 \label{sec:lm}
@@ -55,7 +55,7 @@ If we make the additional assumption that the errors are normally distributed, t
 \begin{equation*}
   \mc{L}\left(\bm{\beta}, \sigma_\epsilon^2 | \bc{Y}\right) = \left(2\pi\sigma_\epsilon^2\right)^{-n/2}\exp\left\{ -\frac{1}{2\sigma_\epsilon^2}\norm{\bc{Y} - \X\bm{\beta}}^2 \right\},
 \end{equation*}
-or equivalently, maximize the log likelihood
+or equivalently, maximize the log-likelihood
 \begin{equation*}
   \loglik\left(\bm{\beta}, \sigma_\epsilon^2 | \bc{Y}\right) = -\frac{n}{2}\log\left(2\pi\right) - \frac{n}{2}\log\left(\sigma_\epsilon^2\right) - \frac{1}{2\sigma_\epsilon^2}\norm{\bc{Y} - \X\bm{\beta}}^2.
 \end{equation*}
@@ -89,22 +89,22 @@ and
 \end{equation*}
 Assuming normal errors, it follows that
 \begin{equation*}
-  \frac{\wh{\mu}_0 - \mu_0}{\wh{\sigma}_\epsilon\sqrt{\left[ \X_0\trans \left( \X\trans\X \right)^{-1} \X_0 \right]}} \sim t_{n - p}.
+  \frac{\wh{\mu}_0 - \mu_0}{\wh{\sigma}_\epsilon\sqrt{\left[ \X_0\trans \left( \X\trans\X \right)^{-1} \X_0 \right]}} \sim \mathcal{T}\left(n-p\right).
 \end{equation*}
 Hence, a $100(1 - \alpha)\%$ confidence interval for the mean response $\mu_0$ is given by
 \begin{equation}
 \label{eqn:ci-response}
-  \X_0\trans\wh{\bm{\beta}} \pm t_{n - p}^{1 - \alpha/2}  \cdot  \widehat{S}.
+  \X_0\trans\wh{\bm{\beta}} \pm \tquant{1-\alpha/2}{n-p}  \cdot  \widehat{S}.
 \end{equation}
 
 Let $\mc{Y}_0$ denote an individual or future observation at the given point $\X_0$. We assume that $\mc{Y}_0 = \X_0\trans\bm{\beta} + \epsilon_0$, where $\epsilon_0 \sim \mc{N}(0, \sigma_\epsilon^2)$ and is independent of $\bm{\epsilon}$. The best predictor of $\mc{Y}_0$ is $\widehat{y}_0 = \X_0\trans\wh{\bm{\beta}}$, the same as $\wh{\mu}_0$, however, the variance of $\widehat{\mc{Y}}_0$ is wider: $\var\left\{\widehat{\mc{Y}}_0\right\} = \sigma_\epsilon^2 + \var\left\{\wh{\mu}_0\right\}$. This is intuitive since there is greater uncertainty in predicting the outcome of a continuous random variable than in estimating a fixed (population) parameter, such as its mean. Under the assumption of normal errors, we have that
 \begin{equation*}
-  \frac{\widehat{y}_0 - \mc{Y}_0}{\wh{\sigma}_\epsilon\sqrt{\left[1 + \X_0\trans \left( \X\trans\X \right)^{-1} \X_0 \right]}} \sim t_{n - p},
+  \frac{\widehat{y}_0 - \mc{Y}_0}{\wh{\sigma}_\epsilon\sqrt{\left[1 + \X_0\trans \left( \X\trans\X \right)^{-1} \X_0 \right]}} \mathcal{T}\left(n-p\right),
 \end{equation*}
 therefore, a $100(1 - \alpha)\%$ prediction interval for $\mc{Y}_0$ is simply
 \begin{equation}
 \label{eqn:pi-response}
-  \X_0\trans\wh{\bm{\beta}} \pm t_{n - p}^{1 - \alpha/2}  \cdot  \sqrt{\wh{\sigma}_\epsilon^2 + \widehat{S}^2}.
+  \X_0\trans\wh{\bm{\beta}} \pm \tquant{1-\alpha/2}{n-p} \sqrt{\wh{\sigma}_\epsilon^2 + \widehat{S}^2}.
 \end{equation}
 We call \eqref{eqn:pi-response} a prediction interval, as opposed to a confidence interval, since $\widehat{y}_0$ is a prediction for the outcome of the random variable $\mc{Y}_0$.
 
@@ -158,7 +158,7 @@ This process is iterated until a suitable convergence criterion is met. Just as 
 \subsection{Predictions}
 Let $x_0$ be a known value of the predictor $x_0$. The estimate of the mean response $\left\{\mc{Y} | x_0\right\} = \mu(x_0; \bm{\beta})$ is $\wh{\mu}_0 = \mu(x_0; \wh{\bm{\beta}})$. Furthermore, assuming normal errors, an approximate $100(1 - \alpha)\%$ confidence interval for the mean response $\mu_0$ can be obtained as in Equation~\eqref{eqn:ci-response} but with $\widehat{S}^2$ computed as 
 \begin{equation*}
-  \widehat{S}^2 = \wh{\sigma}_\epsilon^2 \cdot \bm{d}_0\trans\left(\widehat{\bm{D}}\trans\widehat{\bm{D}}\right)^{-1}\bm{d}_0,
+  \widehat{S}^2 = \wh{\sigma}_\epsilon^2 \bm{d}_0\trans\left(\widehat{\bm{D}}\trans\widehat{\bm{D}}\right)^{-1}\bm{d}_0,
 \end{equation*}
 where
 \begin{equation*}
@@ -182,14 +182,33 @@ where $\mu(\cdot)$ is an unknown smooth function. In this section, we discuss a 
 \end{itemize}
 The remainder of this section discusses spline smoothing, specifically, the \ac{P-spline}.  
 
-% The smoothing spline arises as the solution to an optimization problem. In particular, find the function $\mu(x)$ that minimizes the penalized residual sum of squares
-% \begin{equation}
-% \label{eqn:pss-css}
-%   \sum_{i = 1}^n \left[ \mc{Y}_i - \mu(x_i) \right]^2 + \lambda \int_{x_{(1)}}^{x_{(n)}}\left[ f\trans\trans(t) \right]^2 dt,
-% \end{equation}
-% where $\lambda \ge 0$ is a fixed constant that controls the wiggliness of the fit and $x_{(1)}$ and $x_{(n)}$ are the smallest are largest values of $\X$, respectively. Using the calculus of variations, it can be shown that the unique minimizer of \eqref{eqn:pss-css} is the \textit{natural cubic spline} with knots at the unique values of $\X$.
+Regression splines represent the mean response $\mu(x)$ as a piecewise polynomial of degree $p$. The regions that define each piece are separated by special breakpoints  $\xi_1 < \dotsc < \xi_K$ called \textit{knots}. By increasing $p$ or the number of knots, the family of curves becomes more flexible; thus, as shown in Figure~\ref{fig:sinc-example}, we can easily handle any level of complexity. 
 
-Regression splines represent the mean response $\mu(x)$ as a piecewise polynomial of degree $p$. The regions that define each piece are separated by special breakpoints  $\xi_1, \dotsc, \xi_K$ called \textit{knots}. By increasing $p$ or the number of knots, the family of curves becomes more flexible; thus, as shown in Figure~\ref{fig:sin-example}, we can easily handle any level of complexity. A $p$-th degree spline function has the form
+<<sinc-example, echo=FALSE, fig.width=5, fig.height=3, fig.scap='Unnormalized sinc function example', fig.cap='Unnormalized sinc function example. Scatterplot of 100 observations generated from a regression model with mean response $\\mu(x) = \\sin(x)/x$ (green line) and i.i.d. $\\mc{N}(0, 0.05^2)$ errors. The solid line shows a quadratic \\ac{P-spline} fit with smoothing parameter $\\lambda = 0.9986$. The dotted lines indicate the position of the knots $\\xi_k$.', fig.pos='!htb', par=TRUE, message=FALSE>>=
+set.seed(1212)
+n <- 100
+x <- seq(from = -5*pi, to = 5*pi, length = n)
+y <- sin(x)/x + rnorm(n, sd = 0.05)
+fit <- pspline(x, y, degree = 2)
+#plot(fit, lty.knots = 1)
+plot(x, y, panel.first = {
+  dims <- par("usr")
+  rect(-20, dims[3], fit$knots[1], dims[4], col = YlOrRd[1], 
+       border = "transparent")
+  for (i in 1:length(fit$knots)) {
+    rect(fit$knots[i], dims[3], fit$knots[i+1], dims[4], 
+         col = YlOrRd[i %% 2 + 1], border = "transparent")
+  }
+  rect(fit$knots[25], dims[3], 20, dims[4], col = YlOrRd[2], 
+       border = "transparent")
+  abline(v = fit$knots, lty = 2)
+})
+newx <- seq(from = min(x), to = max(x), length = 500)
+lines(newx, predict(fit, newx), lwd = 2)
+curve(sin(x)/x, col = "green", lty = 1, add = T)
+@
+
+A $p$-th degree spline function has the form
 \begin{equation}
 \label{eqn:spline-model}
   \mu(x) = \beta_0 + \beta_1x + \dotsc + \beta_px^p + \sum_{k = 1}^K \alpha_k(x - \xi_k)_+^p,
@@ -214,7 +233,7 @@ where
       1 & x_n & \cdots & x_n^p & (x_n-\xi_1)_+^p & \dotsc & (x_n-\xi_K)_+^p
     \end{bmatrix}.              
 \end{equation*}
-Equation~\eqref{eqn:spline-model-matrix} has the same form as the linear model \eqref{eqn:linmod-matrixform}. The ordinary least squares fit, however, will be too "wiggly". The idea behind penalized spline regression is to shrink the coefficients $\alpha_k$ by imposing a penalty on their size, thereby limiting their impact on the estimated response curve. The estimated coefficients minimize the penalized residual sum of squares
+Equation~\eqref{eqn:spline-model-matrix} has the same form as the linear model \eqref{eqn:linmod-matrixform}. The ordinary least squares fit, however, will be too ``wiggly.'' The idea behind penalized spline regression is to shrink the coefficients $\alpha_k$ by imposing a penalty on their size, thereby limiting their impact on the estimated response curve. The estimated coefficients minimize the penalized residual sum of squares
 \begin{equation}
 \label{eqn:pss}
   \PSS = \norm{\bc{Y} - \X\bm{\beta}}^2 + \lambda^{2p}\bm{\beta}\trans\bm{D}\bm{\beta},
@@ -224,34 +243,9 @@ where $\bm{D} = \diag\left\{\bm{0}_{(p+1) \times (p+1)}, \bm{I}_{K \times K}\rig
 \label{eqn:pss-solution}
   \wh{\bm{\beta}}_\lambda = \argmin{\bm{\beta}} \norm{\bc{Y} - \X\bm{\beta}}^2 + \lambda^{2p}\bm{\beta}\trans\bm{D}\bm{\beta} = \left( \X\trans\X + \lambda^{2p}\bm{D} \right)^{-1}\X\trans\bc{Y}.
 \end{equation}
-Here $\lambda \ge 0$ is a \textit{smoothing parameter} that controls the wiggliness of the fit. Small values of $\lambda$ produce wiggly curves while larger values  produce smoother curves. The term $\lambda^{2p}\bm{\beta}\trans\bm{D}\bm{\beta}$ is called the \textit{roughness penalty}. If $\bm{D} = \bm{I}$, then the penalized least squares solution \eqref{eqn:pss-solution} is equivalent to the ridge regression estimate of $\bm{\beta}$. The roughness penalty can also be written as $\lambda^{2p}\norm{\bm{\alpha}}^2$, where $\bm{\alpha} = (\alpha_1, \dotsc, \alpha_K)\trans$ is the vector of coefficients for the spline basis functions. Hence, \acp{P-spline} enforce a penalty on the $\ell^2$-norm of $\bm{\alpha}$, so none of the polynomial coefficients are penalized! 
+Here $\lambda \ge 0$ is a \textit{smoothing parameter} that controls the wiggliness of the fit. Small values of $\lambda$ produce wiggly curves while larger values  produce smoother curves. The term $\lambda^{2p}\bm{\beta}\trans\bm{D}\bm{\beta}$ is called the \textit{roughness penalty}. If $\bm{D} = \bm{I}$, then the penalized least squares solution \eqref{eqn:pss-solution} is equivalent to the ridge regression estimate of $\bm{\beta}$. The roughness penalty can also be written as $\lambda^{2p}\norm{\bm{\alpha}}^2$, where $\bm{\alpha} = (\alpha_1, \dotsc, \alpha_K)\trans$ is the vector of coefficients for the spline basis functions. Hence, \acp{P-spline} enforce a penalty on the $\ell^2$-norm of $\bm{\alpha}$, so none of the polynomial coefficients are penalized (See Figure~\ref{fig:sinc-example-2})! 
 
-The fitted values are given by $\wh{\bm{\mu}} = \bm{S}_\lambda \bc{Y}$, where $\bm{S}_\lambda = \X\left( \X\trans\X + \lambda^{2p}\bm{D} \right)^{-1}\X\trans$. For convenience, we drop the subscript $\lambda$ on the smoother matrix and just write $\bm{S}$ from here on. The smoothing parameter $\lambda$ is unknown but can be specified a priori. However, it is often beneficial to let the data determine the appropriate amount of smoothness. To this end, cross-validation techniques are often used to estimate $\lambda$ from the given data. In Chapter~\ref{chp:cal-dependent}, we discuss an alternative approach to \acp{P-spline} that automatically selects an appropriate amount of smoothness.
-
-<<sin-example, echo=FALSE, fig.width=5, fig.height=5, fig.scap='Unnormalized sinc function', fig.cap='\\textit{Top}: Scatterplot of 100 observations generated from a regression model with mean response $\\mu(x) = \\sin(x)/x$ (green line) and i.i.d. $\\mc{N}(0, 0.05^2)$ errors. The solid line shows a quadratic \\ac{P-spline} fit with smoothing parameter $\\lambda = 0.9986$. The dotted lines indicate the position of the knots $\\xi_k$. \\textit{Bottom}: Profiles of spline coefficients as the smoothing parameter $\\lambda$ is varied. Coefficients are plotted versus $\\lambda$. A vertical line is drawn at $\\lambda = 0.9986$.', fig.pos='!htb', par=TRUE, message=FALSE>>=
-par(mfrow = c(2, 1))
-set.seed(1212)
-n <- 100
-x <- seq(from = -5*pi, to = 5*pi, length = n)
-y <- sin(x)/x + rnorm(n, sd = 0.05)
-fit <- pspline(x, y, degree = 2)
-#plot(fit, lty.knots = 1)
-plot(x, y, panel.first = {
-  dims <- par("usr")
-  rect(-20, dims[3], fit$knots[1], dims[4], col = YlOrRd[1], 
-       border = "transparent")
-  for (i in 1:length(fit$knots)) {
-    rect(fit$knots[i], dims[3], fit$knots[i+1], dims[4], 
-         col = YlOrRd[i %% 2 + 1], border = "transparent")
-  }
-  rect(fit$knots[25], dims[3], 20, dims[4], col = YlOrRd[2], 
-       border = "transparent")
-  abline(v = fit$knots, lty = 2)
-})
-newx <- seq(from = min(x), to = max(x), length = 500)
-lines(newx, predict(fit, newx), lwd = 2)
-curve(sin(x)/x, col = "green", lty = 1, add = T)
-
+<<sinc-example-2, echo=FALSE, fig.width=5, fig.height=3, fig.scap='Sinc function spline coefficient profiles', fig.cap='Profiles of spline coefficients as the smoothing parameter $\\lambda$ is varied. Coefficients are plotted versus $\\lambda$. A vertical line is drawn at $\\lambda = 0.9986$.', fig.pos='!htb', par=TRUE, message=FALSE>>=
 knots <- fit$knots
 C.mat <- fit$C
 CTC <- t(C.mat) %*% C.mat
@@ -268,11 +262,13 @@ plot(coef ~ lambda, data = alpha.vec, type = "n",
      xlab = expression(lambda), ylab = "Spline coefficients", log = "x")
 for (i in 1:26) {
   lines(coef ~ lambda, data = alpha.vec[alpha.vec$sub == i, ], 
-        col = adjustcolor("blue", alpha.f = 0.5))
+        col = adjustcolor("blue", alpha.f = 0.5), lwd = 2)
 }
 abline(h = 0, lwd = 2)
 abline(v = 0.9986234, lty = 2, col = "red")
 @
+
+The fitted values are given by $\wh{\bm{\mu}} = \bm{S}_\lambda \bc{Y}$, where $\bm{S}_\lambda = \X\left( \X\trans\X + \lambda^{2p}\bm{D} \right)^{-1}\X\trans$. From this point forward, we will drop the subscript $\lambda$ on the smoother matrix and just write $\bm{S}$. The smoothing parameter $\lambda$ is unknown but can be specified a priori. However, it is often beneficial to let the data determine the appropriate amount of smoothness. To this end, cross-validation techniques are often used to estimate $\lambda$ from the given data. In Chapter~\ref{chp:cal-dependent}, we discuss an alternative approach to \acp{P-spline} that automatically selects an appropriate amount of smoothness.
 
 \subsection{Inference for linear smoothers}
 \label{sec:pspline-inference}
@@ -289,11 +285,11 @@ For a single point, the quantity $Q = \left[ \wh{\mu}(x) - \mu(x) \right]/\se\le
 
 Let $x$ be an arbitrary value of the explanatory variable. Recall that, for linear smoothers, the fitted value $\wh{\mu}(x)$ can be written as $\bm{\omega}\trans\bc{Y}$, a linear combination of the response variables. The variance of $\wh{\mu}(x)$ is just $\var\left\{\bm{\omega}\trans\bc{Y}\right\} = \sigma_\epsilon^2\bm{\omega}\trans\bm{\omega}$. Given an estimate $\wh{\sigma}_\epsilon^2$ of $\sigma_\epsilon^2$, an approximate $100(1 - \alpha)\%$ confidence interval for $\mu(x)$ is given by 
 \begin{equation*}
-  \wh{\mu}(x) \pm t_{df}^{1 - \alpha/2} \cdot \wh{\sigma}_\epsilon \sqrt{\bm{\omega}\trans\bm{\omega}},
+  \wh{\mu}(x) \pm \tquant{1-\alpha/2}{df} \wh{\sigma}_\epsilon \sqrt{\bm{\omega}\trans\bm{\omega}},
 \end{equation*}
-where $df = n - 2\tr\left( \bm{S} \right) + \tr\left( \bm{S}\bm{S}\trans \right)$. For sufficiently large sample size $n$, the quantity $t_{df}^{1 - \alpha/2}$ can be replaced with $z^{1 - \alpha/2}$, the $1 - \alpha/2$ quantile of a standard normal distribution. Similarly, A $100(1 - \alpha)\%$ prediction interval for a new observation is 
+where $df = n - 2\tr\left( \bm{S} \right) + \tr\left( \bm{S}\bm{S}\trans \right)$. For sufficiently large sample size $n$, the quantity $\tquant{1-\alpha/2}{df}$ can be replaced with $z_{1-\alpha/2}$, the $1-\alpha/2$ quantile of a standard normal distribution. Similarly, A $100(1-\alpha)\%$ prediction interval for a new observation is 
 \begin{equation*}
-  \wh{\mu}(x) \pm t_{df}^{1 - \alpha/2} \cdot \wh{\sigma}_\epsilon \sqrt{1 + \bm{\omega}\trans\bm{\omega}}.
+  \wh{\mu}(x) \pm \tquant{1-\alpha/2}{df} \wh{\sigma}_\epsilon \sqrt{1 + \bm{\omega}\trans\bm{\omega}}.
 \end{equation*}
 
 \section{Linear mixed effects models}
@@ -307,7 +303,7 @@ The \ac{LMM} extends the basic \ac{LM} (Equation~\eqref{eqn:linmod-matrixform}) 
 \end{equation}
 where $\X$ and $\Z$ are known design matrices, $\bm{\beta}$ is a vector of fixed effects, $\bm{\alpha}$ is a vector of random effects distributed as $\bm{\alpha} \sim \mc{N}(0, \bm{G})$, and $\bm{\epsilon}$ is a vector of random errors distributed as $\bm{\epsilon} \sim \mc{N}(\bm{0}, \bm{R})$. Further, it is assumed that the random effects and errors are mutually independent, that is, $\bm{\alpha} \indep \bm{\epsilon}$.
 
-Estimating the fixed effects $\bm{\beta}$ is rather straightforward and does not require normality. Note that $\bc{Y} = \X\bm{\beta} + \bm{\mc{E}}$, where $\E\left\{\bm{\mc{E}}\right\} = \bm{0}$ and $\var\left\{\bm{\mc{E}}\right\} = \Z\bm{G}\Z\trans + R = \bm{V}$. Assuming normality, the loglikelihood (ignoring constants) is given by
+Estimating the fixed effects $\bm{\beta}$ is rather straightforward and does not require normality. Note that $\bc{Y} = \X\bm{\beta} + \bm{\mc{E}}$, where $\E\left\{\bm{\mc{E}}\right\} = \bm{0}$ and $\var\left\{\bm{\mc{E}}\right\} = \Z\bm{G}\Z\trans + R = \bm{V}$. Assuming normality, the log-likelihood (ignoring constants) is given by
 \begin{equation}
 \label{eqn:lmm-loglik-long}
   \loglik\left(\bm{\beta}, \bm{\theta}\right) = -\frac{1}{2}\log\left|\bm{V}\right| - \frac{1}{2}\left(\bc{Y} - \X\bm{\beta}\right)\trans\bm{V}^{-1}\left(\bc{Y} - \X\bm{\beta}\right),

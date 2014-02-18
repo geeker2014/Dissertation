@@ -76,7 +76,7 @@ pspline.default <- function(x, y, degree = 1, knots, num.knots,
                    random, method = c("REML", "ML"), ...) {
   
   ## TODO:
-  ##   (1) Fix unadjusted intervals!
+  ##   (1) Fix unadjust intervals!
   ##   (2) Omit load packages section before adding to package.
   
   ## Load packages -------------------------------------------------------------
@@ -167,7 +167,7 @@ splineBM <- function(x, basis, knots, degree) {
 ## Pedict method for objects of class "pspline" --------------------------------
 predict.pspline <- function(object, newdata, se.fit = FALSE, 
                             interval = c("none", "confidence", "prediction"),
-                            level = 0.95, adjusted = TRUE) {
+                            level = 0.95, adjust = TRUE) {
   
   ## Extract needed components from model
   degree <- object$degree
@@ -183,18 +183,20 @@ predict.pspline <- function(object, newdata, se.fit = FALSE,
   
   ## Standard error of fitted value
   if (se.fit || interval != "none") {
-    C.mat <- cbind(X, Z)
+    
+    ## Extract needed components from pspline object
+    C.x <- cbind(X, Z)
+    C.mat <- object$C.mat
     A.mat <- object$A.mat
-    S.mat <- C.mat %*% tcrossprod(A.mat, C.mat)
-    
+      
     ## Calculate standard error of fit
-    sigma.f <- if (adjusted) { # adjusted for bias
-                 sqrt(object$var.components[1] * diag(S.mat))
-               } else { # unadjusted for bias
-                 #sqrt(object$var.components[1] * diag(tcrossprod(S.mat)))
-                 sqrt(object$var.components[1] * diag(S.mat%*%t(S.mat)))
-               }
-    
+    if (adjust) { # adjust for bias
+      mat <- C.x %*% A.mat %*% t(C.x)
+    } else { # unadjust for bias
+      mat <- C.x %*% (A.mat %*% crossprod(C.mat) %*% A.mat) %*% t(C.x)
+    }
+    sigma.f <- sqrt(object$var.components[1] * diag(mat))
+        
   }
   
   ## Confidence/prediction intervals
@@ -228,9 +230,10 @@ df.residual.pspline <- function(object) {
 
 ## Plot method for objects of class "pspline" ----------------------------------
 plot.pspline <- function(object, ..., n = 500, lwd.smooth = 2, lty.smooth = 1, 
-                         col.smooth = "black", knots = TRUE, adjusted = TRUE,
-                         col.knots = "grey", lwd.knots = 1, lty.knots = 3,
-                         interval = c("none", "confidence", "prediction")) {
+                         col.smooth = "black", knots = TRUE, col.knots = "grey", 
+                         lwd.knots = 1, lty.knots = 3,
+                         interval = c("none", "confidence", "prediction"),
+                         level = 0.95, adjust = TRUE) {
   
   ## Extract needed components from pspline object
   x <- object$x
@@ -257,7 +260,7 @@ plot.pspline <- function(object, ..., n = 500, lwd.smooth = 2, lty.smooth = 1,
   interval <- match.arg(interval)
   if (interval != "none") {
     conf <- predict.pspline(object, newdata = newx, interval = interval, 
-                            adjusted = adjusted)
+                            level = level, adjust = adjust)
     lines(newx, conf$lwr)
     lines(newx, conf$upr)
   }
@@ -266,7 +269,7 @@ plot.pspline <- function(object, ..., n = 500, lwd.smooth = 2, lty.smooth = 1,
 
 ## pspline method for invest function ------------------------------------------
 invest.pspline <- function(object, y0, level = 0.95, mean.response = FALSE, 
-                           tol = 1e-10, maxiter = 1000) {
+                           adjust = TRUE, tol = 1e-10, maxiter = 1000) {
   
   if (length(y0) > 1) stop("only a single value for y0 is allowed")
   interval <- if(mean.response) "confidence" else "prediction"
@@ -277,11 +280,11 @@ invest.pspline <- function(object, y0, level = 0.95, mean.response = FALSE,
   }
   invLwrFun <- function(x) {
     predict.pspline(object, newdata = x, interval = interval, 
-                    level = level)$lwr - y0
+                    level = level, adjust = adjust)$lwr - y0
   }
   invUprFun <- function(x) {
     predict.pspline(object, newdata = x, interval = interval,
-                    level = level)$upr - y0
+                    level = level, adjust = adjust)$upr - y0
   } 
   
   ## Find roots

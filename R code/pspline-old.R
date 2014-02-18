@@ -76,7 +76,7 @@ pspline.default <- function(x, y, degree = 1, knots, num.knots,
                    random, method = c("REML", "ML"), ...) {
   
   ## TODO:
-  ##   (1) Fix unadjust intervals!
+  ##   (1) Fix unadjusted intervals!
   ##   (2) Omit load packages section before adding to package.
   
   ## Load packages -------------------------------------------------------------
@@ -167,7 +167,7 @@ splineBM <- function(x, basis, knots, degree) {
 ## Pedict method for objects of class "pspline" --------------------------------
 predict.pspline <- function(object, newdata, se.fit = FALSE, 
                             interval = c("none", "confidence", "prediction"),
-                            level = 0.95, adjust = TRUE) {
+                            level = 0.95, adjusted = TRUE) {
   
   ## Extract needed components from model
   degree <- object$degree
@@ -183,20 +183,18 @@ predict.pspline <- function(object, newdata, se.fit = FALSE,
   
   ## Standard error of fitted value
   if (se.fit || interval != "none") {
-    
-    ## Extract needed components from pspline object
-    C.x <- cbind(X, Z)
-    C.mat <- object$C.mat
+    C.mat <- cbind(X, Z)
     A.mat <- object$A.mat
-      
+    S.mat <- C.mat %*% tcrossprod(A.mat, C.mat)
+    
     ## Calculate standard error of fit
-    if (adjust) { # adjust for bias
-      mat <- C.x %*% A.mat %*% t(C.x)
-    } else { # unadjust for bias
-      mat <- C.x %*% (A.mat %*% crossprod(C.mat) %*% A.mat) %*% t(C.x)
-    }
-    sigma.f <- sqrt(object$var.components[1] * diag(mat))
-        
+    sigma.f <- if (adjusted) { # adjusted for bias
+                 sqrt(object$var.components[1] * diag(S.mat))
+               } else { # unadjusted for bias
+                 #sqrt(object$var.components[1] * diag(tcrossprod(S.mat)))
+                 sqrt(object$var.components[1] * diag(S.mat%*%t(S.mat)))
+               }
+    
   }
   
   ## Confidence/prediction intervals
@@ -230,7 +228,7 @@ df.residual.pspline <- function(object) {
 
 ## Plot method for objects of class "pspline" ----------------------------------
 plot.pspline <- function(object, ..., n = 500, lwd.smooth = 2, lty.smooth = 1, 
-                         col.smooth = "black", knots = TRUE, adjust = TRUE,
+                         col.smooth = "black", knots = TRUE, adjusted = TRUE,
                          col.knots = "grey", lwd.knots = 1, lty.knots = 3,
                          interval = c("none", "confidence", "prediction")) {
   
@@ -259,7 +257,7 @@ plot.pspline <- function(object, ..., n = 500, lwd.smooth = 2, lty.smooth = 1,
   interval <- match.arg(interval)
   if (interval != "none") {
     conf <- predict.pspline(object, newdata = newx, interval = interval, 
-                            adjust = adjust)
+                            adjusted = adjusted)
     lines(newx, conf$lwr)
     lines(newx, conf$upr)
   }

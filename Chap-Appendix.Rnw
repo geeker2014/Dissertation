@@ -73,7 +73,7 @@ Note that since $\sigma_\epsilon^2 \sim \mathcal{IG}\left(a, b\right)$, then
 \begin{equation*}
   \pi(\sigma_\epsilon^2) = \frac{b^a}{\Gamma(a)}\left(\sigma_\epsilon^2\right)^{-(a+1)}\exp\left\{-\frac{b}{\sigma_\epsilon^2}\right\}.
 \end{equation*}
-Now, ignoring the constant of proportionality the conditional posterior of $\sigma_\epsilon^2$ is
+Now, ignoring the constant of proportionality, the conditional posterior of $\sigma_\epsilon^2$ is
 \begin{align*}
   \pi(\sigma_\epsilon^2|\boldsymbol{y}, y_0, \boldsymbol{\beta}, &\boldsymbol{\alpha}, \sigma_\alpha^2, x_0) \propto \pi(\boldsymbol{y}|\boldsymbol{\beta}, \boldsymbol{\alpha}, \sigma_\epsilon^2)\pi(y_0|\boldsymbol{\beta}, \boldsymbol{\alpha}, \sigma_\epsilon^2, x_0)\pi(\sigma_\epsilon^2) \\
   &\propto \left(\sigma_\epsilon^2\right)^{-(a+1)}\exp\left\{-\frac{||\boldsymbol{y} - \boldsymbol{X}\boldsymbol{\beta} - \boldsymbol{Z}\boldsymbol{\alpha}||^2}{2\sigma_\epsilon^2} - \frac{\left(y_0 - \boldsymbol{x}_0\boldsymbol{\beta} - \boldsymbol{z}_0\boldsymbol{\alpha}\right)^2}{2\sigma_\epsilon^2} - \frac{b}{\sigma_\epsilon^2}\right\} \\
