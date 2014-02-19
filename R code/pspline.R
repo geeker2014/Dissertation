@@ -267,37 +267,84 @@ plot.pspline <- function(object, ..., n = 500, lwd.smooth = 2, lty.smooth = 1,
   
 }
 
+# ## pspline method for invest function ------------------------------------------
+# invest.pspline <- function(object, y0, level = 0.95, mean.response = FALSE, 
+#                            adjust = TRUE, tol = 1e-10, maxiter = 1000,
+#                            lower = min(object$x), upper = max(object$x)) {
+#   
+#   require(rootSolve)
+#   
+#   if (length(y0) > 1) stop("only a single value for y0 is allowed")
+#   interval <- if(mean.response) "confidence" else "prediction"
+#                 
+#   ## Functions for uniroot
+#   invEstFun <- function(x) {
+#     predict.pspline(object, newdata = x) - y0
+#   }
+#   invLwrFun <- function(x) {
+#     predict.pspline(object, newdata = x, interval = interval, 
+#                     level = level, adjust = adjust)$lwr - y0
+#   }
+#   invUprFun <- function(x) {
+#     predict.pspline(object, newdata = x, interval = interval,
+#                     level = level, adjust = adjust)$upr - y0
+#   } 
+#   
+#   
+#   ## Find roots
+#   est <- uniroot(invEstFun, lower = min(object$x), upper = max(object$x), 
+#                  tol = tol, maxiter = maxiter)$root
+# #   lwr <- uniroot(invLwrFun, interval = xrange, tol = tol, 
+# #                  maxiter = maxiter)$root
+# #   upr <- uniroot(invUprFun, interval = xrange, tol = tol, 
+# #                  maxiter = maxiter)$root
+#   lwr <- uniroot.all(invLwrFun, lower = lower, upper = upper, tol = tol, 
+#                      maxiter = maxiter)[1]
+#   upr <- uniroot.all(invUprFun, lower = lower, upper = upper, tol = tol, 
+#                      maxiter = maxiter)[1]
+#   
+#   ## Return vector of results
+#   c(estimate = est, lower = min(c(lwr, upr)), upper = max(c(lwr, upr)))
+#   
+# }
+
 ## pspline method for invest function ------------------------------------------
 invest.pspline <- function(object, y0, level = 0.95, mean.response = FALSE, 
-                           adjust = TRUE, tol = 1e-10, maxiter = 1000) {
+                           adjust = TRUE, tol = 1e-10, maxiter = 1000,
+                           lower = min(object$x), upper = max(object$x)) {
   
+  require(rootSolve)
+  
+  ## Catch errors
   if (length(y0) > 1) stop("only a single value for y0 is allowed")
+  
+  ## Determine if confidence or prediction interval should be inverted
   interval <- if(mean.response) "confidence" else "prediction"
-                
+  
   ## Functions for uniroot
-  invEstFun <- function(x) {
+  predFun <- function(x) {
     predict.pspline(object, newdata = x) - y0
   }
-  invLwrFun <- function(x) {
-    predict.pspline(object, newdata = x, interval = interval, 
-                    level = level, adjust = adjust)$lwr - y0
+  predPiv <- function(x) { 
+    pred <- predict(object, newdata = x, se.fit = TRUE, adjust = adjust)
+    if (mean.response) {
+      (y0 - pred$fit)^2 / (pred$se.fit^2) - qt((1+level)/2, df = object$df.res)^2
+    } else {
+      (y0 - pred$fit)^2 / (object$var.components[1] + pred$se.fit^2) - 
+        qt((1+level)/2, df = object$df.res)^2     
+    }
   }
-  invUprFun <- function(x) {
-    predict.pspline(object, newdata = x, interval = interval,
-                    level = level, adjust = adjust)$upr - y0
-  } 
   
   ## Find roots
-  xrange <- range(object$x)
-  est <- uniroot(invEstFun, interval = xrange, tol = tol, 
+  est <- uniroot(predFun, lower = min(object$x), upper = max(object$x), 
+                 tol = tol, maxiter = maxiter)$root
+  lwr <- uniroot(predPiv, lower = lower, upper = est, tol = tol, 
                  maxiter = maxiter)$root
-  lwr <- uniroot(invLwrFun, interval = xrange, tol = tol, 
-                 maxiter = maxiter)$root
-  upr <- uniroot(invUprFun, interval = xrange, tol = tol, 
+  upr <- uniroot(predPiv, lower = est, upper = upper, tol = tol, 
                  maxiter = maxiter)$root
   
   ## Return vector of results
-  c(estimate = est, lower = min(c(lwr, upr)), upper = max(c(lwr, upr)))
+  c(estimate = est, lower = lwr, upper = upr)
   
 }
 

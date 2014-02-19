@@ -99,7 +99,7 @@ Hence, a $100(1 - \alpha)\%$ confidence interval for the mean response $\mu_0$ i
 
 Let $\mc{Y}_0$ denote an individual or future observation at the given point $\X_0$. We assume that $\mc{Y}_0 = \X_0\trans\bm{\beta} + \epsilon_0$, where $\epsilon_0 \sim \mc{N}(0, \sigma_\epsilon^2)$ and is independent of $\bm{\epsilon}$. The best predictor of $\mc{Y}_0$ is $\widehat{y}_0 = \X_0\trans\wh{\bm{\beta}}$, the same as $\wh{\mu}_0$, however, the variance of $\widehat{\mc{Y}}_0$ is wider: $\var\left\{\widehat{\mc{Y}}_0\right\} = \sigma_\epsilon^2 + \var\left\{\wh{\mu}_0\right\}$. This is intuitive since there is greater uncertainty in predicting the outcome of a continuous random variable than in estimating a fixed (population) parameter, such as its mean. Under the assumption of normal errors, we have that
 \begin{equation*}
-  \frac{\widehat{y}_0 - \mc{Y}_0}{\wh{\sigma}_\epsilon\sqrt{\left[1 + \X_0\trans \left( \X\trans\X \right)^{-1} \X_0 \right]}} \mathcal{T}\left(n-p\right),
+  \frac{\widehat{y}_0 - \mc{Y}_0}{\wh{\sigma}_\epsilon\sqrt{\left[1 + \X_0\trans \left( \X\trans\X \right)^{-1} \X_0 \right]}} \sim \mathcal{T}\left(n-p\right),
 \end{equation*}
 therefore, a $100(1 - \alpha)\%$ prediction interval for $\mc{Y}_0$ is simply
 \begin{equation}

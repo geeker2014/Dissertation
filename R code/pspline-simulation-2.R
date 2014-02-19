@@ -9,54 +9,93 @@ library(lattice)
 library(investr)
 library(plyr)
 library(parallel)
-source("/home/w108bmg/Desktop/Dissertation-knitr/R code/pspline.R")
+source("/home/w108bmg/Desktop/Dissertation/R code/pspline.R")
 
 ## Simulation setup ------------------------------------------------------------
 
 ## Simulation parameters
 params <- list(
-  nsim <- 100,
-  f = function(x) sin(pi*x - pi/2)/2 + 0.5,
+  nsim = 100,
+  f = function(x) { sin(pi*x - pi/2)/2 + 0.5 },
   m = 3,
   n = 10,
   sd = 0.05,
   x0 = 0.75
 )
+params$y0 <- params$f(params$x0)
 
 ## Function to simulate scatterplot data
 simData <- function(m = params$m, n = params$n, sd = params$sd) {
-  x <- rep(seq(from = 0, to = 1, length = params$n), each = params$m)
-  y <- params$f(x) + rnorm(params$m*params$n, sd = params$sd)
+  f <- function(x) sin(pi*x - pi/2)/2 + 0.5,
+  x <- rep(seq(from = 0, to = 1, length = n), each = m)
+  y <- f(x) + rnorm(m*n, sd = sd)
   data.frame(x = x, y = y)
 }
 
+## Function to summarize confidence interval
+simulationSummary <- function(x, boot = FALSE) {
+  
+  ## Function that returns coverage and length of a single C.I.
+  coverage.and.length <- function(x) {
+    .coverage <- if (x[1] <= params$x0 && params$x0 <= x[2]) 1 else 0
+    .length <- x[2] - x[1]
+    c(.coverage, .length)
+  }
+  res <- apply(apply(x, 1, coverage.and.length), 1, mean)
+  names(res) <- c("Coverage", "Length")
+  res
+  
+}
+
+## Function to calculate the inversion interval
+invCI <- function(.data, degree = degree, Y0, mean.response = FALSE, adjust = TRUE) {
+
+  if (missing(Y0)) Y0 <- rnorm(1, mean = params$y0, sd = params$sd)
+  mod <- pspline(.data$x, .data$y, degree = degree)
+  invest.pspline(mod, y0 = Y0, mean.response = mean.response, adjust = adjust,
+                 lower = -2, upper = 4)[2:3]
+                 
+}
+
+## Simulation ------------------------------------------------------------------
+
+## Simulate data frames
+set.seed(6596)
+dfs <- rlply(1000, simData)
+
+## Simulation for the inversion interval
+inv.cis <- ldply(dfs, invCI, degree = 3, mean.response = TRUE, adjust = TRUE, 
+                 .progress = "text")
+simulationSummary(na.omit(inv.cis))
+
+inv.cis <- ldply(dfs, invCI, degree = 3, mean.response = TRUE, adjust = FALSE, 
+                 .progress = "text")
+simulationSummary(na.omit(inv.cis))
+
+
 ## Function to simulate coverage probability for pspline
-simulationSummary <- function(nsim = 10000, degree = degree, 
-                              mean.response = FALSE, adjust = TRUE) {
+mcCoverage <- function(f, m, n, sd = 0.05, nsim = 10000, x0 = 0.75, degree, 
+                       adjust = TRUE) {
   
-  ## Simulate data frames
-  dataframes <- rlply(nsim, simData)
-  
-  ## Function to calculate confidence interval
+  dataframes <- rlply(nsim, simData(f = f, m = m, n = n, sd = sd))
   fun <- function(df) { 
     fit <- pspline(df, degree = degree)
-    Y0 <- f(params$x0) + rnorm(1, sd = params$sd)
-    res <- try(invest(fit, y0 = Y0, mean.response = mean.response, 
-                      adjust = adjust), silent = TRUE)
-    if (inherits(res, "try-error") || any(is.na(res))) {
+    Y0 <- f(x0) + rnorm(1, sd = sd)
+    res <- tryCatch(invest(fit, y0 = Y0, adjust = adjust), 
+                    error = function(e) NULL)
+    if (is.null(res)) {
       repeat {
-        newdf <- simData()
+        newdf <- simData(f = f, m = m, n = n, sd = sd)
         newfit <- pspline(newdf, degree = degree)
-        newY0 <- f(params$x0) + rnorm(1, sd = params$sd)
-        res <- try(invest(newfit, y0 = newY0, mean.response = mean.response, 
-                          adjust = adjust), silent = TRUE)
-        if (!inherits(res, "try-error") && !any(is.na(res))) break
+        newY0 <- f(x0) + rnorm(1, sd = sd)
+        res <- tryCatch(invest(newfit, y0 = newY0, adjust = adjust), 
+                        error = function(e) NULL)
+        if (!is.null(res)) break
       }
     }
-    c(if (res["lower"] < params$x0 && res["upper"] > params$x0) 1 else 0,
+    c(if (res["lower"] < x0 && res["upper"] > x0) 1 else 0,
       abs(res["upper"] - res["lower"]))
   }
-  
   z <- matrix(unlist(mclapply(dataframes, fun, mc.cores = 4)), 
               nrow = nsim, ncol = 2, byrow = TRUE)
   colnames(z) <- c("coverage", "length")
@@ -74,6 +113,34 @@ mcCoverage2 <- function(f, m, n, sd = 0.05, nsim = 10000, x0 = 0.75) {
       abs(res[["upper"]] - res[["lower"]]))
   }
   z <- matrix(unlist(lapply(dataframes, fun)), nrow = nsim, ncol = 2, byrow = TRUE)
+  colnames(z) <- c("coverage", "length")
+  apply(z, 2, mean)
+}
+
+## Function to simulate coverage probability for pspline
+mcCoverage3 <- function(f, m, n, sd = 0.05, nsim = 10000, x0 = 0.75, degree) 
+{
+  dataframes <- rlply(nsim, simData(f = f, m = m, n = n, sd = sd))
+  fun <- function(df) { 
+    fit <- pspline(df, degree = degree)
+    Y0 <- f(x0)
+    res <- tryCatch(invest(fit, y0 = Y0, mean.response = TRUE, adjust = adjust), 
+                    error = function(e) NULL)
+    if (is.null(res)) {
+      repeat {
+        newdf <- simData(f = f, m = m, n = n, sd = sd)
+        newfit <- pspline(newdf, degree = degree)
+        newY0 <- f(x0)
+        res <- tryCatch(invest(newfit, y0 = newY0, mean.response = TRUE, 
+                               adjust = adjust), error = function(e) NULL)
+        if (!is.null(res)) break
+      }
+    }
+    c(if (res["lower"] < x0 && res["upper"] > x0) 1 else 0,
+      abs(res["upper"] - res["lower"]))
+  }
+  z <- matrix(unlist(mclapply(dataframes, fun, mc.cores = 4)), 
+              nrow = nsim, ncol = 2, byrow = TRUE)
   colnames(z) <- c("coverage", "length")
   apply(z, 2, mean)
 }
