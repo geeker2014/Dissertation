@@ -23,12 +23,12 @@ source("/home/w108bmg/Desktop/Dissertation/R code/Parametric bootstrap functions
 
 ## Parameters
 params <- list(
-  nsim = 100,                   # simulation size
-  m = 25,                        # number of subjects
-  n = 10,                        # sample size per subject
+  nsim = 1000,                   # simulation size
+  m = 100,                        # number of subjects
+  n = 100,                        # sample size per subject
   beta = c(0, 2),                # fixed effecs
-  theta = c(0.005, 0.075, 0.001), # variance components
-  y0 = c(0, 0.5, 1, 1.5, 2)[4]   # true observed response: 0, 0.5, 1.0, 2.0
+  theta = c(0.01, 0.15, 0.001),  # variance components
+  y0 = c(0, 0.5, 1, 1.5, 2)[5]   # true observed response: 0, 0.5, 1.0, 2.0
 )
 params$x0 <- (params$y0 - params$beta[1]) / params$beta[2]
 params$var.y0 <- params$theta[1] + params$theta[2]*params$x0^2 + 
@@ -240,13 +240,13 @@ x0Fun(mod.nlme)
 
 ## Simulation for the Wald-based interval
 wald.cis <- llply(dfs, waldCI, .progress = "text")
-simulationSummary(wald.cis)
+round(simulationSummary(wald.cis), 4)
 
 ## Simulation for the inversion interval
 inv.cis <- llply(dfs, invCI, .progress = "text")
-simulationSummary(inv.cis)
+round(simulationSummary(inv.cis), 4)
 
 ## Simulation for the PB percentile interval -----------------------------------
-pb.cis <- llply(dfs, pbootCI, .progress = "text")
-simulationSummary(pb.cis, boot = TRUE)
+# pb.cis <- llply(dfs, pbootCI, .progress = "text")
+# simulationSummary(pb.cis, boot = TRUE)
 
