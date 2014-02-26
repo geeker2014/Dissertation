@@ -23,9 +23,9 @@ source("/home/w108bmg/Desktop/Dissertation/R code/Parametric bootstrap functions
 
 ## Parameters
 params <- list(
-  nsim = 1000,                   # simulation size
-  m = 100,                        # number of subjects
-  n = 100,                        # sample size per subject
+  nsim = 10,                   # simulation size
+  m = 15,                        # number of subjects
+  n = 10,                        # sample size per subject
   beta = c(0, 2),                # fixed effecs
   theta = c(0.01, 0.15, 0.001),  # variance components
   y0 = c(0, 0.5, 1, 1.5, 2)[5]   # true observed response: 0, 0.5, 1.0, 2.0
@@ -77,12 +77,20 @@ simulationSummary <- function(x, boot = FALSE) {
     
   } else {
     
+    ## Data frame of coverge and length estimates
     d <- ldply(x, function(x) {
-      c(coverage.and.length(x[1, ]), coverage.and.length(x[2, ]))
+      c(coverage.and.length(x[1, ]), # normal
+        coverage.and.length(x[2, ]), # basic
+        coverage.and.length(x[3, ]), # percentile
+        coverage.and.length(x[4, ])) # adjusted inversion
       })
-    boot.perc <- apply(d[, 1:2], 2, mean)
-    boot.inv <- apply(d[, 3:4], 2, mean)
-    res <- rbind(boot.perc, boot.inv)
+    
+    ## Calculate mean coverage and mean length
+    boot.norm <- apply(d[, 1:2], 2, mean)
+    boot.basic <- apply(d[, 3:4], 2, mean)
+    boot.perc <- apply(d[, 5:6], 2, mean)
+    boot.inv <- apply(d[, 7:8], 2, mean)
+    res <- rbind(boot.norm, boot.basic, boot.perc, boot.inv)
     colnames(res) <- c("Coverage", "Length")
     res
     
@@ -92,13 +100,16 @@ simulationSummary <- function(x, boot = FALSE) {
 
 ## Function to calculate the Wald-based C.I.
 waldCI <- function(.data) {
+  
   ## FIXME: Should this be calculated based on the original model?
   Y0 <- rnorm(1, mean = params$y0, sd = sqrt(params$var.y0))
+  
   ## Fit model using lme4 package and estimate x0 and Var(Y0)
   mod <- lmer(y ~ x + (0+1|subject) + (0+x|subject), data = .data)
   x0.est <- x0Fun(mod, y0 = Y0)
   var.y0 <- VarCorr(mod)[[1]][1] + x0.est^2*VarCorr(mod)[[2]][1] + 
     sigma(mod)^2
+  
   ## Delta method
   beta <- as.numeric(fixef(mod))
   covmat <- diag(3)
@@ -109,17 +120,21 @@ waldCI <- function(.data) {
   dm <- car:::deltaMethod(params, g = gstring, vcov. = covmat)
   rownames(dm) <- ""
   dm$Estimate + qnorm(c(0.025, 0.975))*dm$SE
+  
 }
 
 ## Function to calculate the inversion interval
 invCI <- function(.data, q1 = qnorm(0.025), q2 = qnorm(0.975), Y0) {
+  
   ## FIXME: Should this be calculated based on the original model?
   if (missing(Y0)) Y0 <- rnorm(1, mean = params$y0, sd = sqrt(params$var.y0))
+  
   ## Fit model using nlme package and estimate x0 and Var(Y0)
   mod <- lme(y ~ x, random = list(subject = pdDiag(~x)), data = .data)
   x0.est <- x0Fun(mod, y0 = Y0)
   var.y0 <- getVarCov(mod)[1, 1] + getVarCov(mod)[2, 2]*x0.est^2 + 
     summary(mod)$sigma^2
+  
   ## Prediction function that also returns standard error
   predFun <- function(x) {
     z <- list("x" = x)
@@ -128,6 +143,7 @@ invCI <- function(.data, q1 = qnorm(0.025), q2 = qnorm(0.975), Y0) {
                           t(cbind(1, unlist(z)))))
     list(fit = fit, se.fit = se.fit)
   }
+  
   ## Inverse functions for calculating confidence limits
   invFun1 <- function(x) { 
     z <- list(x)
@@ -141,16 +157,18 @@ invCI <- function(.data, q1 = qnorm(0.025), q2 = qnorm(0.975), Y0) {
     pred <- predFun(x)
     (Y0 - pred$fit)/sqrt((var.y0 + pred$se.fit^2)) - q1
   }
+  
   ## Find roots of inverse function
   lower <- uniroot(invFun1, interval = c(-1, x0.est), tol = 1e-10, 
                    maxiter = 1000)$root
-  upper <- uniroot(invFun2, interval = c(x0.est, 3), tol = 1e-10, 
+  upper <- uniroot(invFun2, interval = c(x0.est, 4), tol = 1e-10, 
                    maxiter = 1000)$root
   c(lower, upper)
+  
 }
 
 ## Function to calculate bootstrap intervals
-pbootCI <- function(.data, R = 999, .parallel = TRUE) {
+pbootCI <- function(.data, R = 9, .parallel = TRUE) {
   
   ## FIXME: Should this be calculated based on the original model?
   Y0 <- rnorm(1, mean = params$y0, sd = sqrt(params$var.y0))
@@ -203,16 +221,24 @@ pbootCI <- function(.data, R = 999, .parallel = TRUE) {
     
   }
   
-  ## Calculate quantiles of bootstrap sample
+  ## Generate bootstrap samples
   x0.pb <- if (.parallel) {
     bootMer2_parallel(mod, FUN = bootFun, FUN0 = bootFun0, nsim = R,
                       parallel = "multicore", ncpus = 4)
   } else {
     bootMer2(mod, FUN = bootFun, FUN0 = bootFun0, nsim = R)
   }
+  
+  ## Calculate bootstrap CIs
+  x0.pb.ci <- suppressWarnings(boot.ci(x0.pb, 
+                                       type = c("norm", "basic", "perc")))
   q.quant <- as.numeric(quantile(x0.pb$t[, 2], c(0.025, 0.975)))
-  rbind(as.numeric(quantile(x0.pb$t[, 1], c(0.025, 0.975))),
+  rbind(x0.pb.ci$normal[2:3],
+        x0.pb.ci$basic[4:5],
+        x0.pb.ci$perc[4:5],
+#         as.numeric(quantile(x0.pb$t[, 1], c(0.025, 0.975))),
         invCI(.data, q1 = q.quant[1], q2 = q.quant[2], Y0 = Y0))  
+
 }
 
 ## Simulation ------------------------------------------------------------------
