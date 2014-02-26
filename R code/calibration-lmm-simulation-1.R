@@ -99,10 +99,10 @@ simulationSummary <- function(x, boot = FALSE) {
 }
 
 ## Function to calculate the Wald-based C.I.
-waldCI <- function(.data) {
+waldCI <- function(.data, Y0) {
   
   ## FIXME: Should this be calculated based on the original model?
-  Y0 <- rnorm(1, mean = params$y0, sd = sqrt(params$var.y0))
+  if (missing(Y0)) Y0 <- rnorm(1, mean = params$y0, sd = sqrt(params$var.y0))
   
   ## Fit model using lme4 package and estimate x0 and Var(Y0)
   mod <- lmer(y ~ x + (0+1|subject) + (0+x|subject), data = .data)
@@ -168,10 +168,10 @@ invCI <- function(.data, q1 = qnorm(0.025), q2 = qnorm(0.975), Y0) {
 }
 
 ## Function to calculate bootstrap intervals
-pbootCI <- function(.data, R = 9, .parallel = TRUE) {
+pbootCI <- function(.data, R = 999, .parallel = TRUE, Y0) {
   
   ## FIXME: Should this be calculated based on the original model?
-  Y0 <- rnorm(1, mean = params$y0, sd = sqrt(params$var.y0))
+  if (missing(Y0)) Y0 <- rnorm(1, mean = params$y0, sd = sqrt(params$var.y0))
   
   ## Fit model using lme4 package and estimate x0 and Var(Y0)
   mod <- lmer(y ~ x + (0+1|subject) + (0+x|subject), data = .data)
@@ -264,15 +264,25 @@ mod.nlme <- lme(y ~ x, random = list(subject = pdDiag(~x)), data = simdata)
 x0Fun(mod.lme4)
 x0Fun(mod.nlme)
 
+## Test functions on sample data
+res <- rbind(waldCI(simdata, Y0 = 2),
+             invCI(simdata, Y0 = 2),
+             pbootCI(simdata, Y0 = 2))
+colnames(res) <- c("lower", "upper")
+rownames(res) <- c("wald", "inversion", "norm", "basic", "perc", "adjusted")
+cbind(res, length = apply(res, 1, diff))
+
 ## Simulation for the Wald-based interval
-wald.cis <- llply(dfs, waldCI, .progress = "text")
-round(simulationSummary(wald.cis), 4)
+# wald.cis <- llply(dfs, waldCI, .progress = "text")
+# round(simulationSummary(wald.cis), 4)
 
 ## Simulation for the inversion interval
-inv.cis <- llply(dfs, invCI, .progress = "text")
-round(simulationSummary(inv.cis), 4)
+# inv.cis <- llply(dfs, invCI, .progress = "text")
+# round(simulationSummary(inv.cis), 4)
 
-## Simulation for the PB percentile interval -----------------------------------
-# pb.cis <- llply(dfs, pbootCI, .progress = "text")
-# simulationSummary(pb.cis, boot = TRUE)
-
+## Simulation for the PB percentile interval (~ 8 hrs) -------------------------
+pb.cis <- llply(dfs, pbootCI, .progress = "text")
+simulationSummary(pb.cis, boot = TRUE)
+# system.time(pbootCI(simdata))
+#    user  system elapsed 
+# 109.220   0.396  28.323
