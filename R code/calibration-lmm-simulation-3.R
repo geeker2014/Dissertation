@@ -28,96 +28,87 @@ source("/home/w108bmg/Desktop/Dissertation/R code/bootMer2_parallel.R")
 ## Parameters
 params <- list(
   nsim = 1000,                      # simulation size
-  m = 30,                           # number of subjects
-  n = 20,                           # sample size per subject
-  beta = c(0, 3, -1),               # fixed effecs
-  theta = c(0.0001, 0.05, 0.001),   # variance components
-  y0 = c(0, 0.5, 1, 1.5, 2)[5] # true observed response
+  m = 15,                           # number of subjects
+  n = 10,                           # sample size per subject
+  beta = c(0, 3, -3, 1),            # fixed effecs
+  theta = c(0.001, 0.025, 0.001),   # variance components
+  x0 = c(0, 0.25, 0.5, 0.75, 1)[5]  # true observed response
 )
-params$x0 <- xinv_cpp(params$beta[3], params$beta[2], params$beta[1]-params$y0, 
-                      lower = 0, upper = 1)
+params$y0 <- params$x0^3 - 3*params$x0^2 + 3*params$x0
+# params$x0 <- xinv_cpp(params$beta[3], params$beta[2], params$beta[1]-params$y0, 
+#                       lower = 0, upper = 1)
 params$var.y0 <- params$theta[1] + params$theta[2]*params$x0^2 + params$theta[3]
 
 # (-params$beta[2] + sqrt(params$beta[2]^2 - 4*params$beta[3]*(params$beta[1]-params$y0))) / (2*params$beta[3])
 
-f1 <- function(x) 3*x - x^2         # quadratic
-f2 <- function(x) x^3 - 3*x^2 + 3*x # cubic
-par(mfrow = c(2, 1))
-curve(f1, from = 0, to = 1)
-curve(f2, from = 0, to = 1)
-
 ## Function to simulate data from a random intercept and slope model
-simData <- function(n = params$n, m = params$m, beta = params$beta, 
+genData <- function(n = params$n, m = params$m, beta = params$beta, 
                     theta = params$theta) {
   subject <- rep(1:m, each = n)
   x <- rep(seq(from = 0, to = 1, length = n), times = m) 
   B0 <- rnorm(m, mean = 0, sd = sqrt(theta[1]))
   B1 <- rnorm(m, mean = 0, sd = sqrt(theta[2]))
   y <- rnorm(m*n, mean = beta[1]+B0[subject] + (beta[2]+B1[subject])*x + 
-               beta[3]*x^2, 
+               beta[3]*x^2 + beta[4]*x^3, 
              sd = sqrt(theta[3]))
   data.frame(x = x, y = y, subject = factor(subject))
 }
 
 ## Inverse estimate function (just use xinv_cpp)
-xinv <- function(object, y0 = params$y0, lower = 0, upper = 1.5) {
+xinv <- function(object, y0 = params$y0, lower = -1, upper = 2) {
   fixed <- as.numeric(fixef(object))
-  xinv_cpp(fixed[3], fixed[2], fixed[1]-y0, lower, upper)
+  f <- function(x) fixed[1] + fixed[2]*x + fixed[3]*x^2 + fixed[4]*x^3
+  roots <- uniroot.all(f, lower = lower, upper = upper, tol = 1e-10, 
+                       maxiter = 1000)
+  roots[which.min(abs(roots - params$x0))]
 }
 
-# solveable <- function(object, y0, lower = 0, upper = 1) {
-#   coefs <- as.numeric(fixef(object))
-#   roots <- try(xinv_cpp(coefs[3], coefs[2], coefs[1]-y0, lower, upper), 
-#                silent = TRUE)
-#   if (inherits(roots, "try-error")) FALSE else TRUE
-# }
-# 
-# ## Function to summarize confidence interval
-# simulationSummary <- function(x, boot = FALSE) {
-#   
-#   ## Function for coverting list of C.I.'s into a two-column matrix
-#   list2Matrix <- function(object) {
-#     matrix(unlist(object), nrow = length(object), ncol = length(object[[1]]), 
-#            byrow = TRUE)
-#   }
-#   
-#   ## Function that returns coverage and length of a single C.I.
-#   coverage.and.length <- function(x) {
-#     .coverage <- if (x[1] <= params$x0 && params$x0 <= x[2]) 1 else 0
-#     .length <- x[2] - x[1]
-#     c(.coverage, .length)
-#   }
-#   
-#   if (!boot) {
-#     
-#     ci.mat <- list2Matrix(x)
-#     res <- apply(apply(ci.mat, 1, coverage.and.length), 1, mean)
-#     names(res) <- c("Coverage", "Length")
-#     res
-#     
-#   } else {
-#     
-#     ## Data frame of coverge and length estimates
-#     d <- ldply(x, function(x) {
-#       c(coverage.and.length(x[1, ]), # normal
-#         coverage.and.length(x[2, ]), # basic
-#         coverage.and.length(x[3, ]), # percentile
-#         coverage.and.length(x[4, ])) # adjusted inversion
-#     })
-#     
-#     ## Calculate mean coverage and mean length
-#     boot.norm <- apply(d[, 1:2], 2, mean)
-#     boot.basic <- apply(d[, 3:4], 2, mean)
-#     boot.perc <- apply(d[, 5:6], 2, mean)
-#     boot.inv <- apply(d[, 7:8], 2, mean)
-#     res <- rbind(boot.norm, boot.basic, boot.perc, boot.inv)
-#     colnames(res) <- c("Coverage", "Length")
-#     res
-#     
-#   }
-#   
-# }
-# 
+## Function to summarize confidence interval
+simulationSummary <- function(x, boot = FALSE) {
+  
+  ## Function for coverting list of C.I.'s into a two-column matrix
+  list2Matrix <- function(object) {
+    matrix(unlist(object), nrow = length(object), ncol = length(object[[1]]), 
+           byrow = TRUE)
+  }
+  
+  ## Function that returns coverage and length of a single C.I.
+  coverage.and.length <- function(x) {
+    .coverage <- if (x[1] <= params$x0 && params$x0 <= x[2]) 1 else 0
+    .length <- x[2] - x[1]
+    c(.coverage, .length)
+  }
+  
+  if (!boot) {
+    
+    ci.mat <- list2Matrix(x)
+    res <- apply(apply(ci.mat, 1, coverage.and.length), 1, mean)
+    names(res) <- c("Coverage", "Length")
+    res
+    
+  } else {
+    
+    ## Data frame of coverge and length estimates
+    d <- ldply(x, function(x) {
+      c(coverage.and.length(x[1, ]), # normal
+        coverage.and.length(x[2, ]), # basic
+        coverage.and.length(x[3, ]), # percentile
+        coverage.and.length(x[4, ])) # adjusted inversion
+    })
+    
+    ## Calculate mean coverage and mean length
+    boot.norm <- apply(d[, 1:2], 2, mean)
+    boot.basic <- apply(d[, 3:4], 2, mean)
+    boot.perc <- apply(d[, 5:6], 2, mean)
+    boot.inv <- apply(d[, 7:8], 2, mean)
+    res <- rbind(boot.norm, boot.basic, boot.perc, boot.inv)
+    colnames(res) <- c("Coverage", "Length")
+    res
+    
+  }
+  
+}
+
 # ## Function to calculate the Wald-based C.I.
 # waldCI <- function(.data) {
 #   
