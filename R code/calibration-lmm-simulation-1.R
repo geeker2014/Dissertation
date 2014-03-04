@@ -146,14 +146,10 @@ invCI <- function(.data, q1 = qnorm(0.025), q2 = qnorm(0.975), Y0) {
   
   ## Inverse functions for calculating confidence limits
   invFun1 <- function(x) { 
-    z <- list(x)
-    names(z) <- "volume"
     pred <- predFun(x)
     (Y0 - pred$fit)/sqrt((var.y0 + pred$se.fit^2)) - q2
   }
   invFun2 <- function(x) { 
-    z <- list(x)
-    names(z) <- "volume"
     pred <- predFun(x)
     (Y0 - pred$fit)/sqrt((var.y0 + pred$se.fit^2)) - q1
   }
@@ -236,7 +232,6 @@ pbootCI <- function(.data, R = 999, .parallel = TRUE, Y0) {
   rbind(x0.pb.ci$normal[2:3],
         x0.pb.ci$basic[4:5],
         x0.pb.ci$perc[4:5],
-#         as.numeric(quantile(x0.pb$t[, 1], c(0.025, 0.975))),
         invCI(.data, q1 = q.quant[1], q2 = q.quant[2], Y0 = Y0))  
 
 }
