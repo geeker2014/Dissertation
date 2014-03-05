@@ -211,7 +211,7 @@ waldCI <- function(.data, Y0) {
 
 ## Function to calculate the inversion interval
 invCI <- function(.data, q1 = qnorm(0.025), q2 = qnorm(0.975), Y0, safe = FALSE,
-                  lower = -2, upper = 3) {
+                  lower = -10, upper = 11) {
   
   ## FIXME: Should this be calculated based on the original model?
   if (missing(Y0)) Y0 <- rnorm(1, mean = params$y0, sd = sqrt(params$var.y0))
@@ -247,7 +247,7 @@ invCI <- function(.data, q1 = qnorm(0.025), q2 = qnorm(0.975), Y0, safe = FALSE,
   }
   
   ## Check curves
-  curve(fun1, from = x0.est-1, to = x0.est+2, lwd = 2)
+  curve(fun1, from = -10, to = 11, lwd = 2, ylab = "Bounds")
   curve(fun2, lwd = 2, col = "red", add = TRUE)
   abline(h = 0, v = x0.est, lty = 2)
   
@@ -400,25 +400,28 @@ wald.cis <- llply(dfs, waldCI, .progress = "text")
 round(simulationSummary(wald.cis), 4)
 
 ## Simulation for the inversion interval ---------------------------------------
-inv.cis <- llply(dfs, invCI, .progress = "text")
+inv.cis <- llply(dfs, invCI, safe = TRUE, .progress = "text")
 round(simulationSummary(inv.cis), 4)
 
 ## Simulation for the PB intervals (~ 8 hrs) -----------------------------------
-pb.cis <- llply(dfs, pbootCI, .progress = "text")
-round(simulationSummary(pb.cis, boot = TRUE), 4)
-system.time(pbootCI(simdata, Y0 = params$y0))
+# pb.cis <- llply(dfs, pbootCI, .progress = "text")
+# round(simulationSummary(pb.cis, boot = TRUE), 4)
+# system.time(pbootCI(simdata, Y0 = params$y0))
 
 ## Try splitting it up
-pb.cis1 <- llply(dfs[1:100], pbootCI, .progress = "text")
-pb.cis2 <- llply(dfs[101:200], pbootCI, .progress = "text")
-pb.cis3 <- llply(dfs[201:300], pbootCI, .progress = "text")
-pb.cis4 <- llply(dfs[301:400], pbootCI, .progress = "text")
-pb.cis5 <- llply(dfs[401:500], pbootCI, .progress = "text")
-pb.cis6 <- llply(dfs[501:600], pbootCI, .progress = "text")
-pb.cis7 <- llply(dfs[601:700], pbootCI, .progress = "text")
-pb.cis8 <- llply(dfs[701:800], pbootCI, .progress = "text")
-pb.cis9 <- llply(dfs[801:900], pbootCI, .progress = "text")
-pb.cis10 <- llply(dfs[901:1000], pbootCI, .progress = "text")
+# pb.cis1 <- llply(dfs[1:100], pbootCI, .progress = "text")
+# pb.cis2 <- llply(dfs[101:200], pbootCI, .progress = "text")
+# pb.cis3 <- llply(dfs[201:300], pbootCI, .progress = "text")
+# pb.cis4 <- llply(dfs[301:400], pbootCI, .progress = "text")
+# pb.cis5 <- llply(dfs[401:500], pbootCI, .progress = "text")
+# pb.cis6 <- llply(dfs[501:600], pbootCI, .progress = "text")
+# pb.cis7 <- llply(dfs[601:700], pbootCI, .progress = "text")
+# pb.cis8 <- llply(dfs[701:800], pbootCI, .progress = "text")
+# pb.cis9 <- llply(dfs[801:900], pbootCI, .progress = "text")
+# pb.cis10 <- llply(dfs[901:1000], pbootCI, .progress = "text")
+# pb.cis <- c(pb.cis1, pb.cis2, pb.cis3, pb.cis4, pb.cis5, pb.cis6, pb.cis7, 
+#             pb.cis8, pb.cis9, pb.cis10)
+simulationSummary(pb.cis, boot = TRUE)
 
-# pb.cis <- rbind(pb.cis1, ..., pb.cis10)
-round(simulationSummary(pb.cis1, boot = TRUE), 4)
+save(wald.cis, inv.cis, pb.cis, 
+     file = "/home/w108bmg/Desktop/sim_results_cuberoot.RData")
