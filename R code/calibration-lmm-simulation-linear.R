@@ -127,6 +127,14 @@ invCI <- function(.data, params, q1 = qnorm(0.025), q2 = qnorm(0.975), Y0) {
   c(lower, upper)
 }
 
+## Function to calculate the inversion interval without LMM
+inv2CI <- function(.data, params, Y0) {
+  if (missing(Y0)) Y0 <- rnorm(1, mean = params$y0, sd = sqrt(params$var.y0))
+  cal <- calibrate(.data[, 1:2], y0 = Y0, interval = "inversion")
+  c(cal$lower, cal$upper)
+}
+
+
 ## Function to calculate bootstrap intervals
 pbootCI <- function(.data, params, R = 999, .parallel = TRUE, Y0) {
   ## FIXME: Should this be calculated based on the original model?
@@ -269,41 +277,52 @@ set.seed(5746)
 dfs <- rlply(1000, genData)
 
 ## Simulations for the Wald-based interval -------------------------------------
-wald.cis1 <- llply(dfs, waldCI, params = params1, .progress = "text")
-wald.cis2 <- llply(dfs, waldCI, params = params2, .progress = "text")
-wald.cis3 <- llply(dfs, waldCI, params = params3, .progress = "text")
-wald.cis4 <- llply(dfs, waldCI, params = params4, .progress = "text")
-wald.cis5 <- llply(dfs, waldCI, params = params5, .progress = "text")
-simulationSummary(wald.cis1, params1)
-simulationSummary(wald.cis2, params2)
-simulationSummary(wald.cis3, params3)
-simulationSummary(wald.cis4, params4)
-simulationSummary(wald.cis5, params5)
+# wald.cis1 <- llply(dfs, waldCI, params = params1, .progress = "text")
+# wald.cis2 <- llply(dfs, waldCI, params = params2, .progress = "text")
+# wald.cis3 <- llply(dfs, waldCI, params = params3, .progress = "text")
+# wald.cis4 <- llply(dfs, waldCI, params = params4, .progress = "text")
+# wald.cis5 <- llply(dfs, waldCI, params = params5, .progress = "text")
+# simulationSummary(wald.cis1, params1)
+# simulationSummary(wald.cis2, params2)
+# simulationSummary(wald.cis3, params3)
+# simulationSummary(wald.cis4, params4)
+# simulationSummary(wald.cis5, params5)
 
 ## Simulations for the inversion intervals -------------------------------------
-inv.cis1 <- llply(dfs, invCI, params = params1, .progress = "text")
-inv.cis2 <- llply(dfs, invCI, params = params2, .progress = "text")
-inv.cis3 <- llply(dfs, invCI, params = params3, .progress = "text")
-inv.cis4 <- llply(dfs, invCI, params = params4, .progress = "text")
-inv.cis5 <- llply(dfs, invCI, params = params5, .progress = "text")
-simulationSummary(inv.cis1, params1)
-simulationSummary(inv.cis2, params2)
-simulationSummary(inv.cis3, params3)
-simulationSummary(inv.cis4, params4)
-simulationSummary(inv.cis5, params5)
+# inv.cis1 <- llply(dfs, invCI, params = params1, .progress = "text")
+# inv.cis2 <- llply(dfs, invCI, params = params2, .progress = "text")
+# inv.cis3 <- llply(dfs, invCI, params = params3, .progress = "text")
+# inv.cis4 <- llply(dfs, invCI, params = params4, .progress = "text")
+# inv.cis5 <- llply(dfs, invCI, params = params5, .progress = "text")
+# simulationSummary(inv.cis1, params1)
+# simulationSummary(inv.cis2, params2)
+# simulationSummary(inv.cis3, params3)
+# simulationSummary(inv.cis4, params4)
+# simulationSummary(inv.cis5, params5)
+
+# inv2.cis1 <- llply(dfs, inv2CI, params = params1, .progress = "text")
+# inv2.cis2 <- llply(dfs, inv2CI, params = params2, .progress = "text")
+# inv2.cis3 <- llply(dfs, inv2CI, params = params3, .progress = "text")
+# inv2.cis4 <- llply(dfs, inv2CI, params = params4, .progress = "text")
+# inv2.cis5 <- llply(dfs, inv2CI, params = params5, .progress = "text")
+# rbind(simulationSummary(inv2.cis1, params1),
+#       simulationSummary(inv2.cis2, params2),
+#       simulationSummary(inv2.cis3, params3),
+#       simulationSummary(inv2.cis4, params4),
+#       simulationSummary(inv2.cis5, params5))
 
 ## Simulation for the PB percentile intervals (~ 8 hrs) ------------------------
-pb.cis1 <- llply(dfs, pbootCI, params = params1, .progress = "text")
-pb.cis2 <- llply(dfs, pbootCI, params = params2, .progress = "text")
-pb.cis3 <- llply(dfs, pbootCI, params = params3, .progress = "text")
+# pb.cis1 <- llply(dfs, pbootCI, params = params1, .progress = "text")
+# pb.cis2 <- llply(dfs, pbootCI, params = params2, .progress = "text")
+# pb.cis3 <- llply(dfs, pbootCI, params = params3, .progress = "text")
 pb.cis4 <- llply(dfs, pbootCI, params = params4, .progress = "text")
-pb.cis5 <- llply(dfs, pbootCI, params = params5, .progress = "text")
-simulationSummary(pb.cis1, params1, boot = TRUE)
-simulationSummary(pb.cis2, params2, boot = TRUE)
-simulationSummary(pb.cis3, params3, boot = TRUE)
+# pb.cis5 <- llply(dfs, pbootCI, params = params5, .progress = "text")
+# simulationSummary(pb.cis1, params1, boot = TRUE)
+# simulationSummary(pb.cis2, params2, boot = TRUE)
+# simulationSummary(pb.cis3, params3, boot = TRUE)
 simulationSummary(pb.cis4, params4, boot = TRUE)
-simulationSummary(pb.cis5, params5, boot = TRUE)
+# simulationSummary(pb.cis5, params5, boot = TRUE)
 
 save(wald.cis1, wald.cis2, wald.cis3, wald.cis4, wald.cis5, inv.cis1, inv.cis2,
-     inv.cis3, inv.cis4, inv.cis5,
-     file = "/home/w108bmg/Desktop/sim_results_linear.RData")
+     inv.cis3, inv.cis4, inv.cis5, pb.cis1, pb.cis5,
+     file = "/home/w108bmg/Desktop/sim_results_linear4.RData")

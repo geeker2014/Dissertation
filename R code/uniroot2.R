@@ -1,8 +1,13 @@
+## This is a safer version of the uniroot function suitable for simulations in
+## which the position of the root is random. If at first the root is not 
+## contained in the interval (a, b), then the interval is expanded in one or 
+## both directions until this condition is met or maxk expansions have been
+## performed.
 uniroot2 <- function (f, interval, ..., lower = min(interval), 
                       upper = max(interval), f.lower = f(lower, ...), 
                       f.upper = f(upper, ...), 
                       tol = .Machine$double.eps^0.25, maxiter = 1000,
-                      extend = c("none", "left", "right", "both"), frac = 0.1,
+                      extend = c("none", "left", "right", "both"), frac = 0.5,
                       maxk = 1000) 
 {
   extend <- match.arg(extend)
